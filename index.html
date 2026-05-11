@@ -7,6 +7,7 @@
   const _sys=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
   document.documentElement.setAttribute("data-theme",_sv||_sys);
 </script>
+<link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Hortifruti - Pedidos</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -267,6 +268,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .dropdown-item:hover{background:var(--bg3)}
 .dropdown-item.danger{color:var(--red)}
 .dd-divider{height:1px;background:var(--border);margin:4px 0}
+
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </head>
 <body>
@@ -740,6 +743,114 @@ async function carregarHistoricoCliente(){
   }).join('');
 }
 
+
+// ── NOTIFICACOES REALTIME ──
+let realtimeSub = null;
+let swRegistration = null;
+let ultimoPedidoId = null;
+
+// Som de notificacao (beep gerado por Web Audio API)
+function tocarSom(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.8);
+  }catch(e){}
+}
+
+// Mostrar popup de notificacao na tela
+function mostrarNotifPopup(titulo, corpo){
+  // Remove popup anterior se existir
+  const old = document.getElementById('notif-popup');
+  if(old) old.remove();
+
+  const el = document.createElement('div');
+  el.id = 'notif-popup';
+  el.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:var(--green);color:#fff;border-radius:14px;padding:14px 18px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.3);animation:slideIn .3s ease;cursor:pointer';
+  el.innerHTML = '<div style="font-weight:800;font-size:14px;margin-bottom:4px">'+titulo+'</div>'
+    +'<div style="font-size:13px;opacity:.9">'+corpo+'</div>';
+  el.onclick = () => { el.remove(); if(perfil?.role==='admin') showAPage('relatorio', document.querySelector('.atab:nth-child(2)')); };
+  document.body.appendChild(el);
+
+  // Remove automaticamente em 6 segundos
+  setTimeout(() => { if(el.parentNode) el.remove(); }, 6000);
+}
+
+// Registrar Service Worker e pedir permissao push
+async function iniciarNotificacoes(){
+  if(!('serviceWorker' in navigator) || !('Notification' in window)) return;
+
+  try{
+    // Registrar SW
+    swRegistration = await navigator.serviceWorker.register('/sw.js');
+    console.log('SW registrado!');
+
+    // Pedir permissao
+    const perm = await Notification.requestPermission();
+    console.log('Permissao notificacao:', perm);
+  }catch(e){
+    console.log('SW nao disponivel:', e);
+  }
+}
+
+// Notificacao do navegador (push nativo)
+function notifNativa(titulo, corpo){
+  if(Notification.permission === 'granted'){
+    new Notification(titulo, {
+      body: corpo,
+      icon: 'https://zfvppqpufiuwuvveounk.supabase.co/storage/v1/object/public/imagens/icon-192.png',
+      badge: 'https://zfvppqpufiuwuvveounk.supabase.co/storage/v1/object/public/imagens/icon-192.png',
+      vibrate: [200, 100, 200]
+    });
+  }
+}
+
+// Iniciar escuta em tempo real de novos pedidos
+function iniciarRealtime(){
+  if(realtimeSub) return; // ja esta ouvindo
+
+  realtimeSub = sb.channel('pedidos-novos')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'pedidos'
+    }, payload => {
+      const ped = payload.new;
+      // Ignorar se foi o proprio admin que criou
+      if(ped.user_id === perfil?.id && perfil?.role === 'admin') return;
+      // Ignorar duplicatas
+      if(ultimoPedidoId === ped.id) return;
+      ultimoPedidoId = ped.id;
+
+      const titulo = '\u{1F6D2} Novo pedido!';
+      const corpo = (ped.cliente_nome||'Cliente') + ' - R$ ' + (ped.total||0).toFixed(2).replace('.',',');
+
+      tocarSom();
+      mostrarNotifPopup(titulo, corpo);
+      notifNativa(titulo, corpo);
+
+      // Atualizar badge na aba do navegador
+      document.title = '(1) Hortifruti - Pedidos';
+      setTimeout(()=>{ document.title = 'Hortifruti - Pedidos'; }, 5000);
+    })
+    .subscribe();
+}
+
+function pararRealtime(){
+  if(realtimeSub){
+    sb.removeChannel(realtimeSub);
+    realtimeSub = null;
+  }
+}
+
 async function init(){
   document.getElementById('r-data').value=hoje();
   document.getElementById('co-data').value=hoje();
@@ -887,6 +998,7 @@ async function fazerLogout(){
   const ddAdmin=document.getElementById('dd-admin');
   if(ddAdmin)ddAdmin.style.display='none';
   fecharDropdown();
+  pararRealtime();
 }
 
 /* LOJA */
@@ -1144,6 +1256,8 @@ async function showAdmin(){
   if(!fCatAdm&&cats.length)fCatAdm=cats[0].id;
   renderACpills();renderAGrid();renderCatSel();
   showAEl('ap-pedido');
+  iniciarRealtime();
+  iniciarNotificacoes();
 }
 function voltarLoja(){document.getElementById('screen-admin').classList.remove('active');document.getElementById('screen-shop').classList.add('active')}
 function showAPage(p,tab){
