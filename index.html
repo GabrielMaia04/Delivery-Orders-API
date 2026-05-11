@@ -1015,7 +1015,7 @@ function renderShopCats(){
     'Coco/Queijos':'\u{1F9C0}','Molhos':'\u{1F375}','Outros':'\u{1F4E6}'
   };
   const todosIcon='\u{1F6D2}';
-  const todosChip=`<div class="cat-chip${fCatShop===null?' active':''}" onclick="setCatShop(null)"><div class="cat-icon">${todosIcon}</div><div class="cat-label">Todos</div></div>`;
+  const todosChip='<div class="cat-chip'+(fCatShop===null?' active':'')+'" onclick="setCatShop(null)"><div class="cat-icon">'+todosIcon+'</div><div class="cat-label">Todos</div></div>';
   document.getElementById('shop-cats').innerHTML=todosChip+cats.map(c=>{
     const img=imgMap[c.nome];
     const em=emojiMap[c.nome]||c.emoji||'\u{1F33F}';
@@ -1278,7 +1278,9 @@ function setAE(v){
   renderAOrder();
 }
 function renderACpills(){
-  document.getElementById('a-cpills').innerHTML=cats.map(c=>`<button class="cpill${fCatAdm===c.id?' active':''}" onclick="fCatAdm=${c.id};renderACpills()">${c.nome}</button>`).join('');
+  document.getElementById('a-cpills').innerHTML=cats.map(c=>{
+    return '<button class="cpill'+(fCatAdm===c.id?' active':'')+'" onclick="fCatAdm='+c.id+';renderACpills()">'+c.nome+'</button>';
+  }).join('');
   renderAGrid();
 }
 function renderAGrid(){
