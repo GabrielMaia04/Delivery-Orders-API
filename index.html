@@ -579,7 +579,31 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 </div>
-<!-- MODAL QTD ADMIN -->
+<!-- MODAL ESTOQUE -->
+<div class="modal-ov" id="est-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-title" id="est-modal-t">Editar Estoque</div>
+    <div class="modal-sub" id="est-modal-atual"></div>
+    <input type="hidden" id="est-produto-id">
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">Definir valor absoluto</label>
+      <input id="est-val" type="number" min="0" placeholder="Ex: 50 (vazio = ilimitado)" style="font-size:15px;text-align:center">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">Ou adicionar / subtrair</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="qty-big-btn" onclick="document.getElementById('est-delta').value=Math.max(-999,(parseInt(document.getElementById('est-delta').value)||0)-1)">-</button>
+        <input id="est-delta" type="number" placeholder="0" style="flex:1;font-size:20px;font-weight:800;text-align:center;padding:9px;border-radius:9px">
+        <button class="qty-big-btn" onclick="document.getElementById('est-delta').value=(parseInt(document.getElementById('est-delta').value)||0)+1">+</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:5px">Use negativo para subtrair. Ex: -5 remove 5 unidades.</div>
+    </div>
+    <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px" onclick="salvarEstoque()">&#10003; Salvar estoque</button>
+    <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('est-modal').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+
 <div class="modal-ov" id="a-modal" onclick="fecharAModal(event)">
   <div class="modal-box">
     <div class="modal-title" id="a-modal-t">Adicionar</div>
@@ -1038,10 +1062,10 @@ function renderShop(){
   document.getElementById('shop-grid').classList.remove('hidden');
   const q=(document.getElementById('shop-search').value||'').toLowerCase();
   let ps=prods.filter(p=>p.ativo);
-  if(fCatShop)ps=ps.filter(p=>p.cat_id===fCatShop);
-  if(q)ps=ps.filter(p=>p.nome.toLowerCase().includes(q));
+  if(fCatShop&&!q)ps=ps.filter(p=>p.cat_id===fCatShop);
+  if(q)ps=ps.filter(p=>p.nome.toLowerCase().includes(q)||p.descricao?.toLowerCase().includes(q));
   const cat=cats.find(c=>c.id===fCatShop);
-  document.getElementById('shop-sec').textContent=cat?cat.nome:'Todos os produtos';
+  document.getElementById('shop-sec').textContent=q?'Resultados para "'+q+'"':(cat?cat.nome:'Todos os produtos');
   const el=document.getElementById('shop-grid');
   if(!ps.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum produto encontrado</div>';return}
   el.innerHTML=ps.map(p=>{
@@ -1300,6 +1324,66 @@ function renderAGrid(){
       +'</div>';
   }).join('');
 }
+/* ── MODAL ADMIN: ADICIONAR PRODUTO ── */
+function abrirModal(id){
+  const p=prods.find(x=>x.id===id);if(!p)return;
+  apSel=id;
+  document.getElementById('a-modal-t').textContent=emoji(p)+' '+p.nome;
+  document.getElementById('a-modal-s').textContent=(p.peso?p.peso+' · ':'')+' R$ '+fp(p.preco);
+  document.getElementById('a-qty').value=1;
+  document.getElementById('a-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('a-qty').select(),60);
+}
+function fecharAModal(e){if(e.target===document.getElementById('a-modal'))document.getElementById('a-modal').classList.remove('open')}
+function ajQty(d){
+  const el=document.getElementById('a-qty');
+  el.value=Math.max(1,(parseInt(el.value)||1)+d);
+}
+function confQty(){
+  if(!apSel)return;
+  const qty=Math.max(1,parseInt(document.getElementById('a-qty').value)||1);
+  const ex=ap.itens.find(i=>i.prodId===apSel);
+  if(ex)ex.qty+=qty;
+  else ap.itens.push({prodId:apSel,qty});
+  apSel=null;
+  document.getElementById('a-modal').classList.remove('open');
+  renderAOrder();
+}
+function renderAOrder(){
+  const el=document.getElementById('a-items');
+  const empty=document.getElementById('a-empty');
+  if(!ap.itens.length){
+    el.classList.add('hidden');empty.classList.remove('hidden');
+    document.getElementById('a-badge').textContent='';
+    ['a-si','a-sp','a-ss','a-st'].forEach((id,i)=>document.getElementById(id).textContent=['0','0,00 kg','R$ 0,00','R$ 0,00'][i]);
+    return;
+  }
+  empty.classList.add('hidden');el.classList.remove('hidden');
+  let tQty=0,tPeso=0;
+  el.innerHTML=ap.itens.map((it,i)=>{
+    const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
+    const sub=p.preco*it.qty;
+    tQty+=it.qty;
+    const n=p.peso?parseFloat(p.peso.replace(/[^0-9.]/g,'')):null;
+    const u=p.peso?p.peso.replace(/[0-9. ]/g,'').toLowerCase():'';
+    if(n&&u==='g')tPeso+=n*it.qty/1000;
+    else if(n&&u==='kg')tPeso+=n*it.qty;
+    return`<div class="oitem">
+      <div><div class="oi-n">${emoji(p)} ${p.nome}</div><div class="oi-s">${p.peso||''}</div></div>
+      <div class="oi-q"><button class="qb" onclick="aChgQ(${i},-1)">-</button><span class="qn">${it.qty}</span><button class="qb" onclick="aChgQ(${i},1)">+</button></div>
+      <div class="oi-p">R$ ${fp(p.preco)}</div>
+      <div class="oi-v">R$ ${fp(sub)}</div>
+      <button class="db" onclick="aRm(${i})">✕</button>
+    </div>`;
+  }).join('');
+  const sub=aCalcSub(),tot=aCalcTot();
+  document.getElementById('a-badge').textContent=tQty+' item(s)';
+  document.getElementById('a-si').textContent=tQty;
+  document.getElementById('a-sp').textContent=tPeso.toFixed(2)+' kg';
+  document.getElementById('a-ss').textContent='R$ '+fp(sub);
+  document.getElementById('a-st').textContent='R$ '+fp(tot);
+}
+
 function aChgQ(i,d){ap.itens[i].qty=Math.max(1,ap.itens[i].qty+d);renderAOrder()}
 function aRm(i){ap.itens.splice(i,1);renderAOrder()}
 function aCalcSub(){return ap.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0)}
@@ -1384,6 +1468,82 @@ async function renderRel(){
     if(totT>0)pedEl.innerHTML+=`<div style="padding:7px 0;display:flex;justify-content:space-between;font-size:11px;color:var(--orange)"><span>Total taxas</span><span style="font-weight:700">R$ ${fp(totT)}</span></div>`;
   }
   renderRPage();
+  renderRPag();
+}
+function renderRPag(){
+  const total=Math.ceil(rTotal/PER);
+  const el=document.getElementById('r-pag');
+  if(total<=1){el.innerHTML='';return}
+  let html='<button class="pag-btn"'+(rPage===1?' disabled':'')+' onclick="goRPage('+(rPage-1)+')">\u2190 Ant</button>';
+  const maxBtn=7;
+  let start=Math.max(1,rPage-Math.floor(maxBtn/2));
+  let end=Math.min(total,start+maxBtn-1);
+  if(end-start<maxBtn-1)start=Math.max(1,end-maxBtn+1);
+  if(start>1)html+='<button class="pag-btn" onclick="goRPage(1)">1</button><span style="padding:4px;color:var(--text3)">...</span>';
+  for(let i=start;i<=end;i++)html+='<button class="pag-btn'+(i===rPage?' active':'')+'" onclick="goRPage('+i+')">'+i+'</button>';
+  if(end<total)html+='<span style="padding:4px;color:var(--text3)">...</span><button class="pag-btn" onclick="goRPage('+total+')">'+total+'</button>';
+  html+='<button class="pag-btn"'+(rPage===total?' disabled':'')+' onclick="goRPage('+(rPage+1)+')">Prox \u2192</button>';
+  html+='<span style="padding:4px 8px;font-size:11px;color:var(--text3)">'+(rTotal)+' pedido(s)</span>';
+  el.innerHTML=html;
+}
+function goRPage(p){
+  const total=Math.ceil(rTotal/PER);
+  rPage=Math.max(1,Math.min(total,p));
+  renderRPage();renderRPag();
+  document.getElementById('r-table').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function exportRel(){
+  if(!rCache.length){alert('Nenhum pedido para exportar.');return}
+  const linhas=['=== RELATORIO DE PEDIDOS ===','Total: '+rCache.length+' pedido(s)','Gerado em: '+new Date().toLocaleString('pt-BR'),''];
+  rCache.forEach((p,i)=>{
+    const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
+    linhas.push('--- Pedido '+(i+1)+' ---');
+    linhas.push('Cliente: '+p.cliente_nome);
+    if(p.cliente_contato)linhas.push('Contato: '+p.cliente_contato);
+    linhas.push('Data: '+fd(p.data_pedido));
+    if(end)linhas.push('Endereco: '+end);
+    linhas.push('Entrega: '+p.entrega+' | Pagamento: '+p.pagamento);
+    if(p.status)linhas.push('Status: '+p.status);
+    if(p.observacoes)linhas.push('Obs: '+p.observacoes);
+    (p.itens_pedido||[]).forEach(it=>{
+      linhas.push('  '+it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'')+'= R$ '+fp(it.subtotal));
+    });
+    if(p.taxa_entrega>0)linhas.push('  Taxa entrega = R$ '+fp(p.taxa_entrega));
+    linhas.push('TOTAL: R$ '+fp(p.total));
+    linhas.push('');
+  });
+  const totG=rCache.reduce((s,p)=>s+p.total,0);
+  linhas.push('=== TOTAL GERAL: R$ '+fp(totG)+' ===');
+  const txt=linhas.join('\n');
+  navigator.clipboard.writeText(txt)
+    .then(()=>alert('Relatorio copiado para a area de transferencia!'))
+    .catch(()=>{
+      const w=window.open('','_blank','width=600,height=700');
+      if(w){w.document.write('<html><body style="font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap">'+txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</body></html>');w.document.close();}
+    });
+}
+
+function verPed(id){
+  const p=rCache.find(x=>x.id===id);if(!p)return;
+  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
+  const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'')+'  R$ '+fp(it.subtotal)).join('\n');
+  const txt=[
+    'Cliente: '+p.cliente_nome,
+    p.cliente_contato?'Contato: '+p.cliente_contato:'',
+    'Data: '+fd(p.data_pedido),
+    end?'Endereco: '+end:'',
+    'Entrega: '+p.entrega,
+    'Pagamento: '+p.pagamento,
+    p.status?'Status: '+p.status:'',
+    p.observacoes?'Obs: '+p.observacoes:'',
+    '---',
+    its,
+    '---',
+    p.taxa_entrega>0?'Taxa: R$ '+fp(p.taxa_entrega):'',
+    'TOTAL: R$ '+fp(p.total)
+  ].filter(Boolean).join('\n');
+  alert(txt);
 }
 
 async function alterarStatus(id,status){
@@ -1415,13 +1575,36 @@ function renderRPage(){
 
 async function editEstoque(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
-  const val=prompt('Estoque atual: '+(p.estoque!=null?p.estoque:'Ilimitado')+'\nNovo estoque (deixe vazio para ilimitado):',p.estoque!=null?p.estoque:'');
-  if(val===null)return; // cancelou
-  const novo=val.trim()===''?null:parseInt(val);
-  if(val.trim()!==''&&isNaN(novo)){alert('Valor invalido.');return}
+  // Abre modal de estoque
+  document.getElementById('est-modal-t').textContent=emoji(p)+' '+p.nome;
+  document.getElementById('est-modal-atual').textContent='Atual: '+(p.estoque!=null?p.estoque+' un':'Ilimitado');
+  document.getElementById('est-val').value=p.estoque!=null?p.estoque:'';
+  document.getElementById('est-delta').value='';
+  document.getElementById('est-produto-id').value=id;
+  document.getElementById('est-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('est-val').select(),60);
+}
+async function salvarEstoque(){
+  const id=parseInt(document.getElementById('est-produto-id').value);
+  const p=prods.find(x=>x.id===id);if(!p)return;
+  const valRaw=document.getElementById('est-val').value.trim();
+  const deltaRaw=document.getElementById('est-delta').value.trim();
+  let novo;
+  if(deltaRaw!==''){
+    const d=parseInt(deltaRaw);
+    if(isNaN(d)){alert('Delta invalido.');return}
+    novo=(p.estoque!=null?p.estoque:0)+d;
+    if(novo<0)novo=0;
+  }else if(valRaw===''){
+    novo=null; // ilimitado
+  }else{
+    novo=parseInt(valRaw);
+    if(isNaN(novo)||novo<0){alert('Valor invalido.');return}
+  }
   const {error}=await sb.from('produtos').update({estoque:novo}).eq('id',id);
   if(error){alert('Erro: '+error.message);return}
   p.estoque=novo;
+  document.getElementById('est-modal').classList.remove('open');
   renderProdList();
 }
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
