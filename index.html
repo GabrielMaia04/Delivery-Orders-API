@@ -1318,6 +1318,93 @@ async function editEstoque(id){
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
 async function rmProd(id){if(!confirm('Remover produto?'))return;await sb.from('produtos').delete().eq('id',id);prods=prods.filter(p=>p.id!==id);renderProdList();renderAGrid();renderShop()}
 
+
+/* PRODUTOS ADMIN */
+async function renderCatList(){
+  const el=document.getElementById('cat-list');
+  if(!cats.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhuma categoria.</div>';return}
+  el.innerHTML=cats.map(c=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'
+    +'<span style="font-size:12px;font-weight:700">'+c.nome+'</span>'
+    +'<button class="btn btn-r btn-sm" onclick="rmCat('+c.id+')">Remover</button>'
+    +'</div>').join('');
+}
+
+async function addCat(){
+  const nome=document.getElementById('cat-nome').value.trim();
+  if(!nome)return;
+  const {data,error}=await sb.from('categorias').insert({nome}).select().single();
+  if(error){alert('Erro: '+error.message);return}
+  cats.push(data);
+  document.getElementById('cat-nome').value='';
+  renderCatList();renderCatSel();renderPPills();renderACpills();renderShopCats();
+}
+
+async function rmCat(id){
+  if(!confirm('Remover esta categoria?'))return;
+  await sb.from('categorias').delete().eq('id',id);
+  cats=cats.filter(c=>c.id!==id);
+  renderCatList();renderCatSel();renderPPills();renderACpills();renderShopCats();
+}
+
+function renderCatSel(){
+  const el=document.getElementById('p-cat');
+  if(!el)return;
+  el.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
+}
+
+async function addProd(){
+  const nome=document.getElementById('p-nome').value.trim();
+  const preco=parseFloat(document.getElementById('p-preco').value);
+  if(!nome||isNaN(preco)){alert('Informe nome e preco.');return}
+  const estoqueVal=document.getElementById('p-estoque').value;
+  const estoque=estoqueVal!==''?parseInt(estoqueVal):null;
+  const {data,error}=await sb.from('produtos').insert({
+    cat_id:parseInt(document.getElementById('p-cat').value),
+    nome,
+    descricao:document.getElementById('p-desc').value.trim(),
+    peso:document.getElementById('p-peso').value.trim(),
+    emoji:document.getElementById('p-emoji').value.trim()||'\u{1F966}',
+    preco,estoque,ativo:true
+  }).select().single();
+  if(error){alert('Erro: '+error.message);return}
+  prods.push(data);
+  ['p-nome','p-desc','p-peso','p-preco','p-emoji','p-estoque'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  renderProdList();renderAGrid();renderShop();
+}
+
+function renderPPills(){
+  const el=document.getElementById('p-pills');
+  if(!el)return;
+  el.innerHTML='<button class="cpill'+(fCatP===null?' active':'')+'" onclick="fCatP=null;renderPPills()">Todos</button>'
+    +cats.map(c=>'<button class="cpill'+(fCatP===c.id?' active':'')+'" onclick="fCatP='+c.id+';renderPPills()">'+c.nome+'</button>').join('');
+  renderProdList();
+}
+
+function renderProdList(){
+  const el=document.getElementById('p-list');
+  if(!el)return;
+  const ps=fCatP?prods.filter(p=>p.cat_id===fCatP):prods;
+  if(!ps.length){el.innerHTML='<div class="empty">Nenhum produto.</div>';return}
+  el.innerHTML=ps.map(p=>{
+    const cat=cats.find(c=>c.id===p.cat_id);
+    const estoq=p.estoque!=null
+      ?'<span style="color:'+(p.estoque<=5?'var(--red)':'var(--text2)')+'">Est: '+p.estoque+'</span>'
+      :'<span style="color:var(--text3)">Ilimitado</span>';
+    return '<div class="prod-row">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700">'+emoji(p)+' '+p.nome+' <span style="font-weight:400;color:var(--text2)">'+(p.peso?'('+p.peso+')':'')+'</span></div>'
+      +'<div style="font-size:10px;color:var(--text2)">'+(cat?cat.nome:'')+' &middot; R$ '+fp(p.preco)+' &middot; '+estoq+'</div>'
+      +'</div>'
+      +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'∞')+'</button>'
+      +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
+      +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
+      +'</div>';
+  }).join('');
+}
+
 /* USUARIOS */
 async function renderUsers(){
   document.getElementById('u-loading').classList.remove('hidden');
