@@ -1299,13 +1299,6 @@ function renderAGrid(){
       +'<button class="btn btn-o btn-sm" style="flex-shrink:0" onclick="abrirModal('+p.id+')">+ Add</button>'
       +'</div>';
   }).join('');
-  const taxa=ap.entrega==='Entrega'?TAXA:0;
-  document.getElementById('a-badge').textContent=ap.itens.length+' item'+(ap.itens.length===1?'':'s');
-  document.getElementById('a-si').textContent=qtd;
-  document.getElementById('a-sp').textContent=kg.toFixed(2).replace('.',',')+'  kg';
-  document.getElementById('a-ss').textContent='R$ '+fp(sub);
-  document.getElementById('a-tr').classList.toggle('hidden',taxa===0);
-  document.getElementById('a-st').textContent='R$ '+fp(sub+taxa);
 }
 function aChgQ(i,d){ap.itens[i].qty=Math.max(1,ap.itens[i].qty+d);renderAOrder()}
 function aRm(i){ap.itens.splice(i,1);renderAOrder()}
