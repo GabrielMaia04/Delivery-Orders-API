@@ -329,10 +329,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div id="t-reg" class="hidden">
         <div id="reg-msg" class="auth-msg"></div>
-        <div class="field"><label>Nome completo</label><input id="reg-nome" type="text" placeholder="Seu nome"></div>
-        <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="seu@email.com"></div>
-        <div class="field"><label>Senha</label><input id="reg-pass" type="password" placeholder="Minimo 6 caracteres"></div>
-        <div class="field"><label>Confirmar senha</label><input id="reg-pass2" type="password" placeholder="Repita a senha"></div>
+        <div class="field"><label>Nome completo <span style="color:var(--red)">*</span></label><input id="reg-nome" type="text" placeholder="Seu nome"></div>
+        <div class="field"><label>Telefone <span style="color:var(--red)">*</span></label><input id="reg-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+        <div class="field"><label>Email <span style="color:var(--red)">*</span></label><input id="reg-email" type="email" placeholder="seu@email.com"></div>
+        <div class="field"><label>Senha <span style="color:var(--red)">*</span></label><input id="reg-pass" type="password" placeholder="Minimo 6 caracteres"></div>
+        <div class="field"><label>Confirmar senha <span style="color:var(--red)">*</span></label><input id="reg-pass2" type="password" placeholder="Repita a senha"></div>
         <button class="big-btn" id="reg-btn" onclick="fazerCadastro()" style="margin-top:6px">Criar conta</button>
       </div>
     </div>
@@ -473,7 +474,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <div class="acard-sm" style="margin-bottom:12px">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div><label>Cliente</label><input id="r-busca" type="text" placeholder="Nome..." style="width:160px" oninput="renderRel()"></div>
+        <div><label>Cliente ou ID do pedido</label><input id="r-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderRel()"></div>
         <div><label>Filtro</label><select id="r-tipo" style="width:150px" onchange="toggleRFiltro()"><option value="dia">Data unica</option><option value="periodo">Periodo</option></select></div>
         <div id="r-fdia"><label>Data</label><input id="r-data" type="date" style="width:155px" onchange="renderRel()"></div>
         <div id="r-fper" class="date-range hidden"><div><label>De</label><input id="r-de" type="date" style="width:145px" onchange="renderRel()"></div><div><label>Ate</label><input id="r-ate" type="date" style="width:145px" onchange="renderRel()"></div></div>
@@ -487,7 +488,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
       <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Historico</div>
       <div id="r-loading" class="loading"><div class="spin"></div> Carregando...</div>
-      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>Cliente</th><th>Data</th><th>Status</th><th>Entrega</th><th>Pagamento</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
+      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Data</th><th>Status</th><th>Entrega</th><th>Pagamento</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
       <div class="pag" id="r-pag"></div>
     </div>
   </div>
@@ -555,8 +556,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <!-- DADOS -->
       <div id="ptab-dados">
         <div id="perfil-msg" class="auth-msg"></div>
-        <div class="field"><label>Nome</label><input id="p-nome-edit" type="text" placeholder="Seu nome"></div>
-        <div class="field"><label>Telefone</label><input id="p-tel-edit" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+        <div class="field">
+          <label>Nome</label>
+          <input id="p-nome-edit" type="text" placeholder="Seu nome" readonly style="background:var(--bg4);color:var(--text3);cursor:not-allowed">
+        </div>
+        <div class="field">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <label style="margin-bottom:0">Telefone</label>
+            <button id="p-tel-btn" onclick="alterarTelefone()" style="font-size:10px;font-weight:700;color:var(--green-bright);background:none;border:none;cursor:pointer;padding:0;font-family:var(--font)">Alterar</button>
+          </div>
+          <input id="p-tel-edit" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)" readonly style="background:var(--bg4)">
+          <div id="p-tel-save" class="hidden" style="margin-top:6px;display:flex;gap:6px">
+            <button class="btn btn-g btn-sm" style="flex:1" onclick="salvarTelefone()">Salvar</button>
+            <button class="btn btn-o btn-sm" onclick="cancelarAlterarTel()">Cancelar</button>
+          </div>
+        </div>
         <div class="field"><label>CEP</label>
           <div style="display:flex;gap:8px;align-items:center">
             <input id="p-cep-edit" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCepPerfil()">
@@ -609,6 +623,24 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+
+<!-- MODAL EDITAR PRODUTO -->
+<div class="modal-ov" id="edit-prod-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="width:360px">
+    <div class="modal-title">&#9999; Editar Produto</div>
+    <div class="modal-sub" id="edit-prod-sub"></div>
+    <input type="hidden" id="edit-prod-id">
+    <div class="field"><label>Nome *</label><input id="edit-p-nome" type="text" placeholder="Nome do produto"></div>
+    <div class="field"><label>Descricao</label><input id="edit-p-desc" type="text" placeholder="Opcional"></div>
+    <div class="row2">
+      <div class="field"><label>Peso</label><input id="edit-p-peso" type="text" placeholder="350g"></div>
+      <div class="field"><label>Preco (R$) *</label><input id="edit-p-preco" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="field"><label>Emoji</label><input id="edit-p-emoji" type="text" placeholder="🥦" style="font-size:20px;text-align:center"></div>
+    <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px;margin-top:4px" onclick="salvarEditProd()">&#10003; Salvar alteracoes</button>
+    <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('edit-prod-modal').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
 
 <div class="modal-ov" id="a-modal" onclick="fecharAModal(event)">
   <div class="modal-box">
@@ -718,9 +750,11 @@ async function buscarCepAdmin(){
 }
 function abrirPerfil(){
   if(!perfil)return;
-  // Preencher dados
   document.getElementById('p-nome-edit').value=perfil.nome||'';
   document.getElementById('p-tel-edit').value=perfil.telefone||'';
+  document.getElementById('p-tel-edit').readOnly=true;
+  document.getElementById('p-tel-edit').style.background='var(--bg4)';
+  document.getElementById('p-tel-save').classList.add('hidden');
   document.getElementById('p-cep-edit').value=perfil.cep||'';
   document.getElementById('p-rua-edit').value=perfil.endereco||'';
   document.getElementById('p-bairro-edit').value=perfil.bairro||'';
@@ -730,6 +764,27 @@ function abrirPerfil(){
   document.getElementById('perfil-title').textContent=perfil.nome.split(' ')[0];
   switchPerfilTab('dados');
   document.getElementById('perfil-ov').classList.add('open');
+}
+function alterarTelefone(){
+  const el=document.getElementById('p-tel-edit');
+  el.readOnly=false;el.style.background='';el.focus();el.select();
+  document.getElementById('p-tel-save').classList.remove('hidden');
+  document.getElementById('p-tel-save').style.display='flex';
+}
+function cancelarAlterarTel(){
+  const el=document.getElementById('p-tel-edit');
+  el.value=perfil.telefone||'';
+  el.readOnly=true;el.style.background='var(--bg4)';
+  document.getElementById('p-tel-save').classList.add('hidden');
+}
+async function salvarTelefone(){
+  const tel=document.getElementById('p-tel-edit').value.trim();
+  if(tel.length<14){alert('Informe um telefone valido.');return}
+  const {error}=await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
+  if(error){alert('Erro: '+error.message);return}
+  perfil.telefone=tel;
+  cancelarAlterarTel();
+  showMsg(document.getElementById('perfil-msg'),'Telefone atualizado!','success');
 }
 function fecharPerfil(){document.getElementById('perfil-ov').classList.remove('open')}
 function fecharPerfilOv(e){if(e.target===document.getElementById('perfil-ov'))fecharPerfil()}
@@ -742,11 +797,7 @@ function switchPerfilTab(t){
 
 async function salvarPerfil(){
   const msg=document.getElementById('perfil-msg');
-  const nome=document.getElementById('p-nome-edit').value.trim();
-  if(!nome){showMsg(msg,'Informe seu nome.','error');return}
   const dados={
-    nome,
-    telefone:document.getElementById('p-tel-edit').value,
     cep:document.getElementById('p-cep-edit').value,
     endereco:document.getElementById('p-rua-edit').value,
     bairro:document.getElementById('p-bairro-edit').value,
@@ -756,8 +807,7 @@ async function salvarPerfil(){
   const {error}=await sb.from('profiles').update(dados).eq('id',perfil.id);
   if(error){showMsg(msg,'Erro ao salvar: '+error.message,'error');return}
   Object.assign(perfil,dados);
-  document.getElementById('topbar-login').textContent=nome.split(' ')[0];
-  showMsg(msg,'Dados salvos com sucesso!','success');
+  showMsg(msg,'Endereco salvo com sucesso!','success');
 }
 
 async function carregarHistoricoCliente(){
@@ -1015,10 +1065,12 @@ async function fazerCadastro(){
   const btn=document.getElementById('reg-btn');
   const msg=document.getElementById('reg-msg');
   const nome=document.getElementById('reg-nome').value.trim();
+  const tel=document.getElementById('reg-tel').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
-  if(!nome||!email||!pass){showMsg(msg,'Preencha todos os campos.','error');return}
+  if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
+  if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
   if(pass.length<6){showMsg(msg,'Senha minima 6 caracteres.','error');return}
   btn.disabled=true;btn.textContent='Criando...';
@@ -1027,6 +1079,11 @@ async function fazerCadastro(){
   if(error){showMsg(msg,tErr(error.message),'error');return}
   if(data?.user){
     await loadProfile(data.user.id,data.user);
+    // Salvar telefone imediatamente
+    if(perfil){
+      await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
+      perfil.telefone=tel;
+    }
     fecharAuth();
     if(window._coPend){window._coPend=false;abrirCo()}
   }else{showMsg(msg,'Verifique seu email para confirmar.','success')}
@@ -1225,6 +1282,15 @@ function buildTextoWhatsApp(pedido,itens){
   return linhas.filter(Boolean).join('\n');
 }
 
+async function gerarCodigo(dataPedido){
+  try{
+    const {count}=await sb.from('pedidos').select('id',{count:'exact',head:true}).eq('data_pedido',dataPedido);
+    const seq=String((count||0)+1).padStart(3,'0');
+    const [ano,mes,dia]=dataPedido.split('-');
+    return ano.slice(2)+seq+dia+mes; // ex: 260011205
+  }catch(e){return null}
+}
+
 function abrirWhatsApp(texto){
   const url='https://wa.me/'+WHATSAPP_NUM+'?text='+encodeURIComponent(texto);
   window.open(url,'_blank');
@@ -1259,9 +1325,11 @@ async function enviarPedido(){
   abrirWhatsApp(txtWpp);
 
   try{
+    const dataPed=document.getElementById('co-data').value;
+    const codigo=await gerarCodigo(dataPed);
     const sub=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     const taxa=cart.entrega==='Entrega'?TAXA:0;
-    const {data:ped,error}=await sb.from('pedidos').insert({
+    const insertData={
       user_id:perfil.id,cliente_nome:nome,
       cliente_contato:tel,
       cliente_endereco:end,
@@ -1270,8 +1338,10 @@ async function enviarPedido(){
       pagamento:pag,
       observacoes:document.getElementById('co-obs').value,
       subtotal:sub,total:sub+taxa,
-      data_pedido:document.getElementById('co-data').value
-    }).select().single();
+      data_pedido:dataPed
+    };
+    if(codigo)insertData.codigo=codigo;
+    const {data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();
     if(error)throw error;
     await sb.from('itens_pedido').insert(itensCopy.map(it=>{
       const p=prods.find(x=>x.id===it.prodId);
@@ -1429,8 +1499,10 @@ async function aSalvar(){
   const btn=document.getElementById('a-save-btn');
   btn.disabled=true;btn.textContent='Salvando...';
   try{
+    const dataPed=document.getElementById('a-data').value;
+    const codigo=await gerarCodigo(dataPed);
     const sub=aCalcSub(),total=aCalcTot(),taxa=ap.entrega==='Entrega'?TAXA:0;
-    const {data:ped,error}=await sb.from('pedidos').insert({
+    const insertData={
       user_id:perfil.id,cliente_nome:nome,
       cliente_contato:document.getElementById('a-tel').value,
       cliente_endereco:document.getElementById('a-end').value,
@@ -1438,8 +1510,10 @@ async function aSalvar(){
       entrega:ap.entrega,taxa_entrega:taxa,
       pagamento:document.getElementById('a-pag').value,
       observacoes:document.getElementById('a-obs').value,
-      subtotal:sub,total,data_pedido:document.getElementById('a-data').value
-    }).select().single();
+      subtotal:sub,total,data_pedido:dataPed
+    };
+    if(codigo)insertData.codigo=codigo;
+    const {data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();
     if(error)throw error;
     await sb.from('itens_pedido').insert(ap.itens.map(it=>{
       const p=prods.find(x=>x.id===it.prodId);
@@ -1485,7 +1559,7 @@ async function renderRel(){
   if(tipo==='dia'){const d=document.getElementById('r-data').value;if(d)q=q.eq('data_pedido',d)}
   else{const de=document.getElementById('r-de').value,ate=document.getElementById('r-ate').value;if(de)q=q.gte('data_pedido',de);if(ate)q=q.lte('data_pedido',ate)}
   const {data:peds}=await q;
-  const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca));
+  const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
   rCache=lista;rTotal=lista.length;rPage=1;
   const totG=lista.reduce((s,p)=>s+p.total,0);
   const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
@@ -1623,7 +1697,9 @@ function renderRPage(){
   const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue'];
   tbody.innerHTML=pagina.map(p=>{
     const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
-    return '<tr><td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
+    return '<tr>'
+      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
+      +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
       +'<td>'+fd(p.data_pedido)+'</td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
       +'<td>'+(p.taxa_entrega>0?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
@@ -1668,8 +1744,51 @@ async function salvarEstoque(){
   document.getElementById('est-modal').classList.remove('open');
   renderProdList();
 }
+function abrirEditProd(id){
+  const p=prods.find(x=>x.id===id);if(!p)return;
+  document.getElementById('edit-prod-id').value=id;
+  document.getElementById('edit-prod-sub').textContent=emoji(p)+' Editando: '+p.nome;
+  document.getElementById('edit-p-nome').value=p.nome||'';
+  document.getElementById('edit-p-desc').value=p.descricao||'';
+  document.getElementById('edit-p-peso').value=p.peso||'';
+  document.getElementById('edit-p-preco').value=p.preco||'';
+  document.getElementById('edit-p-emoji').value=p.emoji||'';
+  document.getElementById('edit-prod-modal').classList.add('open');
+}
+async function salvarEditProd(){
+  const id=parseInt(document.getElementById('edit-prod-id').value);
+  const p=prods.find(x=>x.id===id);if(!p)return;
+  const nome=document.getElementById('edit-p-nome').value.trim();
+  const preco=parseFloat(document.getElementById('edit-p-preco').value);
+  if(!nome||isNaN(preco)){alert('Nome e preco sao obrigatorios.');return}
+  const upd={
+    nome,
+    descricao:document.getElementById('edit-p-desc').value.trim(),
+    peso:document.getElementById('edit-p-peso').value.trim(),
+    preco,
+    emoji:document.getElementById('edit-p-emoji').value.trim()||p.emoji||'\u{1F966}'
+  };
+  const {error}=await sb.from('produtos').update(upd).eq('id',id);
+  if(error){alert('Erro: '+error.message);return}
+  Object.assign(p,upd);
+  document.getElementById('edit-prod-modal').classList.remove('open');
+  renderProdList();renderAGrid();renderShop();
+}
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
-async function rmProd(id){if(!confirm('Remover produto?'))return;await sb.from('produtos').delete().eq('id',id);prods=prods.filter(p=>p.id!==id);renderProdList();renderAGrid();renderShop()}
+async function rmProd(id){
+  if(!confirm('Remover produto?\nSe ele ja foi usado em pedidos, sera desativado em vez de excluido.'))return;
+  // Tenta deletar; se tiver FK constraint (produto usado em pedidos), desativa
+  const {error}=await sb.from('produtos').delete().eq('id',id);
+  if(error){
+    // Produto referenciado em pedidos — apenas desativa
+    await sb.from('produtos').update({ativo:false}).eq('id',id);
+    const p=prods.find(x=>x.id===id);
+    if(p)p.ativo=false;
+  }else{
+    prods=prods.filter(p=>p.id!==id);
+  }
+  renderProdList();renderAGrid();renderShop();
+}
 
 
 /* PRODUTOS ADMIN */
@@ -1751,6 +1870,7 @@ function renderProdList(){
       +'<div style="font-size:10px;color:var(--text2)">'+(cat?cat.nome:'')+' &middot; R$ '+fp(p.preco)+' &middot; '+estoq+'</div>'
       +'</div>'
       +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
+      +'<button class="btn btn-o btn-sm" onclick="abrirEditProd('+p.id+')" title="Editar produto">&#9999;</button>'
       +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'∞')+'</button>'
       +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
       +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
@@ -1763,12 +1883,63 @@ async function renderUsers(){
   document.getElementById('u-loading').classList.remove('hidden');
   document.getElementById('u-table').classList.add('hidden');
   const {data}=await sb.from('profiles').select('*').order('created_at');
+  const {data:authData}=await sb.from('profiles').select('id,email_auth:id').limit(1); // just to check
   document.getElementById('u-loading').classList.add('hidden');
   document.getElementById('u-table').classList.remove('hidden');
   const tbody=document.getElementById('u-tbody');
   const lista=data||[];
   if(!lista.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum usuario.</td></tr>';return}
-  tbody.innerHTML=lista.map(u=>`<tr><td style="font-weight:700;font-size:12px">${u.nome}</td><td><span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span></td><td style="color:var(--text2);font-size:11px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td><td>${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'Para Cliente':'Para Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Voce</span>'}</td></tr>`).join('');
+  // Busca pedidos de todos os usuarios de uma vez
+  const {data:todospeds}=await sb.from('pedidos').select('id,user_id,codigo,data_pedido,total').order('created_at',{ascending:false});
+  const pedsByUser={};
+  (todospeds||[]).forEach(p=>{
+    if(!pedsByUser[p.user_id])pedsByUser[p.user_id]=[];
+    pedsByUser[p.user_id].push(p);
+  });
+  tbody.innerHTML=lista.map(u=>{
+    const peds=pedsByUser[u.id]||[];
+    const pedRows=peds.length
+      ?peds.map(p=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${p.codigo||'#'+p.id}</span>
+          <span style="font-size:11px;color:var(--text3)">${fd(p.data_pedido)}</span>
+          <span style="font-size:11px;font-weight:700;color:var(--green-bright)">R$ ${fp(p.total)}</span>
+        </div>`).join('')
+      :'<div style="font-size:11px;color:var(--text3);padding:6px 0">Nenhum pedido.</div>';
+    return `<tr>
+      <td style="font-weight:700;font-size:12px">${u.nome}</td>
+      <td><span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span></td>
+      <td style="color:var(--text2);font-size:11px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Voce</span>'}
+        <button class="btn btn-o btn-sm" onclick="toggleUserInfo('${u.id}')">&#9660; Info</button>
+      </td>
+    </tr>
+    <tr id="uinfo-${u.id}" style="display:none">
+      <td colspan="4" style="padding:0">
+        <div style="padding:12px 14px;background:var(--bg3);border-bottom:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">&#128203; Pedidos (${peds.length})</div>
+              <div style="max-height:160px;overflow-y:auto">${pedRows}</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">&#128100; Dados</div>
+              <div style="font-size:12px;display:flex;flex-direction:column;gap:5px">
+                <div><span style="color:var(--text3)">Nome: </span><strong>${u.nome}</strong></div>
+                <div><span style="color:var(--text3)">Contato: </span><strong>${u.telefone||'—'}</strong></div>
+                <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
+                ${u.endereco?`<div><span style="color:var(--text3)">End: </span><strong>${u.endereco}, ${u.endereco_num||''} - ${u.bairro||''}</strong></div>`:''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function toggleUserInfo(uid){
+  const row=document.getElementById('uinfo-'+uid);
+  if(row)row.style.display=row.style.display==='none'?'':'none';
 }
 async function togRole(uid,cur){
   const nr=cur==='admin'?'cliente':'admin';
@@ -1788,7 +1959,7 @@ function tErr(msg){
 document.getElementById('a-qty').addEventListener('keydown',e=>{if(e.key==='Enter')confQty()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharAuth();fecharCart();fecharCo();document.getElementById('a-modal').classList.remove('open')}});
 ['login-email','login-pass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()}));
-['reg-nome','reg-email','reg-pass','reg-pass2'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')fazerCadastro()}));
+['reg-nome','reg-tel','reg-email','reg-pass','reg-pass2'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')fazerCadastro()}));
 
 init();
 </script>
