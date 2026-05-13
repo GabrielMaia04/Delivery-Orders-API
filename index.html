@@ -1777,21 +1777,9 @@ async function salvarEditProd(){
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
 async function rmProd(id){
   if(!confirm('Remover produto?'))return;
-  // Verifica se produto foi usado em algum pedido
-  const {count}=await sb.from('itens_pedido').select('id',{count:'exact',head:true}).eq('produto_id',id);
-  if(count>0){
-    // Produto tem historico — apenas desativa e esconde da loja
-    const {error}=await sb.from('produtos').update({ativo:false}).eq('id',id);
-    if(error){alert('Erro: '+error.message);return}
-    const p=prods.find(x=>x.id===id);
-    if(p)p.ativo=false;
-    alert('Produto desativado (ja foi usado em pedidos e nao pode ser excluido).');
-  }else{
-    // Produto nunca usado — pode excluir
-    const {error}=await sb.from('produtos').delete().eq('id',id);
-    if(error){alert('Erro: '+error.message);return}
-    prods=prods.filter(p=>p.id!==id);
-  }
+  const {error}=await sb.from('produtos').delete().eq('id',id);
+  if(error){alert('Erro: '+error.message);return}
+  prods=prods.filter(p=>p.id!==id);
   renderProdList();renderAGrid();renderShop();
 }
 
