@@ -250,6 +250,27 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pag{display:flex;gap:5px;padding:10px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
 .pag-btn{min-width:30px;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font)}
 .pag-btn.active{background:var(--green);border-color:var(--green);color:#fff}
+/* ── POPUP / TOAST ── */
+.popup-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
+.popup-ov.open{opacity:1;pointer-events:all}
+.popup-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35);transform:translateY(12px) scale(.97);transition:transform .18s}
+.popup-ov.open .popup-box{transform:none}
+.popup-icon{font-size:32px;text-align:center;margin-bottom:10px}
+.popup-title{font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)}
+.popup-msg{font-size:13px;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:18px;white-space:pre-line}
+.popup-btns{display:flex;gap:8px}
+.popup-btns button{flex:1;padding:11px;border-radius:10px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;transition:opacity .15s}
+.popup-btns button:active{opacity:.8}
+.pbtn-ok{background:var(--green);color:#fff}
+.pbtn-cancel{background:var(--bg4);color:var(--text2)}
+.pbtn-danger{background:var(--red);color:#fff}
+.toast-wrap{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:340px}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;width:100%;animation:tIn .2s ease;opacity:1;transition:opacity .3s}
+.toast.out{opacity:0}
+.toast.t-ok{border-color:var(--green);background:var(--green-light);color:var(--green-bright)}
+.toast.t-err{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+@keyframes tIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-ov.open{display:flex}
 .modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -599,6 +620,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 </div>
+<!-- POPUP GLOBAL -->
+<div class="popup-ov" id="g-popup">
+  <div class="popup-box">
+    <div class="popup-icon" id="g-popup-icon"></div>
+    <div class="popup-title" id="g-popup-title"></div>
+    <div class="popup-msg" id="g-popup-msg"></div>
+    <div class="popup-btns" id="g-popup-btns"></div>
+  </div>
+</div>
+<div class="toast-wrap" id="toast-wrap"></div>
+
 <!-- MODAL ESTOQUE -->
 <div class="modal-ov" id="est-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
@@ -707,14 +739,14 @@ async function buscarCep(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){alert('CEP nao encontrado.');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('co-rua').value=d.logradouro||'';
     document.getElementById('co-bairro').value=d.bairro||'';
     document.getElementById('co-cidade').value=(d.localidade||'')+' / '+(d.uf||'');
     document.getElementById('co-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
     document.getElementById('co-end-fields').classList.remove('hidden');
     document.getElementById('co-num').focus();
-  }catch(e){alert('Erro ao buscar CEP.')}
+  }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
 }
 
@@ -726,11 +758,11 @@ async function buscarCepPerfil(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){alert('CEP nao encontrado.');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('p-rua-edit').value=d.logradouro||'';
     document.getElementById('p-bairro-edit').value=d.bairro||'';
     document.getElementById('p-cidade-edit').value=(d.localidade||'')+' / '+(d.uf||'');
-  }catch(e){alert('Erro ao buscar CEP.')}
+  }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
 }
 
@@ -742,10 +774,10 @@ async function buscarCepAdmin(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){alert('CEP nao encontrado.');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('a-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
     document.getElementById('a-num').focus();
-  }catch(e){alert('Erro ao buscar CEP.')}
+  }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
 }
 function abrirPerfil(){
@@ -779,9 +811,9 @@ function cancelarAlterarTel(){
 }
 async function salvarTelefone(){
   const tel=document.getElementById('p-tel-edit').value.trim();
-  if(tel.length<14){alert('Informe um telefone valido.');return}
+  if(tel.length<14){toast('Informe um telefone válido.','err');return}
   const {error}=await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
-  if(error){alert('Erro: '+error.message);return}
+  if(error){toast('Erro: '+error.message,'err');return}
   perfil.telefone=tel;
   cancelarAlterarTel();
   showMsg(document.getElementById('perfil-msg'),'Telefone atualizado!','success');
@@ -820,7 +852,7 @@ async function carregarHistoricoCliente(){
   if(!lista.length){el.innerHTML='<div class="empty">Nenhum pedido ainda.</div>';return}
   el.innerHTML=lista.map(p=>{
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(', ');
-    const statusColor={'Pendente':'var(--orange)','Em preparo':'#3b82f6','Saiu para entrega':'#8b5cf6','Entregue':'var(--green-bright)'}[p.status]||'var(--text2)';
+    const statusColor={'Pendente':'var(--orange)','Em preparo':'#3b82f6','Saiu para entrega':'#8b5cf6','Entregue':'var(--green-bright)','Cancelado':'var(--red)'}[p.status]||'var(--text2)';
     return`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
@@ -1006,8 +1038,10 @@ async function loadProfile(uid,user){
 function handleLoginBtn(){
   if(perfil){
     if(perfil.role==='admin'){
-      const ok=confirm('Ir para o painel Admin?\nOK = Admin | Cancelar = Minha conta');
-      if(ok)showAdmin();else abrirPerfil();
+      popup('🔐','Acessar como','O que deseja abrir?',[
+        {label:'Minha conta',cls:'pbtn-cancel',cb:()=>abrirPerfil()},
+        {label:'Painel Admin',cls:'pbtn-ok',cb:()=>showAdmin()}
+      ]);
     }else{abrirPerfil();}
   }else{
     abrirAuth();
@@ -1214,12 +1248,13 @@ function updSums(){
 
 function limparCarrinho(){
   if(!cart.itens.length)return;
-  if(!confirm('Esvaziar o carrinho?'))return;
-  cart.itens=[];
-  updCartBadge();renderCart();
+  popConfirm('🗑️','Esvaziar carrinho?','Todos os itens serão removidos.','Esvaziar','pbtn-danger',()=>{
+    cart.itens=[];
+    updCartBadge();renderCart();
+  });
 }
 function irCheckout(){
-  if(!cart.itens.length){alert('Carrinho vazio!');return}
+  if(!cart.itens.length){toast('Carrinho vazio!','err');return}
   fecharCart();
   if(!perfil){window._coPend=true;abrirAuth();return}
   abrirCo();
@@ -1305,8 +1340,8 @@ async function enviarPedido(){
   if(!tel) erros.push('Contato');
   if(!end) erros.push('Endereco');
   if(!pag) erros.push('Forma de pagamento');
-  if(erros.length){alert('Preencha os campos obrigatorios:\n- '+erros.join('\n- '));return}
-  if(!cart.itens.length){alert('Carrinho vazio.');return}
+  if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
+  if(!cart.itens.length){toast('Carrinho vazio.','err');return}
   const btn=document.getElementById('co-btn');
   btn.disabled=true;btn.textContent='Enviando...';
 
@@ -1356,7 +1391,7 @@ async function enviarPedido(){
       return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
     }));
     cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo();
-  }catch(e){alert('Erro: '+e.message)}
+  }catch(e){toast('Erro: '+e.message,'err')}
   btn.disabled=false;btn.textContent='Enviar pedido';
 }
 
@@ -1421,7 +1456,43 @@ function renderAGrid(){
       +'</div>';
   }).join('');
 }
-/* ── MODAL ADMIN: ADICIONAR PRODUTO ── */
+/* ── POPUP & TOAST ── */
+function toast(msg,type='info',dur=3200){
+  const wrap=document.getElementById('toast-wrap');
+  const el=document.createElement('div');
+  const icons={ok:'✅',err:'❌',info:'ℹ️'};
+  el.className='toast '+(type==='ok'?'t-ok':type==='err'?'t-err':'');
+  el.innerHTML='<span>'+icons[type]+'</span><span>'+msg+'</span>';
+  wrap.appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),320)},dur);
+}
+function popup(icon,title,msg,btns){
+  // btns: [{label, cls:'pbtn-ok'|'pbtn-cancel'|'pbtn-danger', cb}]
+  document.getElementById('g-popup-icon').textContent=icon;
+  document.getElementById('g-popup-title').textContent=title;
+  document.getElementById('g-popup-msg').textContent=msg;
+  const bd=document.getElementById('g-popup-btns');
+  bd.innerHTML='';
+  (btns||[]).forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className=b.cls||'pbtn-ok';
+    btn.textContent=b.label;
+    btn.onclick=()=>{closePopup();if(b.cb)b.cb()};
+    bd.appendChild(btn);
+  });
+  document.getElementById('g-popup').classList.add('open');
+}
+function closePopup(){document.getElementById('g-popup').classList.remove('open')}
+function popAlert(icon,title,msg,cb){popup(icon,title,msg,[{label:'OK',cls:'pbtn-ok',cb}])}
+function popConfirm(icon,title,msg,labelOk,clsOk,cbOk){
+  popup(icon,title,msg,[
+    {label:'Cancelar',cls:'pbtn-cancel'},
+    {label:labelOk,cls:clsOk||'pbtn-ok',cb:cbOk}
+  ]);
+}
+document.getElementById('g-popup').addEventListener('click',e=>{if(e.target===document.getElementById('g-popup'))closePopup()});
+
+
 function abrirModal(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   apSel=id;
@@ -1486,7 +1557,10 @@ function aRm(i){ap.itens.splice(i,1);renderAOrder()}
 function aCalcSub(){return ap.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0)}
 function aCalcTot(){return aCalcSub()+(ap.entrega==='Entrega'?TAXA:0)}
 function aLimpar(){
-  if(ap.itens.length&&!confirm('Limpar pedido?'))return;
+  if(ap.itens.length){popConfirm('🗑️','Limpar pedido?','Todos os itens serão removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
+  _aLimparExec();
+}
+function _aLimparExec(){
   ap={itens:[],entrega:'Entrega'};
   ['a-nome','a-tel','a-cep','a-end','a-num','a-obs'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('a-data').value=hoje();
@@ -1494,8 +1568,8 @@ function aLimpar(){
 }
 async function aSalvar(){
   const nome=document.getElementById('a-nome').value.trim();
-  if(!nome){alert('Informe o nome do cliente.');return}
-  if(!ap.itens.length){alert('Adicione ao menos um produto.');return}
+  if(!nome){toast('Informe o nome do cliente.','err');return}
+  if(!ap.itens.length){toast('Adicione ao menos um produto.','err');return}
   const btn=document.getElementById('a-save-btn');
   btn.disabled=true;btn.textContent='Salvando...';
   try{
@@ -1527,8 +1601,8 @@ async function aSalvar(){
       p.estoque=novo;
       return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
     }));
-    alert('Pedido salvo!');aLimpar();
-  }catch(e){alert('Erro: '+e.message)}
+    toast('Pedido salvo! ✅','ok');aLimpar();
+  }catch(e){toast('Erro: '+e.message,'err')}
   btn.disabled=false;btn.textContent='Salvar pedido';
 }
 function bldTxt(ped){
@@ -1542,8 +1616,8 @@ function aObj(){
   const sub=aCalcSub(),taxa=ap.entrega==='Entrega'?TAXA:0;
   return{cliente_nome:document.getElementById('a-nome').value.trim(),cliente_contato:document.getElementById('a-tel').value,cliente_endereco:document.getElementById('a-end').value,cliente_numero:document.getElementById('a-num').value,data_pedido:document.getElementById('a-data').value,entrega:ap.entrega,taxa_entrega:taxa,pagamento:document.getElementById('a-pag').value,observacoes:document.getElementById('a-obs').value,subtotal:sub,total:sub+taxa,_itens:ap.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return{quantidade:it.qty,nome_produto:p?.nome||'',peso_produto:p?.peso||'',subtotal:(p?.preco||0)*it.qty}})};
 }
-function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){alert('Complete o pedido primeiro.');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
-function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){alert('Complete o pedido primeiro.');return}navigator.clipboard.writeText(bldTxt(o)).then(()=>alert('Copiado!')).catch(()=>alert('Erro ao copiar.'))}
+function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
+function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}navigator.clipboard.writeText(bldTxt(o)).then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar.','err'))}
 
 /* RELATORIO */
 function toggleRFiltro(){
@@ -1609,7 +1683,7 @@ function imprimirConsolidado(){
     mapa[it.produto_id].qty+=it.quantidade;
   }));
   const items=Object.values(mapa).sort((a,b)=>b.qty-a.qty);
-  if(!items.length){alert('Sem dados para imprimir.');return}
+  if(!items.length){toast('Sem dados para imprimir.','err');return}
   const linhas=items.map(it=>{
     const n=it.peso?parseFloat(it.peso.replace(/[^0-9.]/g,'')):null;
     const u=it.peso?it.peso.replace(/[0-9. ]/g,'').toLowerCase():'';
@@ -1629,7 +1703,7 @@ function imprimirConsolidado(){
 }
 
 function exportRel(){
-  if(!rCache.length){alert('Nenhum pedido para exportar.');return}
+  if(!rCache.length){toast('Nenhum pedido para exportar.','err');return}
   const linhas=['=== RELATORIO DE PEDIDOS ===','Total: '+rCache.length+' pedido(s)','Gerado em: '+new Date().toLocaleString('pt-BR'),''];
   rCache.forEach((p,i)=>{
     const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
@@ -1652,7 +1726,7 @@ function exportRel(){
   linhas.push('=== TOTAL GERAL: R$ '+fp(totG)+' ===');
   const txt=linhas.join('\n');
   navigator.clipboard.writeText(txt)
-    .then(()=>alert('Relatorio copiado para a area de transferencia!'))
+    .then(()=>toast('Relatório copiado!','ok'))
     .catch(()=>{
       const w=window.open('','_blank','width=600,height=700');
       if(w){w.document.write('<html><body style="font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap">'+txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</body></html>');w.document.close();}
@@ -1678,12 +1752,12 @@ function verPed(id){
     p.taxa_entrega>0?'Taxa: R$ '+fp(p.taxa_entrega):'',
     'TOTAL: R$ '+fp(p.total)
   ].filter(Boolean).join('\n');
-  alert(txt);
+  popAlert('📋','Pedido '+(p.codigo||'#'+p.id),txt);
 }
 
 async function alterarStatus(id,status){
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
-  if(error){alert('Erro ao salvar status: '+error.message);return;}
+  if(error){toast('Erro ao salvar status: '+error.message,'err');return;}
   const p=rCache.find(x=>x.id===id);
   if(p)p.status=status;
 }
@@ -1694,7 +1768,7 @@ function renderRPage(){
   const table=document.getElementById('r-table');table.classList.remove('hidden');
   const tbody=document.getElementById('r-tbody');
   if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPag();return}
-  const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue'];
+  const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'];
   tbody.innerHTML=pagina.map(p=>{
     const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
     return '<tr>'
@@ -1729,17 +1803,17 @@ async function salvarEstoque(){
   let novo;
   if(deltaRaw!==''){
     const d=parseInt(deltaRaw);
-    if(isNaN(d)){alert('Delta invalido.');return}
+    if(isNaN(d)){toast('Delta inválido.','err');return}
     novo=(p.estoque!=null?p.estoque:0)+d;
     if(novo<0)novo=0;
   }else if(valRaw===''){
     novo=null; // ilimitado
   }else{
     novo=parseInt(valRaw);
-    if(isNaN(novo)||novo<0){alert('Valor invalido.');return}
+    if(isNaN(novo)||novo<0){toast('Valor inválido.','err');return}
   }
   const {error}=await sb.from('produtos').update({estoque:novo}).eq('id',id);
-  if(error){alert('Erro: '+error.message);return}
+  if(error){toast('Erro: '+error.message,'err');return}
   p.estoque=novo;
   document.getElementById('est-modal').classList.remove('open');
   renderProdList();
@@ -1760,7 +1834,7 @@ async function salvarEditProd(){
   const p=prods.find(x=>x.id===id);if(!p)return;
   const nome=document.getElementById('edit-p-nome').value.trim();
   const preco=parseFloat(document.getElementById('edit-p-preco').value);
-  if(!nome||isNaN(preco)){alert('Nome e preco sao obrigatorios.');return}
+  if(!nome||isNaN(preco)){toast('Nome e preço são obrigatórios.','err');return}
   const upd={
     nome,
     descricao:document.getElementById('edit-p-desc').value.trim(),
@@ -1769,18 +1843,20 @@ async function salvarEditProd(){
     emoji:document.getElementById('edit-p-emoji').value.trim()||p.emoji||'\u{1F966}'
   };
   const {error}=await sb.from('produtos').update(upd).eq('id',id);
-  if(error){alert('Erro: '+error.message);return}
+  if(error){toast('Erro: '+error.message,'err');return}
   Object.assign(p,upd);
   document.getElementById('edit-prod-modal').classList.remove('open');
   renderProdList();renderAGrid();renderShop();
 }
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
 async function rmProd(id){
-  if(!confirm('Remover produto?'))return;
-  const {error}=await sb.from('produtos').delete().eq('id',id);
-  if(error){alert('Erro: '+error.message);return}
-  prods=prods.filter(p=>p.id!==id);
-  renderProdList();renderAGrid();renderShop();
+  popConfirm('🗑️','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
+    const {error}=await sb.from('produtos').delete().eq('id',id);
+    if(error){toast('Erro: '+error.message,'err');return}
+    prods=prods.filter(p=>p.id!==id);
+    renderProdList();renderAGrid();renderShop();
+    toast('Produto removido.','ok');
+  });
 }
 
 
@@ -1798,17 +1874,20 @@ async function addCat(){
   const nome=document.getElementById('cat-nome').value.trim();
   if(!nome)return;
   const {data,error}=await sb.from('categorias').insert({nome}).select().single();
-  if(error){alert('Erro: '+error.message);return}
+  if(error){toast('Erro: '+error.message,'err');return}
   cats.push(data);
   document.getElementById('cat-nome').value='';
   renderCatList();renderCatSel();renderPPills();renderACpills();renderShopCats();
 }
 
 async function rmCat(id){
-  if(!confirm('Remover esta categoria?'))return;
-  await sb.from('categorias').delete().eq('id',id);
-  cats=cats.filter(c=>c.id!==id);
-  renderCatList();renderCatSel();renderPPills();renderACpills();renderShopCats();
+  popConfirm('🗑️','Remover categoria?','Os produtos vinculados perderão a categoria.','Remover','pbtn-danger',async()=>{
+    const {error}=await sb.from('categorias').delete().eq('id',id);
+    if(error){toast('Erro: '+error.message,'err');return}
+    cats=cats.filter(c=>c.id!==id);
+    renderCatList();renderCatTabs();renderAGrid();renderShop();
+    toast('Categoria removida.','ok');
+  });
 }
 
 function renderCatSel(){
@@ -1820,7 +1899,7 @@ function renderCatSel(){
 async function addProd(){
   const nome=document.getElementById('p-nome').value.trim();
   const preco=parseFloat(document.getElementById('p-preco').value);
-  if(!nome||isNaN(preco)){alert('Informe nome e preco.');return}
+  if(!nome||isNaN(preco)){toast('Informe nome e preço.','err');return}
   const estoqueVal=document.getElementById('p-estoque').value;
   const estoque=estoqueVal!==''?parseInt(estoqueVal):null;
   const {data,error}=await sb.from('produtos').insert({
@@ -1831,7 +1910,7 @@ async function addProd(){
     emoji:document.getElementById('p-emoji').value.trim()||'\u{1F966}',
     preco,estoque,ativo:true
   }).select().single();
-  if(error){alert('Erro: '+error.message);return}
+  if(error){toast('Erro: '+error.message,'err');return}
   prods.push(data);
   ['p-nome','p-desc','p-peso','p-preco','p-emoji','p-estoque'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
@@ -1936,9 +2015,11 @@ function toggleUserInfo(uid){
 }
 async function togRole(uid,cur){
   const nr=cur==='admin'?'cliente':'admin';
-  if(!confirm('Alterar para "'+nr+'"?'))return;
-  await sb.from('profiles').update({role:nr}).eq('id',uid);
-  renderUsers();
+  popConfirm('👤','Alterar função?','Alterar para "'+nr+'"?','Confirmar','pbtn-ok',async()=>{
+    await sb.from('profiles').update({role:nr}).eq('id',uid);
+    renderUsers();
+    toast('Função alterada para '+nr+'.','ok');
+  });
 }
 
 function showMsg(el,msg,type){el.className='auth-msg '+type;el.textContent=msg}
