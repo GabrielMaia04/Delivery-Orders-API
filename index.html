@@ -644,18 +644,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green-bright)" id="e-tot-ped">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Pedidos</div></div>
       <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--orange)" id="e-tot-entr">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Entregas</div></div>
       <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:#3b82f6" id="e-tot-ret">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Retiradas</div></div>
-      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green-bright)" id="e-tot-val">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Total R$</div></div>
     </div>
-    <!-- Duas colunas: Pedidos | Consolidado -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="acard-sm">
-        <div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do dia</div>
-        <div class="r-scroll-box"><div id="e-pedidos"></div></div>
-      </div>
-      <div class="acard-sm">
-        <div style="font-size:12px;font-weight:700;margin-bottom:10px">Consolidado de produtos</div>
-        <div class="r-scroll-box"><div id="e-cons"></div></div>
-      </div>
+    <!-- Pedidos -->
+    <div class="acard-sm">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do dia</div>
+      <div class="r-scroll-box"><div id="e-pedidos"></div></div>
     </div>
   </div>
 </div>
@@ -1839,22 +1832,15 @@ function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('C
 async function renderEntregas(){
   const data=document.getElementById('e-data').value;
   const pedEl=document.getElementById('e-pedidos');
-  const consEl=document.getElementById('e-cons');
-  if(!data){
-    pedEl.innerHTML='<div class="empty">Selecione uma data acima.</div>';
-    consEl.innerHTML='<div class="empty">-</div>';
-    return;
-  }
+  if(!data){pedEl.innerHTML='<div class="empty">Selecione uma data acima.</div>';return}
   pedEl.innerHTML='<div class="loading"><div class="spin"></div> Carregando...</div>';
   const {data:peds}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('data_pedido',data).order('created_at',{ascending:true});
   const lista=peds||[];
   document.getElementById('e-tot-ped').textContent=lista.length;
   document.getElementById('e-tot-entr').textContent=lista.filter(p=>p.entrega==='Entrega').length;
   document.getElementById('e-tot-ret').textContent=lista.filter(p=>p.entrega!=='Entrega').length;
-  document.getElementById('e-tot-val').textContent='R$ '+fp(lista.reduce((s,p)=>s+p.total,0));
   if(!lista.length){
     pedEl.innerHTML='<div class="empty">Nenhum pedido para esta data.</div>';
-    consEl.innerHTML='<div class="empty">-</div>';
     return;
   }
   const entregas=lista.filter(p=>p.entrega==='Entrega');
@@ -1884,10 +1870,6 @@ async function renderEntregas(){
   if(entregas.length){html+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:4px">🚚 Entregas (${entregas.length})</div>`;html+=entregas.map(cardPed).join('');}
   if(retiradas.length){if(entregas.length)html+=`<div style="margin-top:10px"></div>`;html+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#3b82f6;margin-bottom:4px">🏪 Retiradas (${retiradas.length})</div>`;html+=retiradas.map(cardPed).join('');}
   pedEl.innerHTML=html;
-  const mapa={};
-  lista.forEach(p=>(p.itens_pedido||[]).forEach(it=>{const k=it.produto_id||it.nome_produto;if(!mapa[k])mapa[k]={nome:it.nome_produto,peso:it.peso_produto,qty:0};mapa[k].qty+=it.quantidade;}));
-  const items=Object.values(mapa).sort((a,b)=>b.qty-a.qty);
-  consEl.innerHTML=items.map(it=>{const n=it.peso?parseFloat(it.peso.replace(/[^0-9.]/g,'')):null;const u=it.peso?it.peso.replace(/[0-9. ]/g,'').toLowerCase():'';let kg='';if(n&&u==='g')kg=` · ${(n*it.qty/1000).toFixed(2)}kg`;else if(n&&u==='kg')kg=` · ${(n*it.qty).toFixed(2)}kg`;return`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-weight:700;font-size:12px">${it.nome}</div><div style="font-weight:700;color:var(--green-bright);font-size:12px">${it.qty} un${kg}</div></div>`;}).join('');
 }
 async function alterarStatusE(id,status){await sb.from('pedidos').update({status}).eq('id',id);}
 function imprimirEntregas(){
@@ -1899,7 +1881,6 @@ function imprimirEntregas(){
   w.document.write('<html><head>'+st+'</head><body>');
   w.document.write('<h2>ENTREGAS — '+label+'</h2><hr>');
   w.document.write('<h2>PEDIDOS</h2>'+document.getElementById('e-pedidos').innerHTML);
-  w.document.write('<hr><h2>CONSOLIDADO</h2>'+document.getElementById('e-cons').innerHTML);
   w.document.write('<script>window.onload=()=>window.print()<\/script></body></html>');
   w.document.close();
 }
@@ -1915,8 +1896,14 @@ async function renderRel(){
   const busca=(document.getElementById('r-busca').value||'').toLowerCase();
   const tipo=document.getElementById('r-tipo').value;
   let q=sb.from('pedidos').select('*,itens_pedido(*)').order('created_at',{ascending:false});
-  if(tipo==='dia'){const d=document.getElementById('r-data').value;if(d)q=q.eq('data_pedido',d)}
-  else{const de=document.getElementById('r-de').value,ate=document.getElementById('r-ate').value;if(de)q=q.gte('data_pedido',de);if(ate)q=q.lte('data_pedido',ate)}
+  if(tipo==='dia'){
+    const d=document.getElementById('r-data').value;
+    if(d)q=q.gte('created_at',d+'T00:00:00').lte('created_at',d+'T23:59:59');
+  }else{
+    const de=document.getElementById('r-de').value,ate=document.getElementById('r-ate').value;
+    if(de)q=q.gte('created_at',de+'T00:00:00');
+    if(ate)q=q.lte('created_at',ate+'T23:59:59');
+  }
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
   rCache=lista;rTotal=lista.length;rPage=1;
@@ -1935,7 +1922,9 @@ async function renderRel(){
     pedEl.innerHTML=lista.map(p=>{
       const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
       const dataEntrega=fdLabel(p.data_pedido)||fd(p.data_pedido);
-      const dataPedido=p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+      const dtCompra=p.created_at?new Date(p.created_at):null;
+      const dataPedido=dtCompra?dtCompra.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+      const horaPedido=dtCompra?dtCompra.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
       return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1944,8 +1933,8 @@ async function renderRel(){
             ${p.taxa_entrega>0?'<span class="badge bg-orange" style="font-size:9px">Taxa</span>':''}
           </div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
-            ${dataPedido?`<span>📝 Pedido: ${dataPedido}</span>`:''}
-            ${dataEntrega?`<span>🚚 Entrega: ${dataEntrega}</span>`:''}
+            ${dataPedido?`<span>📝 ${dataPedido}${horaPedido?' · '+horaPedido:''}</span>`:''}
+            ${dataEntrega?`<span>🚚 ${dataEntrega}</span>`:''}
           </div>
           <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
         </div>
@@ -2108,7 +2097,9 @@ function renderRPage(){
     return '<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
-      +'<td><div style="font-size:11px">'+( p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div></td>'
+      +'<td><div style="font-size:11px">'+( p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div>'
+      +(p.created_at?'<div style="font-size:10px;color:var(--text3)">'+new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</div>':'')
+      +'</td>'
       +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
       +'<td>'+(p.taxa_entrega>0?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
