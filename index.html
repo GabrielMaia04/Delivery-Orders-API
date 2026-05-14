@@ -398,7 +398,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="co-body">
       <div class="field"><label>Nome <span style="color:var(--red)">*</span></label><input id="co-nome" required type="text" placeholder="Seu nome"></div>
       <div class="field"><label>Contato <span style="color:var(--red)">*</span></label><input id="co-tel" required type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-      <div class="field"><label>Data</label><input id="co-data" type="date"></div>      <div class="field">
+      <div class="field"><label>Data de entrega</label><select id="co-data" style="width:100%"></select></div>      <div class="field">
         <label>CEP</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input id="co-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCep()">
@@ -456,7 +456,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="acard-body">
           <div class="field"><label>Nome *</label><input id="a-nome" type="text" placeholder="Nome do cliente"></div>
           <div class="field"><label>Contato</label><input id="a-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-          <div class="field"><label>Data</label><input id="a-data" type="date"></div>
+          <div class="field"><label>Data de entrega</label><select id="a-data" style="width:100%"></select></div>
           <div class="field"><label>CEP</label>
             <div style="display:flex;gap:8px;align-items:center">
               <input id="a-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCepAdmin()">
@@ -743,8 +743,35 @@ let fCatShop=null,fCatAdm=null,fCatP=null;
 let rPage=1,rTotal=0,rCache=[];
 
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
-const fd=d=>d?d.split('-').reverse().join('/'):'';
-const hoje=()=>new Date().toISOString().split('T')[0];
+const fd=d=>d?d.split('-').reverse().join('/'):'';;
+
+/* ── DATAS DE ENTREGA ──
+   Produção: Segunda(1), Quinta(4), Sexta(5)
+   Entrega:  Terça(2) → Segunda | Sábado(6) → Quinta+Sexta
+   Regras: sem entrega no mesmo dia, sem datas passadas           */
+const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function gerarDatasEntrega(){
+  const hj=new Date();hj.setHours(0,0,0,0);
+  const datas=[];
+  const d=new Date(hj);
+  d.setDate(d.getDate()+1);
+  let t=0;
+  while(datas.length<6&&t<60){
+    const dia=d.getDay();
+    if(dia===2||dia===6)datas.push(new Date(d));
+    d.setDate(d.getDate()+1);t++;
+  }
+  return datas;
+}
+function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function labelData(dt){return DIAS_NOME_LONG[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'/'+MESES[dt.getMonth()]}
+function preencherSelectData(selectId){
+  const el=document.getElementById(selectId);if(!el)return;
+  const datas=gerarDatasEntrega();
+  el.innerHTML=datas.map(d=>`<option value="${toISO(d)}">${labelData(d)}</option>`).join('');
+}const hoje=()=>new Date().toISOString().split('T')[0];
 const ini=n=>n?n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?';
 const emoji=p=>p.emoji||'\u{1F966}';
 
@@ -1018,7 +1045,6 @@ function pararRealtime(){
 
 async function init(){
   document.getElementById('r-data').value=hoje();
-  document.getElementById('co-data').value=hoje();
 
   // Verifica sessao primeiro, depois carrega catalogo
   const {data:{session}}=await sb.auth.getSession();
@@ -1301,8 +1327,7 @@ function irCheckout(){
 }
 function abrirCo(){
   document.getElementById('co-nome').value=perfil?.nome||'';
-  document.getElementById('co-data').value=hoje();
-  document.getElementById('co-data').min=hoje();
+  preencherSelectData('co-data');
   // Pre-preenche CEP e endereco se o cliente ja salvou
   if(perfil?.cep){
     document.getElementById('co-cep').value=perfil.cep;
@@ -1449,8 +1474,7 @@ async function showAdmin(){
     +'<button class="atab" onclick="showAPage(\'produtos\',this)">Produtos</button>'
     +'<button class="atab" onclick="showAPage(\'usuarios\',this)">Usuarios</button>'
     +'<button class="atab" onclick="voltarLoja()">Loja</button>';;
-  document.getElementById('a-data').value=hoje();
-  document.getElementById('a-data').min=hoje();
+  preencherSelectData('a-data');
   if(!fCatAdm&&cats.length)fCatAdm=cats[0].id;
   renderACpills();renderAGrid();renderCatSel();
   showAEl('ap-pedido');
@@ -1610,7 +1634,7 @@ function aLimpar(){
 function _aLimparExec(){
   ap={itens:[],entrega:'Entrega'};
   ['a-nome','a-tel','a-cep','a-end','a-num','a-obs'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('a-data').value=hoje();
+  preencherSelectData('a-data');
   setAE('Entrega');renderAOrder();
 }
 async function aSalvar(){
