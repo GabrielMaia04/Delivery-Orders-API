@@ -830,7 +830,7 @@ let fCatShop=null,fCatAdm=null,fCatP=null;
 let rPage=1,rTotal=0,rCache=[];
 
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
-const fd=d=>d?d.split('-').reverse().join('/'):'';;
+const fd=d=>d?d.split('-').reverse().join('/'):'';
 // Exibe "Terça, 20/mai" para datas de entrega
 function fdLabel(iso){
   if(!iso)return'';
@@ -845,26 +845,8 @@ function fdLabel(iso){
 const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
-function gerarDatasEntrega(){
-  const hj=new Date();hj.setHours(0,0,0,0);
-  const datas=[];
-  const d=new Date(hj);
-  d.setDate(d.getDate()+1);
-  let t=0;
-  while(datas.length<6&&t<60){
-    const dia=d.getDay();
-    if(dia===2||dia===6)datas.push(new Date(d));
-    d.setDate(d.getDate()+1);t++;
-  }
-  return datas;
-}
 function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
-function labelData(dt){return DIAS_NOME_LONG[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'/'+MESES[dt.getMonth()]}
-function preencherSelectData(selectId){
-  const el=document.getElementById(selectId);if(!el)return;
-  const datas=gerarDatasEntrega();
-  el.innerHTML=datas.map(d=>`<option value="${toISO(d)}">${labelData(d)}</option>`).join('');
-}const hoje=()=>new Date().toISOString().split('T')[0];
+const hoje=()=>new Date().toISOString().split('T')[0];
 const ini=n=>n?n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?';
 const emoji=p=>p.emoji||'\u{1F966}';
 
@@ -1077,14 +1059,10 @@ async function iniciarNotificacoes(){
   try{
     // Registrar SW
     swRegistration = await navigator.serviceWorker.register('/sw.js');
-    console.log('SW registrado!');
 
     // Pedir permissao
     const perm = await Notification.requestPermission();
-    console.log('Permissao notificacao:', perm);
-  }catch(e){
-    console.log('SW nao disponivel:', e);
-  }
+  }catch(e){}
 }
 
 // Notificacao do navegador (push nativo)
@@ -1194,19 +1172,6 @@ async function loadProfile(uid,user){
   }catch(e){console.error('loadProfile:',e)}
 }
 
-
-function handleLoginBtn(){
-  if(perfil){
-    if(perfil.role==='admin'){
-      popup('🔐','Acessar como','O que deseja abrir?',[
-        {label:'Minha conta',cls:'pbtn-cancel',cb:()=>abrirPerfil()},
-        {label:'Painel Admin',cls:'pbtn-ok',cb:()=>showAdmin()}
-      ]);
-    }else{abrirPerfil();}
-  }else{
-    abrirAuth();
-  }
-}
 
 // ── DROPDOWN MENU ──
 function toggleDropdown(){
@@ -1571,7 +1536,7 @@ async function showAdmin(){
     +'<button class="atab" onclick="showAPage(\'entregas\',this)">Entregas</button>'
     +'<button class="atab" onclick="showAPage(\'produtos\',this)">Produtos</button>'
     +'<button class="atab" onclick="showAPage(\'usuarios\',this)">Usuarios</button>'
-    +'<button class="atab" onclick="voltarLoja()">Loja</button>';;
+    +'<button class="atab" onclick="voltarLoja()">Loja</button>';
   document.getElementById('a-data').value='';
   const adb=document.getElementById('a-data-btn');
   if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
@@ -1650,31 +1615,35 @@ function renderCal(){
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const selVal=document.getElementById(calCtx==='co'?'co-data':'a-data').value;
 
-  // Primeiro dia do mês e total de dias
+  // Calcula as próximas 3 datas de entrega disponíveis
+  const proximas=new Set();
+  const d=new Date(hoje);d.setDate(d.getDate()+1);
+  while(proximas.size<3){
+    if(d.getDay()===2||d.getDay()===6)proximas.add(toISO(d));
+    d.setDate(d.getDate()+1);
+  }
+
   const primeiroDia=new Date(calAno,calMes,1).getDay();
   const totalDias=new Date(calAno,calMes+1,0).getDate();
 
   let html=DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  // Células vazias antes do dia 1
   for(let i=0;i<primeiroDia;i++) html+='<div class="cal-day empty"></div>';
 
   for(let dia=1;dia<=totalDias;dia++){
     const dt=new Date(calAno,calMes,dia);
-    const dow=dt.getDay();
     const iso=toISO(dt);
     const isHoje=dt.getTime()===hoje.getTime();
-    const isPast=dt<=hoje;           // hoje inclusive = sem entrega no mesmo dia
-    const isEntrega=dow===2||dow===6; // Terça ou Sábado
+    const isPast=dt<=hoje;
+    const isDisponivel=proximas.has(iso);
     const isSelected=iso===selVal;
 
     let cls='cal-day';
     if(isSelected) cls+=' selected-day';
-    else if(!isPast&&isEntrega) cls+=' available';
+    else if(isDisponivel) cls+=' available';
     else cls+=' disabled';
     if(isHoje) cls+=' today';
 
-    const disabled=isPast||!isEntrega;
-    html+=`<button class="${cls}" ${disabled?'disabled':''} onclick="selecionarData('${iso}')">${dia}</button>`;
+    html+=`<button class="${cls}" ${!isDisponivel?'disabled':''} onclick="selecionarData('${iso}')">${dia}</button>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
 }
