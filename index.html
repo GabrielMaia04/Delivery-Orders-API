@@ -251,7 +251,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pag{display:flex;gap:5px;padding:10px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
 .pag-btn{min-width:30px;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font)}
 .pag-btn.active{background:var(--green);border-color:var(--green);color:#fff}
-/* ORDER SUCCESS */
+/* ── CALENDAR PICKER ── */
+.cal-trigger{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;font-family:var(--font);text-align:left;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cal-trigger:hover{border-color:var(--green)}
+.cal-trigger.selected{color:var(--green-bright);border-color:var(--green);background:var(--green-light)}
+.cal-trigger::after{content:'📅';font-size:16px;flex-shrink:0}
+.cal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9980;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
+.cal-ov.open{opacity:1;pointer-events:all}
+.cal-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;width:320px;max-width:100%;box-shadow:0 12px 48px rgba(0,0,0,.4);transform:translateY(14px) scale(.97);transition:transform .2s}
+.cal-ov.open .cal-box{transform:none}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-nav-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font);transition:background .12s}
+.cal-nav-btn:hover{background:var(--bg4)}
+.cal-month-label{font-size:15px;font-weight:800;color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:10px;font-weight:700;text-align:center;color:var(--text3);padding:4px 0;text-transform:uppercase;letter-spacing:.05em}
+.cal-day{height:38px;border-radius:9px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.cal-day.empty{pointer-events:none}
+.cal-day.disabled{color:var(--text3);cursor:not-allowed;opacity:.35}
+.cal-day.available{color:var(--green-bright);background:var(--green-light);font-weight:800}
+.cal-day.available:hover{background:var(--green);color:#fff}
+.cal-day.today{outline:2px solid var(--border2)}
+.cal-day.selected-day{background:var(--green)!important;color:#fff!important;box-shadow:0 2px 8px rgba(45,140,78,.4)}
+.cal-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.cal-dot{width:8px;height:8px;border-radius:50%;background:var(--green-bright);display:inline-block;flex-shrink:0}
+
+/* ── ORDER SUCCESS ── */
 .success-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9990;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
 .success-ov.open{opacity:1;pointer-events:all}
 .success-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:36px 28px 28px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,.4);transform:scale(.9) translateY(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
@@ -398,7 +423,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="co-body">
       <div class="field"><label>Nome <span style="color:var(--red)">*</span></label><input id="co-nome" required type="text" placeholder="Seu nome"></div>
       <div class="field"><label>Contato <span style="color:var(--red)">*</span></label><input id="co-tel" required type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-      <div class="field"><label>Data de entrega</label><select id="co-data" style="width:100%"></select></div>      <div class="field">
+      <div class="field"><label>Data de entrega</label>
+        <button type="button" class="cal-trigger" id="co-data-btn" onclick="abrirCal('co')">Selecionar data de entrega</button>
+        <input type="hidden" id="co-data">
+      </div>      <div class="field">
         <label>CEP</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input id="co-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCep()">
@@ -456,7 +484,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="acard-body">
           <div class="field"><label>Nome *</label><input id="a-nome" type="text" placeholder="Nome do cliente"></div>
           <div class="field"><label>Contato</label><input id="a-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-          <div class="field"><label>Data de entrega</label><select id="a-data" style="width:100%"></select></div>
+          <div class="field"><label>Data de entrega</label>
+            <button type="button" class="cal-trigger" id="a-data-btn" onclick="abrirCal('adm')">Selecionar data de entrega</button>
+            <input type="hidden" id="a-data">
+          </div>
           <div class="field"><label>CEP</label>
             <div style="display:flex;gap:8px;align-items:center">
               <input id="a-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCepAdmin()">
@@ -648,6 +679,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 </div>
+<!-- CALENDAR PICKER -->
+<div class="cal-ov" id="cal-ov" onclick="if(event.target===this)fecharCal()">
+  <div class="cal-box">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="navCal(-1)">&#8592;</button>
+      <span class="cal-month-label" id="cal-month-label"></span>
+      <button class="cal-nav-btn" onclick="navCal(1)">&#8594;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-hint"><span class="cal-dot"></span> Terças e Sábados disponíveis</div>
+  </div>
+</div>
+
 <!-- ORDER SUCCESS POPUP -->
 <div class="success-ov" id="success-ov" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="success-box">
@@ -744,7 +788,13 @@ let rPage=1,rTotal=0,rCache=[];
 
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
 const fd=d=>d?d.split('-').reverse().join('/'):'';;
-
+// Exibe "Terça, 20/mai" para datas de entrega
+function fdLabel(iso){
+  if(!iso)return'';
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  return DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
+}
 /* ── DATAS DE ENTREGA ──
    Produção: Segunda(1), Quinta(4), Sexta(5)
    Entrega:  Terça(2) → Segunda | Sábado(6) → Quinta+Sexta
@@ -923,7 +973,8 @@ async function carregarHistoricoCliente(){
     return`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
-          <div style="font-size:13px;font-weight:700">${fd(p.data_pedido)}</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Entrega</div>
+          <div style="font-size:13px;font-weight:700">${fdLabel(p.data_pedido)}</div>
           <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -1327,7 +1378,9 @@ function irCheckout(){
 }
 function abrirCo(){
   document.getElementById('co-nome').value=perfil?.nome||'';
-  preencherSelectData('co-data');
+  document.getElementById('co-data').value='';
+  const cob=document.getElementById('co-data-btn');
+  cob.textContent='Selecionar data de entrega';cob.classList.remove('selected');
   // Pre-preenche CEP e endereco se o cliente ja salvou
   if(perfil?.cep){
     document.getElementById('co-cep').value=perfil.cep;
@@ -1363,7 +1416,7 @@ function buildTextoWhatsApp(pedido,itens){
     '=== PEDIDO ===',
     'Cliente: '+pedido.nome,
     pedido.contato?'Contato: '+pedido.contato:'',
-    'Data: '+pedido.data,
+    'Entrega prevista: '+pedido.data,
     end?'Endereco: '+end:'',
     'Entrega: '+pedido.entrega,
     'Pagamento: '+pedido.pagamento,
@@ -1407,6 +1460,7 @@ async function enviarPedido(){
   if(!end) erros.push('Endereco');
   if(!pag) erros.push('Forma de pagamento');
   if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
+  if(!document.getElementById('co-data').value){popAlert('📅','Data obrigatória','Selecione uma data de entrega.');return}
   if(!cart.itens.length){toast('Carrinho vazio.','err');return}
   const btn=document.getElementById('co-btn');
   btn.disabled=true;btn.textContent='Enviando...';
@@ -1474,7 +1528,9 @@ async function showAdmin(){
     +'<button class="atab" onclick="showAPage(\'produtos\',this)">Produtos</button>'
     +'<button class="atab" onclick="showAPage(\'usuarios\',this)">Usuarios</button>'
     +'<button class="atab" onclick="voltarLoja()">Loja</button>';;
-  preencherSelectData('a-data');
+  document.getElementById('a-data').value='';
+  const adb=document.getElementById('a-data-btn');
+  if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
   if(!fCatAdm&&cats.length)fCatAdm=cats[0].id;
   renderACpills();renderAGrid();renderCatSel();
   showAEl('ap-pedido');
@@ -1522,6 +1578,76 @@ function renderAGrid(){
       +'</div>';
   }).join('');
 }
+/* ── CALENDAR PICKER ── */
+let calCtx=null; // 'co' | 'adm'
+let calAno,calMes;
+
+function abrirCal(ctx){
+  calCtx=ctx;
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  calAno=hoje.getFullYear();calMes=hoje.getMonth();
+  renderCal();
+  document.getElementById('cal-ov').classList.add('open');
+}
+function fecharCal(){document.getElementById('cal-ov').classList.remove('open')}
+function navCal(d){
+  calMes+=d;
+  if(calMes>11){calMes=0;calAno++}
+  if(calMes<0){calMes=11;calAno--}
+  renderCal();
+}
+
+function renderCal(){
+  const MESES_LONG=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  document.getElementById('cal-month-label').textContent=MESES_LONG[calMes]+' '+calAno;
+
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const selVal=document.getElementById(calCtx==='co'?'co-data':'a-data').value;
+
+  // Primeiro dia do mês e total de dias
+  const primeiroDia=new Date(calAno,calMes,1).getDay();
+  const totalDias=new Date(calAno,calMes+1,0).getDate();
+
+  let html=DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  // Células vazias antes do dia 1
+  for(let i=0;i<primeiroDia;i++) html+='<div class="cal-day empty"></div>';
+
+  for(let dia=1;dia<=totalDias;dia++){
+    const dt=new Date(calAno,calMes,dia);
+    const dow=dt.getDay();
+    const iso=toISO(dt);
+    const isHoje=dt.getTime()===hoje.getTime();
+    const isPast=dt<=hoje;           // hoje inclusive = sem entrega no mesmo dia
+    const isEntrega=dow===2||dow===6; // Terça ou Sábado
+    const isSelected=iso===selVal;
+
+    let cls='cal-day';
+    if(isSelected) cls+=' selected-day';
+    else if(!isPast&&isEntrega) cls+=' available';
+    else cls+=' disabled';
+    if(isHoje) cls+=' today';
+
+    const disabled=isPast||!isEntrega;
+    html+=`<button class="${cls}" ${disabled?'disabled':''} onclick="selecionarData('${iso}')">${dia}</button>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function selecionarData(iso){
+  const idInput=calCtx==='co'?'co-data':'a-data';
+  const idBtn=calCtx==='co'?'co-data-btn':'a-data-btn';
+  document.getElementById(idInput).value=iso;
+  // Atualiza o botão trigger com o label amigável
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  const label=DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
+  const btn=document.getElementById(idBtn);
+  btn.textContent=label;
+  btn.classList.add('selected');
+  fecharCal();
+}
+
 function mostrarSucesso(){
   const ov=document.getElementById('success-ov');
   ov.classList.add('open');
@@ -1634,7 +1760,9 @@ function aLimpar(){
 function _aLimparExec(){
   ap={itens:[],entrega:'Entrega'};
   ['a-nome','a-tel','a-cep','a-end','a-num','a-obs'].forEach(id=>document.getElementById(id).value='');
-  preencherSelectData('a-data');
+  document.getElementById('a-data').value='';
+  const adb=document.getElementById('a-data-btn');
+  if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
   setAE('Entrega');renderAOrder();
 }
 async function aSalvar(){
@@ -1678,7 +1806,7 @@ async function aSalvar(){
 }
 function bldTxt(ped){
   const end=[ped.cliente_endereco,ped.cliente_numero].filter(Boolean).join(', no ');
-  const ls=['=== PEDIDO ===','Cliente: '+ped.cliente_nome,ped.cliente_contato?'Contato: '+ped.cliente_contato:'','Data: '+fd(ped.data_pedido),end?'Endereco: '+end:'','Entrega: '+ped.entrega,'Pagamento: '+ped.pagamento,ped.observacoes?'Obs: '+ped.observacoes:'','---'];
+  const ls=['=== PEDIDO ===','Cliente: '+ped.cliente_nome,ped.cliente_contato?'Contato: '+ped.cliente_contato:'','Entrega prevista: '+fd(ped.data_pedido),end?'Endereco: '+end:'','Entrega: '+ped.entrega,'Pagamento: '+ped.pagamento,ped.observacoes?'Obs: '+ped.observacoes:'','---'];
   (ped._itens||[]).forEach(it=>ls.push(it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'')+'= R$ '+fp(it.subtotal)));
   ls.push('---');if(ped.taxa_entrega>0)ls.push('Taxa entrega = R$ '+fp(ped.taxa_entrega));ls.push('TOTAL: R$ '+fp(ped.total));
   return ls.filter(Boolean).join('\n');
@@ -1781,7 +1909,7 @@ function exportRel(){
     linhas.push('--- Pedido '+(i+1)+' ---');
     linhas.push('Cliente: '+p.cliente_nome);
     if(p.cliente_contato)linhas.push('Contato: '+p.cliente_contato);
-    linhas.push('Data: '+fd(p.data_pedido));
+    linhas.push('Entrega: '+fd(p.data_pedido));
     if(end)linhas.push('Endereco: '+end);
     linhas.push('Entrega: '+p.entrega+' | Pagamento: '+p.pagamento);
     if(p.status)linhas.push('Status: '+p.status);
@@ -1811,7 +1939,7 @@ function verPed(id){
   const txt=[
     'Cliente: '+p.cliente_nome,
     p.cliente_contato?'Contato: '+p.cliente_contato:'',
-    'Data: '+fd(p.data_pedido),
+    'Entrega: '+fd(p.data_pedido),
     end?'Endereco: '+end:'',
     'Entrega: '+p.entrega,
     'Pagamento: '+p.pagamento,
@@ -1845,7 +1973,7 @@ function renderRPage(){
     return '<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
-      +'<td>'+fd(p.data_pedido)+'</td>'
+      +'<td>'+fdLabel(p.data_pedido)+'</td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
       +'<td>'+(p.taxa_entrega>0?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
       +'<td>'+p.pagamento+'</td>'
