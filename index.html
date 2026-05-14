@@ -6,6 +6,7 @@
   const _sv=localStorage.getItem("hf-theme");
   const _sys=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
   document.documentElement.setAttribute("data-theme",_sv||_sys);
+  window.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('dd-theme-btn');if(b)b.textContent=((_sv||_sys)==='dark'?'🌙':'☀️')});
 </script>
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
@@ -250,7 +251,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pag{display:flex;gap:5px;padding:10px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
 .pag-btn{min-width:30px;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font)}
 .pag-btn.active{background:var(--green);border-color:var(--green);color:#fff}
-/* ── POPUP / TOAST ── */
+/* ORDER SUCCESS */
+.success-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9990;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
+.success-ov.open{opacity:1;pointer-events:all}
+.success-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:36px 28px 28px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,.4);transform:scale(.9) translateY(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.success-ov.open .success-box{transform:none}
+.success-emoji{font-size:56px;display:block;margin-bottom:12px;animation:bounce .5s .15s both}
+.success-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
+.success-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px}
+.success-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity .15s}
+.success-btn:active{opacity:.85}
+@keyframes bounce{0%{transform:scale(.5)}60%{transform:scale(1.15)}80%{transform:scale(.95)}100%{transform:scale(1)}}
+
+
 .popup-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
 .popup-ov.open{opacity:1;pointer-events:all}
 .popup-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35);transform:translateY(12px) scale(.97);transition:transform .18s}
@@ -289,6 +302,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .dropdown-item:hover{background:var(--bg3)}
 .dropdown-item.danger{color:var(--red)}
 .dd-divider{height:1px;background:var(--border);margin:4px 0}
+.dd-icon-row{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px}
+.dd-icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;flex-shrink:0}
+.dd-icon-btn:hover{background:var(--bg4)}
+.dd-icon-btn.wpp{color:#25d366}.dd-icon-btn.wpp:hover{background:#e8fdf0}
+.dd-icon-btn.ig{color:#e1306c}.dd-icon-btn.ig:hover{background:#fde8ef}
+[data-theme="dark"] .dd-icon-btn.wpp:hover{background:#0d2e1a}
+[data-theme="dark"] .dd-icon-btn.ig:hover{background:#2e0d1a}
 
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
@@ -300,8 +320,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="topbar">
     <div class="brand"><div class="logo">&#127807;</div><div class="brand-name">Hortifruti<span>Legumes e Verduras</span></div></div>
     <div class="topbar-right">
-      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()">&#127769;</button>
-      <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown"><button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">&#128100; Conta</button><button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('historico')">&#128203; Pedidos</button><div class="dd-divider"></div><button class="dropdown-item" id="dd-admin" style="display:none" onclick="fecharDropdown();showAdmin()">&#9881; Admin</button><button class="dropdown-item danger" onclick="fecharDropdown();fazerLogout()">&#128673; Sair</button></div></div>
+      <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown">
+        <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">&#128100; Conta</button>
+        <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('historico')">&#128203; Pedidos</button>
+        <div class="dd-divider"></div>
+        <button class="dropdown-item" id="dd-admin" style="display:none" onclick="fecharDropdown();showAdmin()">&#9881; Admin</button>
+        <div class="dd-icon-row">
+          <button class="dd-icon-btn wpp" title="WhatsApp" onclick="fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg></button>
+          <button class="dd-icon-btn ig" title="Instagram" onclick="fecharDropdown();window.open('https://instagram.com','_blank')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></button>
+          <button class="dd-icon-btn" title="Alternar tema" onclick="toggleTheme()" id="dd-theme-btn">&#127769;</button>
+        </div>
+        <div class="dd-divider"></div>
+        <button class="dropdown-item danger" onclick="fecharDropdown();fazerLogout()">&#128673; Sair</button>
+      </div></div>
       <button class="cart-fab" onclick="abrirCart()">&#128722;<span class="cart-badge hidden" id="cart-badge">0</span></button>
     </div>
   </div>
@@ -620,6 +651,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 </div>
+<!-- ORDER SUCCESS POPUP -->
+<div class="success-ov" id="success-ov" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="success-box">
+    <span class="success-emoji">🥦</span>
+    <div class="success-title">Pedido realizado com sucesso!</div>
+    <div class="success-sub">Obrigado pela sua compra!<br>Logo entraremos em contato.</div>
+    <button class="success-btn" onclick="document.getElementById('success-ov').classList.remove('open')">Ótimo! 🎉</button>
+  </div>
+</div>
+
 <!-- POPUP GLOBAL -->
 <div class="popup-ov" id="g-popup">
   <div class="popup-box">
@@ -714,6 +755,8 @@ function toggleTheme(){
   const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
   document.documentElement.setAttribute('data-theme',t);
   localStorage.setItem('hf-theme',t);
+  const btn=document.getElementById('dd-theme-btn');
+  if(btn)btn.textContent=t==='dark'?'🌙':'☀️';
 }
 
 
@@ -1026,7 +1069,7 @@ async function loadProfile(uid,user){
     }
     perfil=data;
     const pn=perfil.nome.split(' ')[0];
-    document.getElementById('topbar-login').textContent=pn+' v';
+    document.getElementById('topbar-login').textContent=pn;
     document.getElementById('hero-msg').textContent='Ola, '+pn+'!';
     const ddAdmin=document.getElementById('dd-admin');
     if(ddAdmin) ddAdmin.style.display=perfil.role==='admin'?'flex':'none';
@@ -1391,6 +1434,7 @@ async function enviarPedido(){
       return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
     }));
     cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo();
+    mostrarSucesso();
   }catch(e){toast('Erro: '+e.message,'err')}
   btn.disabled=false;btn.textContent='Enviar pedido';
 }
@@ -1456,6 +1500,11 @@ function renderAGrid(){
       +'</div>';
   }).join('');
 }
+function mostrarSucesso(){
+  const ov=document.getElementById('success-ov');
+  ov.classList.add('open');
+}
+
 /* ── POPUP & TOAST ── */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
