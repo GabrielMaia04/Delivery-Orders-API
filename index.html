@@ -1843,8 +1843,7 @@ async function renderEntregas(){
   if(!data){pedEl.innerHTML='<div class="empty">Selecione uma data acima.</div>';document.getElementById('e-cons').innerHTML='';return}
   pedEl.innerHTML='<div class="loading"><div class="spin"></div> Carregando...</div>';
   const {data:peds}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('data_pedido',data).order('created_at',{ascending:true});
-  const lista=peds||[];
-  document.getElementById('e-tot-ped').textContent=lista.length;
+  const lista=(peds||[]).filter(p=>p.status!=='Cancelado'&&p.status!=='Entregue');
   document.getElementById('e-tot-entr').textContent=lista.filter(p=>p.entrega==='Entrega').length;
   document.getElementById('e-tot-ret').textContent=lista.filter(p=>p.entrega!=='Entrega').length;
   if(!lista.length){
@@ -1898,6 +1897,10 @@ async function renderEntregas(){
       <div style="font-weight:700;color:var(--green-bright);font-size:12px">${it.qty} un${kg}</div>
     </div>`;
   }).join('') || '<div class="empty">Sem produtos.</div>';
+}
+async function alterarStatusE(id,status){
+  await sb.from('pedidos').update({status}).eq('id',id);
+  if(status==='Cancelado'||status==='Entregue') renderEntregas();
 }
 function imprimirEntregas(){
   const data=document.getElementById('e-data').value;
