@@ -2005,9 +2005,10 @@ async function renderRel(){
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
   rCache=lista;rTotal=lista.length;rPage=1;
-  const totG=lista.reduce((s,p)=>s+p.total,0);
+  const ativos=lista.filter(p=>p.status!=='Cancelado');
+  const totG=ativos.reduce((s,p)=>s+p.total,0);
   const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
-  document.getElementById('r-stats').innerHTML=`<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">${lista.length}</div></div><div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ ${fp(totG)}</div></div><div class="scard"><div class="scard-l">Ticket medio</div><div class="scard-v">R$ ${lista.length?fp(totG/lista.length):'0,00'}</div></div>`;
+  document.getElementById('r-stats').innerHTML=`<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">${ativos.length}</div></div><div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ ${fp(totG)}</div></div><div class="scard"><div class="scard-l">Ticket medio</div><div class="scard-v">R$ ${ativos.length?fp(totG/ativos.length):'0,00'}</div></div>`;
   const pedEl=document.getElementById('r-peds');
   if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>'}
   else{
