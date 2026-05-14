@@ -245,6 +245,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pg-grid{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
 @media(max-width:680px){.pg-grid{grid-template-columns:1fr}}
 .acard-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.r-scroll-box{height:390px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.r-scroll-box::-webkit-scrollbar{width:4px}
+.r-scroll-box::-webkit-scrollbar-track{background:transparent}
+.r-scroll-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 .prod-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:7px}
 .prod-row:last-child{border-bottom:none}
 .date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -562,8 +566,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <div id="r-stats" class="stats"></div>
     <div class="pg-grid" style="margin-bottom:12px">
-      <div class="acard-sm"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;font-weight:700">Consolidado</span><button class="btn btn-o btn-sm" onclick="imprimirConsolidado()">&#128424; Imprimir</button></div><div id="r-cons"></div></div>
-      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div id="r-peds"></div></div>
+      <div class="acard-sm"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;font-weight:700">Consolidado</span><button class="btn btn-o btn-sm" onclick="imprimirConsolidado()">&#128424; Imprimir</button></div><div class="r-scroll-box"><div id="r-cons"></div></div></div>
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div class="r-scroll-box"><div id="r-peds"></div></div></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
       <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Historico</div>
@@ -1846,7 +1850,22 @@ async function renderRel(){
   const pedEl=document.getElementById('r-peds');
   if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>'}
   else{
-    pedEl.innerHTML=lista.slice(0,8).map(p=>{const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-weight:700;font-size:12px">${p.cliente_nome}</span>${p.taxa_entrega>0?'<span class="badge bg-orange" style="font-size:9px">Taxa</span>':''}<span style="font-size:10px;color:var(--text3)">${fd(p.data_pedido)}</span></div><div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div></div><div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div></div>`}).join('');
+    pedEl.innerHTML=lista.map(p=>{
+      const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
+      const dataLabel=fdLabel(p.data_pedido)||fd(p.data_pedido);
+      return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-weight:700;font-size:12px">${p.cliente_nome}</span>
+            ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${p.codigo}</span>`:''}
+            ${p.taxa_entrega>0?'<span class="badge bg-orange" style="font-size:9px">Taxa</span>':''}
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${dataLabel}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
+        </div>
+        <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
+      </div>`;
+    }).join('');
     if(totT>0)pedEl.innerHTML+=`<div style="padding:7px 0;display:flex;justify-content:space-between;font-size:11px;color:var(--orange)"><span>Total taxas</span><span style="font-weight:700">R$ ${fp(totT)}</span></div>`;
   }
   renderRPage();
