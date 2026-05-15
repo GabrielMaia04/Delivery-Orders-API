@@ -2002,9 +2002,10 @@ function imprimirEntregas(){
     return`<div class="row"><span>${it.nome}</span><span>${it.qty}un${kg}</span></div>`;
   }).join('');
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <style>@page{size:80mm auto;margin:2mm 4mm}
+  <style>@page{size:80mm auto;margin:2mm 3mm}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Courier New',Courier,monospace;font-size:11px;width:72mm;color:#000;line-height:1.45}
+    html,body{width:72mm;max-width:72mm}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#000;line-height:1.45}
     .c{text-align:center}
     .b{font-weight:700}
     .title{font-size:13px;font-weight:700;text-align:center;margin:2px 0}
@@ -2182,9 +2183,10 @@ function imprimirPedido(id){
   }).join('');
   const taxa=p.taxa_entrega>0?`<div class="row"><span>Taxa entrega</span><span>R$ ${fp(p.taxa_entrega)}</span></div>`:'';
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <style>@page{size:80mm auto;margin:2mm 4mm}
+  <style>@page{size:80mm auto;margin:2mm 3mm}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Courier New',Courier,monospace;font-size:11px;width:72mm;color:#000;line-height:1.45}
+    html,body{width:72mm;max-width:72mm}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#000;line-height:1.45}
     .c{text-align:center}
     .b{font-weight:700}
     .title{font-size:13px;font-weight:700;text-align:center;margin:2px 0}
