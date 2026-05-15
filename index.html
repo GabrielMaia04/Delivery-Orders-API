@@ -1973,14 +1973,22 @@ function imprimirEntregas(){
   const data=document.getElementById('e-data').value;
   if(!data){toast('Selecione uma data primeiro.','err');return}
   const label=fdLabel(data)||fd(data);
-  const w=window.open('','_blank','width=480,height=700');if(!w)return;
-  const st='<style>body{font-family:monospace;font-size:12px;padding:16px}h2{font-size:13px;margin:12px 0 4px}hr{border:none;border-top:1px solid #ccc;margin:6px 0}select{display:none}</style>';
-  w.document.write('<html><head>'+st+'</head><body>');
-  w.document.write('<h2>ENTREGAS — '+label+'</h2><hr>');
-  w.document.write('<h2>PEDIDOS</h2>'+document.getElementById('e-pedidos').innerHTML);
-  w.document.write('<hr><h2>CONSOLIDADO</h2>'+document.getElementById('e-cons').innerHTML);
-  w.document.write('<script>window.onload=()=>window.print()<\/script></body></html>');
-  w.document.close();
+  const pedHtml=document.getElementById('e-pedidos').innerHTML;
+  const consHtml=document.getElementById('e-cons').innerHTML;
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Entregas ${label}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;padding:16px;max-width:600px;margin:0 auto}h2{font-size:13px;margin:12px 0 4px}hr{border:none;border-top:1px solid #ccc;margin:8px 0}select{display:none}button{display:none}@media print{body{padding:8px}}</style>
+  </head><body>
+  <h2>ENTREGAS — ${label}</h2><hr>
+  <h2>PEDIDOS</h2>${pedHtml}
+  <hr><h2>CONSOLIDADO</h2>${consHtml}
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
 }
 
 /* RELATORIO */
@@ -2122,28 +2130,42 @@ function verPed(id){
 function imprimirPedido(id){
   const p=rCache.find(x=>x.id===id);if(!p)return;
   const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-  const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'')+'  R$ '+fp(it.subtotal)).join('\n');
-  const linhas=[
-    '=== PEDIDO '+(p.codigo||'#'+p.id)+' ===',
-    'Cliente: '+p.cliente_nome,
-    p.cliente_contato?'Contato: '+p.cliente_contato:'',
-    'Pedido em: '+(p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):''),
-    'Entrega: '+fdLabel(p.data_pedido),
-    end?'Endereço: '+end:'',
-    p.entrega==='Entrega'?'Modalidade: Entrega':'Modalidade: Retirada',
-    'Pagamento: '+p.pagamento,
-    p.status?'Status: '+p.status:'',
-    p.observacoes?'Obs: '+p.observacoes:'',
-    '---',
-    its,
-    '---',
-    p.taxa_entrega>0?'Taxa: R$ '+fp(p.taxa_entrega):'',
-    'TOTAL: R$ '+fp(p.total)
-  ].filter(Boolean).join('\n');
-  const w=window.open('','_blank','width=400,height=600');
-  if(!w)return;
-  w.document.write('<html><body style="font-family:monospace;font-size:13px;width:72mm;margin:0 auto;padding:12px;white-space:pre-wrap">'+linhas.join('\n').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'<script>window.onload=()=>window.print()<\/script></body></html>');
-  w.document.close();
+  const its=(p.itens_pedido||[]).map(it=>
+    `<tr><td>${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</td><td style="text-align:right">R$ ${fp(it.subtotal)}</td></tr>`
+  ).join('');
+  const taxa=p.taxa_entrega>0?`<tr><td style="color:#e67e22">Taxa de entrega</td><td style="text-align:right;color:#e67e22">R$ ${fp(p.taxa_entrega)}</td></tr>`:'';
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pedido ${p.codigo||'#'+p.id}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:13px;padding:20px;max-width:400px;margin:0 auto;color:#111}
+    h2{font-size:15px;margin:0 0 4px}
+    .sub{font-size:11px;color:#666;margin-bottom:14px}
+    .info{font-size:12px;margin-bottom:12px;line-height:1.7}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    td{padding:5px 2px;border-bottom:1px solid #eee;font-size:12px}
+    .total td{font-size:14px;font-weight:700;border-top:2px solid #111;border-bottom:none;padding-top:8px}
+    @media print{body{padding:8px}}
+  </style></head><body>
+  <h2>Pedido ${p.codigo||'#'+p.id}</h2>
+  <div class="sub">Status: ${p.status||'Pendente'} · ${fdLabel(p.data_pedido)}</div>
+  <div class="info">
+    <strong>${p.cliente_nome}</strong><br>
+    ${p.cliente_contato?p.cliente_contato+'<br>':''}
+    ${end?end+'<br>':''}
+    Pagamento: ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}<br>
+    Pedido em: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):''}
+    ${p.observacoes?'<br>Obs: '+p.observacoes:''}
+  </div>
+  <table>${its}${taxa}
+    <tr class="total"><td>TOTAL</td><td style="text-align:right;color:#27ae60">R$ ${fp(p.total)}</td></tr>
+  </table>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
 }
 
 async function alterarStatus(id,status){
