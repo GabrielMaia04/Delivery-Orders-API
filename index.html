@@ -2180,49 +2180,56 @@ function imprimirPedido(id){
   const its=(p.itens_pedido||[]).map(it=>{
     const sub='R$ '+fp(it.subtotal);
     const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
-    return`<div class="row"><span>${nome}</span><span>${sub}</span></div>`;
+    return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">${sub}</span></div>`;
   }).join('');
-  const taxa=p.taxa_entrega>0?`<div class="row"><span>Taxa entrega</span><span>R$ ${fp(p.taxa_entrega)}</span></div>`:'';
+  const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
+  const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <style>@page{size:80mm auto;margin:0}
+  <style>
+    @page{size:80mm auto;margin:0}
     *{box-sizing:border-box;margin:0;padding:0}
     html{width:80mm}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:500;color:#000;line-height:1.5;width:72mm;margin:0 auto;padding:3mm 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{html,body{height:auto!important;overflow:visible!important}
-    *{-webkit-font-smoothing:none!important;font-smooth:never!important}}
-    .c{text-align:center}
-    .b{font-weight:700}
-    .title{font-size:13px;font-weight:700;text-align:center;margin:2px 0}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;line-height:1.5;width:76mm;margin:0 auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
+    .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
+    .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
+    .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
     .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
-    .sep2{border:none;border-top:2px solid #000;margin:5px 0;width:100%}
-    .row{display:flex;justify-content:space-between;gap:4px;font-size:11px;padding:1px 0}
-    .row span:first-child{flex:1;word-break:break-word}
-    .row span:last-child{white-space:nowrap;font-weight:700;text-align:right;min-width:60px}
-    .total-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:3px 0}
-    .info{font-size:10px;line-height:1.5;margin:3px 0}
-    .sm{font-size:10px;color:#333}
-    button,select{display:none!important}</style></head><body>
-  <div class="title">PEDIDO ${p.codigo||'#'+p.id}</div>
-  <div class="c sm">${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):''}</div>
-  <hr class="sep">
-  <div class="info">
-    <span class="b">${p.cliente_nome}</span>
-    ${p.cliente_contato?'<br>'+p.cliente_contato:''}
-    ${end?'<br>'+end:''}
-  </div>
-  <div class="info">
-    Entrega: ${fdLabel(p.data_pedido)}<br>
-    Modalidade: ${p.entrega==='Entrega'?'Entrega':'Retirada'}<br>
-    Pagamento: ${p.pagamento}<br>
-    Status: ${p.status||'Pendente'}
-    ${p.observacoes?'<br>Obs: '+p.observacoes:''}
+    .sep2{border:none;border-top:2px solid #000;margin:4px 0;width:100%}
+    .section{padding:4px 2px}
+    .field{font-size:11px;margin-bottom:2px}
+    .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
+    .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
+    .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
+    .item-nome{flex:1;font-weight:700;font-size:11px}
+    .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
+    .totals{padding:5px 2px}
+    .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
+    .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
+    .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
+  </style></head><body>
+  <div class="header">
+    <div class="num">${p.codigo||'#'+p.id}</div>
+    <div class="loja">HORTIFRUTI</div>
   </div>
   <hr class="sep">
-  ${its}${taxa}
-  <hr class="sep2">
-  <div class="total-row"><span>TOTAL</span><span>R$ ${fp(p.total)}</span></div>
+  <div class="section">
+    <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
+    <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
+    <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
+    <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+    ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
+    <div class="field"><span class="label">Status: </span>${p.status||'Pendente'}</div>
+  </div>
   <hr class="sep">
-  <div class="c sm" style="margin-top:4px">Obrigado pela preferencia!</div>
+  ${its}
+  <div class="totals">
+    <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
+    <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
+    <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
+  </div>
+  ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Observação: </span>${p.observacoes}</div></div>`:''}
+  <div class="footer">Seu pedido foi preparado com cuidado!</div>
   <script>window.onload=function(){window.print();}<\/script>
   </body></html>`;
   const blob=new Blob([html],{type:'text/html'});
