@@ -1185,7 +1185,7 @@ function pararRealtime(){
 }
 
 async function init(){
-  document.getElementById('r-data').value=hoje();
+  // r-data intencionalmente em branco — relatório começa sem filtro de data
 
   // Verifica sessao primeiro, depois carrega catalogo
   const {data:{session}}=await sb.auth.getSession();
@@ -2059,11 +2059,11 @@ function imprimirTodosPedidos(){
     </body></html>`;
     const blob=new Blob([html],{type:'text/html'});
     const url=URL.createObjectURL(blob);
-    const w=window.open(url,'_blank');
-    if(!w){toast('Permita popups para imprimir em fila.','err');return}
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    const a=document.createElement('a');
+    a.href=url;a.target='_blank';a.rel='noopener';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
   }
-  // Expõe o próximo na fila para o afterprint chamar
   window._printNext=imprimirProximo;
   imprimirProximo();
 }
