@@ -1986,83 +1986,72 @@ async function alterarStatusE(id,status){
 function imprimirTodosPedidos(){
   const lista=window._entCache||[];
   if(!lista.length){toast('Nenhum pedido para imprimir.','err');return}
-  let idx=0;
-  function imprimirProximo(){
-    if(idx>=lista.length)return;
-    const p=lista[idx++];
-    const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-    const its=(p.itens_pedido||[]).map(it=>{
-      const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
-      return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">R$ ${fp(it.subtotal)}</span></div>`;
-    }).join('');
-    const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
-    const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
-    const restante=lista.length-idx;
-    const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <style>
-      @page{size:80mm auto;margin:0}
-      *{box-sizing:border-box;margin:0;padding:0}
-      html{width:80mm}
-      body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;width:76mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
-      .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
-      .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
-      .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
-      .header .prog{font-size:10px;opacity:.6;margin-top:1px}
-      .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
-      .section{padding:4px 2px}
-      .field{font-size:11px;margin-bottom:2px}
-      .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
-      .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
-      .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
-      .item-nome{flex:1;font-weight:700;font-size:11px}
-      .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
-      .totals{padding:5px 2px}
-      .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
-      .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
-      .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
-    </style></head><body>
-    <div class="header">
-      <div class="num">${p.codigo||'#'+p.id}</div>
-      <div class="loja">HORTIFRUTI</div>
-      <div class="prog">${idx} de ${lista.length}</div>
-    </div>
-    <hr class="sep">
-    <div class="section">
-      <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
-      <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
-      <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
-      <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-      ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
-    </div>
-    <hr class="sep">
-    ${its}
-    <div class="totals">
-      <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
-      <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
-      <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
-    </div>
-    ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Obs: </span>${p.observacoes}</div></div>`:''}
-    <div class="footer">Seu pedido foi preparado com cuidado!</div>
-    <script>
-      window.onload=function(){
-        window.print();
-        window.addEventListener('afterprint',function(){
-          window.close();
-          ${restante>0?'window.opener&&window.opener._printNext&&window.opener._printNext();':''}
-        });
-      };
-    <\/script>
-    </body></html>`;
-    const blob=new Blob([html],{type:'text/html'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.target='_blank';a.rel='noopener';
-    document.body.appendChild(a);a.click();
-    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
-  }
-  window._printNext=imprimirProximo;
-  imprimirProximo();
+  toast('Imprimindo '+lista.length+' pedido(s)... aguarde.','ok',lista.length*4000);
+  lista.forEach((p,idx)=>{
+    setTimeout(()=>{
+      const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
+      const its=(p.itens_pedido||[]).map(it=>{
+        const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
+        return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">R$ ${fp(it.subtotal)}</span></div>`;
+      }).join('');
+      const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
+      const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
+      const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <style>
+        @page{size:80mm auto;margin:0}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html{width:80mm}
+        body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;width:76mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
+        .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
+        .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
+        .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
+        .header .prog{font-size:10px;opacity:.6;margin-top:1px}
+        .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
+        .section{padding:4px 2px}
+        .field{font-size:11px;margin-bottom:2px}
+        .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
+        .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
+        .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
+        .item-nome{flex:1;font-weight:700;font-size:11px}
+        .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
+        .totals{padding:5px 2px}
+        .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
+        .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
+        .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
+      </style></head><body>
+      <div class="header">
+        <div class="num">${p.codigo||'#'+p.id}</div>
+        <div class="loja">HORTIFRUTI</div>
+        <div class="prog">${idx+1} de ${lista.length}</div>
+      </div>
+      <hr class="sep">
+      <div class="section">
+        <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
+        <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
+        <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
+        <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+        ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
+      </div>
+      <hr class="sep">
+      ${its}
+      <div class="totals">
+        <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
+        <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
+        <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
+      </div>
+      ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Obs: </span>${p.observacoes}</div></div>`:''}
+      <div class="footer">Seu pedido foi preparado com cuidado!</div>
+      <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
+      </body></html>`;
+      const blob=new Blob([html],{type:'text/html'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.target='_blank';a.rel='noopener';
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},5000);
+    }, idx*3500); // 3.5s entre cada cupom
+  });
 }
 
 function imprimirEntregas(){
