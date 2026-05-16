@@ -2102,72 +2102,71 @@ function imprimirTodosPedidos(){
   toast('Imprimindo '+lista.length+' pedido(s)... aguarde.','ok',lista.length*4000);
   lista.forEach((p,idx)=>{
     setTimeout(()=>{
-      const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-      const its=(p.itens_pedido||[]).map(it=>{
-        const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
-        return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">R$ ${fp(it.subtotal)}</span></div>`;
-      }).join('');
-      const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
-      const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
-      const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-      <style>
-        @page{size:80mm auto;margin:0}
-        *{box-sizing:border-box;margin:0;padding:0}
-        html{width:80mm}
-        body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;width:76mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
-        .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
-        .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
-        .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
-        .header .prog{font-size:10px;opacity:.6;margin-top:1px}
-        .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
-        .section{padding:4px 2px}
-        .field{font-size:11px;margin-bottom:2px}
-        .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
-        .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
-        .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
-        .item-nome{flex:1;font-weight:700;font-size:11px}
-        .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
-        .totals{padding:5px 2px}
-        .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
-        .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
-        .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
-      </style></head><body>
-      <div class="header">
-        <div class="num">${p.codigo||'#'+p.id}</div>
-        <div class="loja">HORTIFRUTI</div>
-        <div class="prog">${idx+1} de ${lista.length}</div>
-      </div>
-      <hr class="sep">
-      <div class="section">
-        <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
-        <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
-        <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
-        <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-        ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
-        ${p.cliente_complemento?`<div class="field"><span class="label">Complemento: </span>${p.cliente_complemento}</div>`:''}
-      </div>
-      <hr class="sep">
-      ${its}
-      <div class="totals">
-        <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
-        <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
-        <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
-      </div>
-      ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Obs: </span>${p.observacoes}</div></div>`:''}
-      <div style="background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:6px;font-size:14px;font-weight:900;letter-spacing:1px">
-        ${p.status==='Pendente'?'⏳ PIX — AGUARDANDO PGTO':'✓ PGTO: PAGO / NA ENTREGA'}
-      </div>
-      <div class="footer">Seu pedido foi preparado com cuidado!</div>
-      <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
-      </body></html>`;
-      const blob=new Blob([html],{type:'text/html'});
+      const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
+    const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
+    const _comp=p.cliente_complemento||'';
+    const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':p.status==='Em preparo'?'PGTO: NA ENTREGA':'PGTO: PAGO';
+    const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
+    const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
+    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
+    const _html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <style>@page{size:80mm auto;margin:0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{width:80mm}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;width:76mm;margin:0 auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
+    .dt{text-align:center;font-size:10px;padding:5px 0 2px}
+    .header{background:#000;color:#fff;text-align:center;padding:8px 4px 6px}
+    .num{font-size:32px;font-weight:900;line-height:1}
+    .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
+    .info-block{padding:5px 3px 3px}
+    .ir{font-size:11px;margin-bottom:3px;line-height:1.4}
+    .lbl{font-weight:400}
+    .val{font-weight:900}
+    .item-row{display:flex;align-items:flex-start;gap:2px;padding:3px 0;border-bottom:1px dotted #aaa}
+    .chk{font-size:11px;flex-shrink:0;font-weight:900;min-width:18px}
+    .in{flex:1;font-weight:900;font-size:11px}
+    .iv{font-weight:900;font-size:11px;white-space:nowrap;min-width:55px;text-align:right}
+    .totals{padding:4px 3px}
+    .tr{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
+    .tl{font-weight:400}
+    .tv{font-weight:900}
+    .tr.main .tl,.tr.main .tv{font-weight:900;font-size:12px}
+    .pgto{background:#000;color:#fff;text-align:center;padding:7px 4px;margin:5px 0;font-size:13px;font-weight:900;letter-spacing:.5px}
+    .obs{padding:3px 3px 5px;font-size:11px}
+    .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000}</style></head><body>
+    <div class="dt">${_dt}</div>
+    <div class="header"><div class="num">${p.codigo||'#'+p.id}</div></div>
+    <hr class="sep">
+    <div class="info-block">
+      <div class="ir"><span class="lbl">NOME: </span><span class="val">${p.cliente_nome}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${p.cliente_contato||'—'}</span></div>
+      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
+      <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
+      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
+    </div>
+    <hr class="sep">
+    ${_its}
+    <hr class="sep">
+    <div class="totals">
+      <div class="tr"><span class="tl">TOTAL DOS ITENS:</span><span class="tv">R$ ${fp(_sub)}</span></div>
+      <div class="tr"><span class="tl">TOTAL DE ENTREGA:</span><span class="tv">${_taxa}</span></div>
+      <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
+    </div>
+    <div class="pgto">${_pago}</div>
+    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
+    <hr class="sep">
+    <div class="footer">Seu pedido foi preparado com cuidado!</div>
+    <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
+    </body></html>`;
+      const blob=new Blob([_html],{type:'text/html'});
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
       a.href=url;a.target='_blank';a.rel='noopener';
       document.body.appendChild(a);a.click();
       setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},5000);
-    }, idx*3500); // 3.5s entre cada cupom
+    }, idx*3500);
   });
 }
 
@@ -2371,72 +2370,70 @@ function verPed(id){
 }
 function imprimirPedido(id){
   const p=rCache.find(x=>x.id===id);if(!p)return;
-  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-  const its=(p.itens_pedido||[]).map(it=>{
-    const sub='R$ '+fp(it.subtotal);
-    const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
-    return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">${sub}</span></div>`;
-  }).join('');
-  const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
-  const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <style>
-    @page{size:80mm auto;margin:0}
+  const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
+    const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
+    const _comp=p.cliente_complemento||'';
+    const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':p.status==='Em preparo'?'PGTO: NA ENTREGA':'PGTO: PAGO';
+    const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
+    const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
+    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
+    const _html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <style>@page{size:80mm auto;margin:0}
     *{box-sizing:border-box;margin:0;padding:0}
     html{width:80mm}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;line-height:1.5;width:76mm;margin:0 auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;width:76mm;margin:0 auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
-    .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
-    .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
-    .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
+    .dt{text-align:center;font-size:10px;padding:5px 0 2px}
+    .header{background:#000;color:#fff;text-align:center;padding:8px 4px 6px}
+    .num{font-size:32px;font-weight:900;line-height:1}
     .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
-    .sep2{border:none;border-top:2px solid #000;margin:4px 0;width:100%}
-    .section{padding:4px 2px}
-    .field{font-size:11px;margin-bottom:2px}
-    .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
-    .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
-    .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
-    .item-nome{flex:1;font-weight:700;font-size:11px}
-    .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
-    .totals{padding:5px 2px}
-    .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
-    .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
-    .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
-  </style></head><body>
-  <div class="header">
-    <div class="num">${p.codigo||'#'+p.id}</div>
-    <div class="loja">HORTIFRUTI</div>
-  </div>
-  <hr class="sep">
-  <div class="section">
-    <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
-    <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
-    <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
-    <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-    ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
-    ${p.cliente_complemento?`<div class="field"><span class="label">Complemento: </span>${p.cliente_complemento}</div>`:''}
-    <div class="field"><span class="label">Status: </span>${p.status||'Pendente'}</div>
-  </div>
-  <hr class="sep">
-  ${its}
-  <div class="totals">
-    <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
-    <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
-    <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
-  </div>
-  ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Observação: </span>${p.observacoes}</div></div>`:''}
-  <div style="background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:6px;font-size:14px;font-weight:900;letter-spacing:1px">
-    ${p.status==='Pendente'?'⏳ PIX — AGUARDANDO PGTO':'✓ PGTO: PAGO / NA ENTREGA'}
-  </div>
-  <div class="footer">Seu pedido foi preparado com cuidado!</div>
-  <script>window.onload=function(){window.print();}<\/script>
-  </body></html>`;
-  const blob=new Blob([html],{type:'text/html'});
+    .info-block{padding:5px 3px 3px}
+    .ir{font-size:11px;margin-bottom:3px;line-height:1.4}
+    .lbl{font-weight:400}
+    .val{font-weight:900}
+    .item-row{display:flex;align-items:flex-start;gap:2px;padding:3px 0;border-bottom:1px dotted #aaa}
+    .chk{font-size:11px;flex-shrink:0;font-weight:900;min-width:18px}
+    .in{flex:1;font-weight:900;font-size:11px}
+    .iv{font-weight:900;font-size:11px;white-space:nowrap;min-width:55px;text-align:right}
+    .totals{padding:4px 3px}
+    .tr{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
+    .tl{font-weight:400}
+    .tv{font-weight:900}
+    .tr.main .tl,.tr.main .tv{font-weight:900;font-size:12px}
+    .pgto{background:#000;color:#fff;text-align:center;padding:7px 4px;margin:5px 0;font-size:13px;font-weight:900;letter-spacing:.5px}
+    .obs{padding:3px 3px 5px;font-size:11px}
+    .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000}</style></head><body>
+    <div class="dt">${_dt}</div>
+    <div class="header"><div class="num">${p.codigo||'#'+p.id}</div></div>
+    <hr class="sep">
+    <div class="info-block">
+      <div class="ir"><span class="lbl">NOME: </span><span class="val">${p.cliente_nome}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${p.cliente_contato||'—'}</span></div>
+      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
+      <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
+      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
+    </div>
+    <hr class="sep">
+    ${_its}
+    <hr class="sep">
+    <div class="totals">
+      <div class="tr"><span class="tl">TOTAL DOS ITENS:</span><span class="tv">R$ ${fp(_sub)}</span></div>
+      <div class="tr"><span class="tl">TOTAL DE ENTREGA:</span><span class="tv">${_taxa}</span></div>
+      <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
+    </div>
+    <div class="pgto">${_pago}</div>
+    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
+    <hr class="sep">
+    <div class="footer">Seu pedido foi preparado com cuidado!</div>
+    <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`;
+  const blob=new Blob([_html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.target='_blank';a.rel='noopener';
   document.body.appendChild(a);a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
 }
 
 async function alterarStatus(id,status){
