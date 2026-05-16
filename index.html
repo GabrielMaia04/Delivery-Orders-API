@@ -623,10 +623,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div id="ap-entregas" class="apage">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
       <span style="font-size:17px;font-weight:800">Entregas</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-o btn-sm" onclick="renderEntregas()">↻ Atualizar</button>
-        <button class="btn btn-o btn-sm" onclick="imprimirEntregas()">🖨 Imprimir lista</button>
-      </div>
+      <button class="btn btn-o btn-sm" onclick="renderEntregas()">↻ Atualizar</button>
     </div>
     <!-- Filtro de data de entrega -->
     <div class="acard-sm" style="margin-bottom:12px">
@@ -2073,19 +2070,7 @@ function imprimirEntregas(){
   if(!data){toast('Selecione uma data primeiro.','err');return}
   const label=fdLabel(data)||fd(data);
   const pedidos=window._entCache||[];
-  // Monta HTML térmico dos pedidos
-  const pedLines=pedidos.map(p=>{
-    const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-    const its=(p.itens_pedido||[]).map(it=>`<div class="row"><span>${it.quantidade}x ${it.nome_produto}</span><span>${it.quantidade}</span></div>`).join('');
-    return`<div style="margin-bottom:6px">
-      <div class="b">${p.cliente_nome}</div>
-      ${p.cliente_contato?`<div class="sm">${p.cliente_contato}</div>`:''}
-      ${end?`<div class="sm">${end}</div>`:''}
-      <div class="sm">${p.entrega==='Entrega'?'Entrega':'Retirada'} · ${p.pagamento} · R$ ${fp(p.total)}</div>
-      ${p.observacoes?`<div class="sm">Obs: ${p.observacoes}</div>`:''}
-      ${its}
-    </div><hr class="sep">`;
-  }).join('');
+  if(!pedidos.length){toast('Sem produtos no consolidado.','err');return}
   // Monta consolidado
   const mapa={};
   pedidos.forEach(p=>(p.itens_pedido||[]).forEach(it=>{
@@ -2097,35 +2082,32 @@ function imprimirEntregas(){
     const n=it.peso?parseFloat(it.peso.replace(/[^0-9.]/g,'')):null;
     const u=it.peso?it.peso.replace(/[0-9. ]/g,'').toLowerCase():'';
     let kg='';if(n&&u==='g')kg=' / '+(n*it.qty/1000).toFixed(2)+'kg';else if(n&&u==='kg')kg=' / '+(n*it.qty).toFixed(2)+'kg';
-    return`<div class="row"><span>${it.nome}</span><span>${it.qty}un${kg}</span></div>`;
+    return`<div class="row"><span>${it.nome}</span><span class="qty">${it.qty}un${kg}</span></div>`;
   }).join('');
+  const total=Object.values(mapa).reduce((s,it)=>s+it.qty,0);
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <style>@page{size:80mm auto;margin:0}
+  <style>
+    @page{size:80mm auto;margin:0}
     *{box-sizing:border-box;margin:0;padding:0}
     html{width:80mm}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:500;color:#000;line-height:1.5;width:72mm;margin:0 auto;padding:3mm 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{html,body{height:auto!important;overflow:visible!important}
-    *{-webkit-font-smoothing:none!important;font-smooth:never!important}}
-    .c{text-align:center}
-    .b{font-weight:700}
-    .title{font-size:13px;font-weight:700;text-align:center;margin:2px 0}
-    .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
-    .sep2{border:none;border-top:2px solid #000;margin:5px 0;width:100%}
-    .row{display:flex;justify-content:space-between;gap:4px;font-size:11px;padding:1px 0}
-    .row span:first-child{flex:1;word-break:break-word}
-    .row span:last-child{white-space:nowrap;font-weight:700;text-align:right;min-width:60px}
-    .total-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:3px 0}
-    .info{font-size:10px;line-height:1.5;margin:3px 0}
-    .sm{font-size:10px;color:#333}
-    button,select{display:none!important}</style></head><body>
-  <div class="title">ENTREGAS</div>
-  <div class="c sm">${label}</div>
-  <div class="c sm">${pedidos.length} pedido(s)</div>
-  <hr class="sep2">
-  <div class="b" style="margin-bottom:4px">PEDIDOS</div>
-  ${pedLines}
-  <div class="b" style="margin:4px 0">CONSOLIDADO</div>
+    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#000;width:76mm;margin:0 auto;padding:3mm 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
+    .header{background:#000;color:#fff;text-align:center;padding:6px 4px;margin-bottom:4px}
+    .header .title{font-size:14px;font-weight:900;letter-spacing:1px}
+    .header .sub{font-size:10px;opacity:.7;margin-top:2px}
+    .sep{border:none;border-top:1px dashed #000;margin:4px 0;width:100%}
+    .sep2{border:none;border-top:2px solid #000;margin:4px 0;width:100%}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:4px 2px;border-bottom:1px dotted #ccc;font-size:12px}
+    .row span:first-child{flex:1;font-weight:600}
+    .qty{font-weight:900;color:#000;white-space:nowrap}
+    .footer{display:flex;justify-content:space-between;padding:5px 2px;font-size:12px;font-weight:700;border-top:2px solid #000;margin-top:3px}
+  </style></head><body>
+  <div class="header">
+    <div class="title">CONSOLIDADO</div>
+    <div class="sub">${label} · ${pedidos.length} pedido(s)</div>
+  </div>
   ${consLines}
+  <div class="footer"><span>TOTAL GERAL</span><span>${total} un</span></div>
   <script>window.onload=function(){window.print();}<\/script>
   </body></html>`;
   const blob=new Blob([html],{type:'text/html'});
@@ -2133,7 +2115,7 @@ function imprimirEntregas(){
   const a=document.createElement('a');
   a.href=url;a.target='_blank';a.rel='noopener';
   document.body.appendChild(a);a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
 }
 
 /* RELATORIO */
