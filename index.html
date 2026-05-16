@@ -252,9 +252,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .prod-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:7px}
 .prod-row:last-child{border-bottom:none}
 .date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.pag{display:flex;gap:5px;padding:10px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
-.pag-btn{min-width:30px;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font)}
-.pag-btn.active{background:var(--green);border-color:var(--green);color:#fff}
+/* ── PAGAMENTO CHECKOUT ── */
+.pag-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pag-opt{padding:12px 8px;border-radius:12px;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font);width:100%}
+.pag-opt .pag-ico{font-size:22px;display:block;margin-bottom:4px}
+.pag-opt .pag-lbl{font-size:12px;font-weight:700;color:var(--text)}
+.pag-opt .pag-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.pag-opt.active{border-color:var(--green);background:var(--green-light)}
+.pag-opt.active .pag-lbl{color:var(--green-bright)}
+.metodos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.met-btn{flex:1;min-width:80px;padding:9px 6px;border-radius:10px;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;font-size:12px;font-weight:700;font-family:var(--font);color:var(--text);transition:all .15s}
+.met-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green-bright)}
+.troco-box{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-top:8px}
+.troco-btns{display:flex;gap:8px;margin-top:8px}
 /* ── CALENDAR PICKER ── */
 .cal-trigger{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;font-family:var(--font);text-align:left;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .cal-trigger:hover{border-color:var(--green)}
@@ -457,7 +467,49 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
         <div id="co-taxa" class="taxa-badge">Taxa de entrega: R$ 2,50</div>
       </div>
-      <div class="field"><label>Pagamento</label><select id="co-pag"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartao">Cartao</option></select></div>
+      <!-- PAGAMENTO -->
+      <div class="field">
+        <label>Pagamento</label>
+        <div class="pag-toggle">
+          <button type="button" class="pag-opt active" id="co-pag-agora" onclick="setPagMomento('agora')">
+            <span class="pag-ico">📱</span>
+            <div class="pag-lbl">Pagar agora</div>
+            <div class="pag-sub">Via Pix</div>
+          </button>
+          <button type="button" class="pag-opt" id="co-pag-entrega" onclick="setPagMomento('entrega')">
+            <span class="pag-ico">🚚</span>
+            <div class="pag-lbl">Pagar na entrega</div>
+            <div class="pag-sub">Cartão ou dinheiro</div>
+          </button>
+        </div>
+        <!-- Pix (pagar agora) -->
+        <div id="co-pag-pix-box">
+          <div class="metodos">
+            <button type="button" class="met-btn active" id="met-pix">Pix</button>
+          </div>
+        </div>
+        <!-- Métodos na entrega -->
+        <div id="co-pag-entr-box" class="hidden">
+          <div class="metodos">
+            <button type="button" class="met-btn active" id="met-cartao" onclick="setMetodo('Cartao')">Cartão</button>
+            <button type="button" class="met-btn" id="met-dinheiro" onclick="setMetodo('Dinheiro')">Dinheiro</button>
+          </div>
+          <!-- Troco (só dinheiro) -->
+          <div id="co-troco-box" class="troco-box hidden">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px">Vai precisar de troco?</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Informe o valor que vai pagar. Deve ser maior que o total do pedido.</div>
+            <input id="co-troco-val" type="number" step="0.01" placeholder="Ex: 100,00" style="width:100%" oninput="validarTroco()">
+            <div id="co-troco-erro" style="font-size:11px;color:var(--red);margin-top:4px;display:none"></div>
+            <div class="troco-btns">
+              <button type="button" class="btn btn-g btn-sm" style="flex:1" onclick="confirmarTroco()">Confirmar</button>
+              <button type="button" class="btn btn-o btn-sm" style="flex:1" onclick="semTroco()">Não preciso de troco!</button>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="co-pag">
+        <input type="hidden" id="co-troco">
+        <input type="hidden" id="co-pag-momento" value="agora">
+      </div>
       <div class="field"><label>Observacoes</label><textarea id="co-obs" placeholder="Alguma observacao..."></textarea></div>
       <div class="resumo-box">
         <div class="resumo-itens" id="co-resumo"></div>
@@ -1455,6 +1507,9 @@ function abrirCo(){
   document.getElementById('co-data').value='';
   const cob=document.getElementById('co-data-btn');
   cob.textContent='Selecionar data de entrega';cob.classList.remove('selected');
+  // Reset pagamento
+  setPagMomento('agora');
+  document.getElementById('co-pag').value='Pix';
   // Pre-preenche CEP e endereco se o cliente ja salvou
   if(perfil?.cep){
     document.getElementById('co-cep').value=perfil.cep;
@@ -1523,32 +1578,88 @@ function abrirWhatsApp(texto){
   const url='https://wa.me/'+WHATSAPP_NUM+'?text='+encodeURIComponent(texto);
   window.open(url,'_blank');
 }
+/* ── PAGAMENTO CHECKOUT ── */
+let _metodoEntrega='Cartao';
+function setPagMomento(m){
+  document.getElementById('co-pag-momento').value=m;
+  document.getElementById('co-pag-agora').classList.toggle('active',m==='agora');
+  document.getElementById('co-pag-entrega').classList.toggle('active',m==='entrega');
+  document.getElementById('co-pag-pix-box').classList.toggle('hidden',m!=='agora');
+  document.getElementById('co-pag-entr-box').classList.toggle('hidden',m!=='entrega');
+  if(m==='agora'){
+    document.getElementById('co-pag').value='Pix';
+    document.getElementById('co-troco-box').classList.add('hidden');
+  }else{
+    _metodoEntrega='Cartao';
+    document.getElementById('met-cartao').classList.add('active');
+    document.getElementById('met-dinheiro').classList.remove('active');
+    document.getElementById('co-pag').value='Cartao';
+    document.getElementById('co-troco-box').classList.add('hidden');
+  }
+}
+function setMetodo(m){
+  _metodoEntrega=m;
+  document.getElementById('met-cartao').classList.toggle('active',m==='Cartao');
+  document.getElementById('met-dinheiro').classList.toggle('active',m==='Dinheiro');
+  document.getElementById('co-pag').value=m;
+  document.getElementById('co-troco-box').classList.toggle('hidden',m!=='Dinheiro');
+  document.getElementById('co-troco').value='';
+  document.getElementById('co-troco-val').value='';
+  document.getElementById('co-troco-erro').style.display='none';
+}
+function validarTroco(){
+  const val=parseFloat(document.getElementById('co-troco-val').value)||0;
+  const total=parseFloat((document.getElementById('co-total').textContent||'0').replace(/[^0-9,]/g,'').replace(',','.'))||0;
+  const err=document.getElementById('co-troco-erro');
+  if(val>0&&val<=total){err.textContent='O troco deve ser maior que R$ '+fp(total);err.style.display='block';}
+  else{err.style.display='none';}
+}
+function confirmarTroco(){
+  const val=parseFloat(document.getElementById('co-troco-val').value)||0;
+  const total=parseFloat((document.getElementById('co-total').textContent||'0').replace(/[^0-9,]/g,'').replace(',','.'))||0;
+  if(val<=total){validarTroco();return}
+  document.getElementById('co-troco').value=val.toFixed(2);
+  document.getElementById('co-troco-box').classList.add('hidden');
+  toast('Troco para R$ '+fp(val)+' confirmado!','ok');
+}
+function semTroco(){
+  document.getElementById('co-troco').value='sem troco';
+  document.getElementById('co-troco-box').classList.add('hidden');
+  toast('Sem troco!','ok');
+}
+
 async function enviarPedido(){
   const nome=document.getElementById('co-nome').value.trim();
   const tel=document.getElementById('co-tel').value.trim();
   const end=document.getElementById('co-end').value.trim();
   const pag=document.getElementById('co-pag').value;
+  const momento=document.getElementById('co-pag-momento').value;
+  const troco=document.getElementById('co-troco').value;
+  const comp=document.getElementById('co-comp').value.trim();
   const erros=[];
   if(!nome) erros.push('Nome');
   if(!tel) erros.push('Contato');
   if(!end) erros.push('Endereco');
   if(!pag) erros.push('Forma de pagamento');
+  // Validar troco se dinheiro
+  if(pag==='Dinheiro'&&!troco){popAlert('💵','Troco obrigatório','Informe o valor para troco ou clique em "Não preciso de troco!"');return}
   if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
   if(!document.getElementById('co-data').value){popAlert('📅','Data obrigatória','Selecione uma data de entrega.');return}
   if(!cart.itens.length){toast('Carrinho vazio.','err');return}
   const btn=document.getElementById('co-btn');
   btn.disabled=true;btn.textContent='Enviando...';
 
-  // Monta o texto e abre WhatsApp ANTES do await (evita bloqueio do navegador)
+  // Status automático: Pix = Pendente, entrega = Em preparo
+  const statusAuto=momento==='agora'?'Pendente':'Em preparo';
+
   const itensCopy=[...cart.itens];
+  const pagLabel=pag+(troco&&troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(troco))+')':(troco==='sem troco'?' (sem troco)':''));
   const txtWpp=buildTextoWhatsApp({
-    nome,
-    contato:tel,
-    endereco:end,
+    nome,contato:tel,endereco:end,
     numero:document.getElementById('co-num').value,
+    complemento:comp,
     data:fd(document.getElementById('co-data').value),
-    entrega:cart.entrega,
-    pagamento:pag,
+    entrega:cart.entrega,pagamento:pagLabel,
     obs:document.getElementById('co-obs').value
   },itensCopy);
   abrirWhatsApp(txtWpp);
@@ -1563,8 +1674,10 @@ async function enviarPedido(){
       cliente_contato:tel,
       cliente_endereco:end,
       cliente_numero:document.getElementById('co-num').value,
+      cliente_complemento:comp||null,
       entrega:cart.entrega,taxa_entrega:taxa,
-      pagamento:pag,
+      pagamento:pagLabel,
+      status:statusAuto,
       observacoes:document.getElementById('co-obs').value,
       subtotal:sub,total:sub+taxa,
       data_pedido:dataPed
@@ -2032,6 +2145,7 @@ function imprimirTodosPedidos(){
         <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
         <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
         ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
+        ${p.cliente_complemento?`<div class="field"><span class="label">Complemento: </span>${p.cliente_complemento}</div>`:''}
       </div>
       <hr class="sep">
       ${its}
@@ -2041,6 +2155,9 @@ function imprimirTodosPedidos(){
         <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
       </div>
       ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Obs: </span>${p.observacoes}</div></div>`:''}
+      <div style="background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:6px;font-size:14px;font-weight:900;letter-spacing:1px">
+        ${p.status==='Pendente'?'⏳ PIX — AGUARDANDO PGTO':'✓ PGTO: PAGO / NA ENTREGA'}
+      </div>
       <div class="footer">Seu pedido foi preparado com cuidado!</div>
       <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
       </body></html>`;
@@ -2297,6 +2414,7 @@ function imprimirPedido(id){
     <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
     <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
     ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
+    ${p.cliente_complemento?`<div class="field"><span class="label">Complemento: </span>${p.cliente_complemento}</div>`:''}
     <div class="field"><span class="label">Status: </span>${p.status||'Pendente'}</div>
   </div>
   <hr class="sep">
@@ -2307,6 +2425,9 @@ function imprimirPedido(id){
     <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
   </div>
   ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Observação: </span>${p.observacoes}</div></div>`:''}
+  <div style="background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:6px;font-size:14px;font-weight:900;letter-spacing:1px">
+    ${p.status==='Pendente'?'⏳ PIX — AGUARDANDO PGTO':'✓ PGTO: PAGO / NA ENTREGA'}
+  </div>
   <div class="footer">Seu pedido foi preparado com cuidado!</div>
   <script>window.onload=function(){window.print();}<\/script>
   </body></html>`;
