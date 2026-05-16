@@ -647,7 +647,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <!-- Pedidos + Consolidado -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="acard-sm">
-        <div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do dia</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
+          <button class="btn btn-o btn-sm" onclick="imprimirTodosPedidos()">🖨 Imprimir todos</button>
+        </div>
         <div class="r-scroll-box"><div id="e-pedidos"></div></div>
       </div>
       <div class="acard-sm">
@@ -731,7 +734,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <button class="cal-nav-btn" onclick="navCal(1)">&#8594;</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
-    <div class="cal-hint"><span class="cal-dot"></span> Terças e Sábados disponíveis</div>
+    <div class="cal-hint" id="cal-hint"><span class="cal-dot"></span> Terças e Sábados disponíveis</div>
   </div>
 </div>
 
@@ -1669,6 +1672,10 @@ function abrirCal(ctx){
   const hoje=new Date();hoje.setHours(0,0,0,0);
   calAno=hoje.getFullYear();calMes=hoje.getMonth();
   renderCal();
+  const hint=document.getElementById('cal-hint');
+  if(hint)hint.innerHTML=calCtx==='entr'
+    ?'<span class="cal-dot"></span> Todas as datas de entrega'
+    :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
   document.getElementById('cal-ov').classList.add('open');
 }function fecharCal(){document.getElementById('cal-ov').classList.remove('open')}
 function navCal(d){
@@ -1688,20 +1695,19 @@ function renderCal(){
 
   // Datas disponíveis: lógica diferente por contexto
   // Cliente/admin novo pedido: começa amanhã, 3 próximas
-  // Entregas admin: inclui hoje se for dia de entrega + próximas 3
+  // Entregas admin: todas as Terças e Sábados (passadas e futuras)
   const proximas=new Set();
   const d=new Date(hoje);
   if(calCtx==='entr'){
-    // Para entregas: começa hoje
-    if(d.getDay()===2||d.getDay()===6)proximas.add(toISO(d));
-    d.setDate(d.getDate()+1);
+    // Para entregas: todas as terças e sábados do mês visível
+    // Marca como disponível — calculado por dia no loop abaixo
   }else{
-    // Para clientes: começa amanhã
+    // Para clientes: começa amanhã, 3 próximas
     d.setDate(d.getDate()+1);
-  }
-  while(proximas.size<3){
-    if(d.getDay()===2||d.getDay()===6)proximas.add(toISO(d));
-    d.setDate(d.getDate()+1);
+    while(proximas.size<3){
+      if(d.getDay()===2||d.getDay()===6)proximas.add(toISO(d));
+      d.setDate(d.getDate()+1);
+    }
   }
 
   const primeiroDia=new Date(calAno,calMes,1).getDay();
@@ -1714,7 +1720,9 @@ function renderCal(){
     const dt=new Date(calAno,calMes,dia);
     const iso=toISO(dt);
     const isHoje=dt.getTime()===hoje.getTime();
-    const isDisponivel=proximas.has(iso);
+    const dow=dt.getDay();
+    // Para entregas: todos os Ter/Sáb são clicáveis. Para clientes: só proximas
+    const isDisponivel=calCtx==='entr'?(dow===2||dow===6):proximas.has(iso);
     const isSelected=iso===selVal;
 
     let cls='cal-day';
@@ -1921,6 +1929,7 @@ async function renderEntregas(){
   const {data:peds}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('data_pedido',data).order('created_at',{ascending:true});
   const lista=(peds||[]).filter(p=>p.status!=='Cancelado'&&p.status!=='Entregue');
   window._entCache=lista;
+  document.getElementById('e-tot-ped').textContent=lista.length;
   document.getElementById('e-tot-entr').textContent=lista.filter(p=>p.entrega==='Entrega').length;
   document.getElementById('e-tot-ret').textContent=lista.filter(p=>p.entrega!=='Entrega').length;
   if(!lista.length){
@@ -1979,6 +1988,79 @@ async function alterarStatusE(id,status){
   await sb.from('pedidos').update({status}).eq('id',id);
   if(status==='Cancelado'||status==='Entregue') renderEntregas();
 }
+function imprimirTodosPedidos(){
+  const lista=window._entCache||[];
+  if(!lista.length){toast('Nenhum pedido para imprimir.','err');return}
+  const data=document.getElementById('e-data').value;
+  const label=fdLabel(data)||fd(data);
+  const cupons=lista.map(p=>{
+    const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
+    const its=(p.itens_pedido||[]).map(it=>{
+      const nome=it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'');
+      return`<div class="item-row"><span class="check">[ ]</span><span class="item-nome">${nome}</span><span class="item-val">R$ ${fp(it.subtotal)}</span></div>`;
+    }).join('');
+    const subTotal=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
+    const taxa=p.taxa_entrega>0?`R$ ${fp(p.taxa_entrega)}`:'R$ 0,00';
+    return`<div class="cupom">
+      <div class="header">
+        <div class="num">${p.codigo||'#'+p.id}</div>
+        <div class="loja">HORTIFRUTI</div>
+      </div>
+      <hr class="sep">
+      <div class="section">
+        <div class="field"><span class="label">Nome: </span>${p.cliente_nome}</div>
+        <div class="field"><span class="label">Telefone: </span>${p.cliente_contato||'—'}</div>
+        <div class="field"><span class="label">Pagamento: </span>${p.pagamento}</div>
+        <div class="field"><span class="label">Entrega: </span>${fdLabel(p.data_pedido)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+        ${end?`<div class="field"><span class="label">Endereço: </span>${end}</div>`:''}
+        <div class="field"><span class="label">Status: </span>${p.status||'Pendente'}</div>
+      </div>
+      <hr class="sep">
+      ${its}
+      <div class="totals">
+        <div class="tot-row"><span>TOTAL DOS ITENS:</span><span>R$ ${fp(subTotal)}</span></div>
+        <div class="tot-row"><span>TOTAL DE ENTREGA:</span><span>${taxa}</span></div>
+        <div class="tot-row main"><span>TOTAL DO PEDIDO:</span><span>R$ ${fp(p.total)}</span></div>
+      </div>
+      ${p.observacoes?`<hr class="sep"><div class="section"><div class="field"><span class="label">Observação: </span>${p.observacoes}</div></div>`:''}
+      <div class="footer">Seu pedido foi preparado com cuidado!</div>
+    </div>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <style>
+    @page{size:80mm auto;margin:0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{width:80mm}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#000;width:76mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{html,body{height:auto!important;overflow:visible!important}*{-webkit-font-smoothing:none!important}}
+    .cupom{padding:0;page-break-after:always}
+    .cupom:last-child{page-break-after:avoid}
+    .header{background:#000;color:#fff;text-align:center;padding:7px 4px}
+    .header .num{font-size:30px;font-weight:900;letter-spacing:1px;line-height:1.1}
+    .header .loja{font-size:10px;letter-spacing:3px;opacity:.7;margin-top:2px}
+    .sep{border:none;border-top:1px dashed #000;margin:5px 0;width:100%}
+    .section{padding:4px 2px}
+    .field{font-size:11px;margin-bottom:2px}
+    .label{font-weight:700;text-transform:uppercase;font-size:10.5px}
+    .item-row{display:flex;align-items:flex-start;gap:3px;padding:3px 2px;border-bottom:1px dotted #bbb}
+    .check{font-size:11px;flex-shrink:0;min-width:16px;font-weight:700}
+    .item-nome{flex:1;font-weight:700;font-size:11px}
+    .item-val{white-space:nowrap;font-weight:700;font-size:11px;min-width:52px;text-align:right}
+    .totals{padding:5px 2px}
+    .tot-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
+    .tot-row.main{font-size:13px;font-weight:900;padding-top:4px;border-top:2px solid #000;margin-top:3px}
+    .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000;margin-top:4px}
+  </style></head><body>${cupons}
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
+}
+
 function imprimirEntregas(){
   const data=document.getElementById('e-data').value;
   if(!data){toast('Selecione uma data primeiro.','err');return}
