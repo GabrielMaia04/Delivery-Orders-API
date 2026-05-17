@@ -2642,7 +2642,7 @@ function aObj(){
   const sub=aCalcSub(),taxa=ap.entrega==='Entrega'?TAXA:0;
   return{cliente_nome:document.getElementById('a-nome').value.trim(),cliente_contato:document.getElementById('a-tel').value,cliente_endereco:document.getElementById('a-end').value,cliente_numero:document.getElementById('a-num').value,data_pedido:document.getElementById('a-data').value,entrega:ap.entrega,taxa_entrega:taxa,pagamento:document.getElementById('a-pag').value,observacoes:document.getElementById('a-obs').value,subtotal:sub,total:sub+taxa,_itens:ap.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return{quantidade:it.qty,nome_produto:p?.nome||'',peso_produto:p?.peso||'',subtotal:(p?.preco||0)*it.qty}})};
 }
-function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
+function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><scr'+'ipt>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
 function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}navigator.clipboard.writeText(bldTxt(o)).then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar.','err'))}
 
 /* ── ENTREGAS ── */
@@ -2775,7 +2775,7 @@ function imprimirTodosPedidos(){
     <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
-    <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
+    <scr'+'ipt>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/scr'+'ipt>
     </body></html>`;
       const blob=new Blob([_html],{type:'text/html'});
       const url=URL.createObjectURL(blob);
@@ -2830,7 +2830,7 @@ function imprimirEntregas(){
   </div>
   ${consLines}
   <div class="footer"><span>TOTAL GERAL</span><span>${total} un</span></div>
-  <script>window.onload=function(){window.print();}<\/script>
+  <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
   </body></html>`;
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -3043,7 +3043,7 @@ function imprimirPedido(id){
     <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
-    <script>window.onload=function(){window.print();}<\/script>
+    <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
     </body></html>`;
   const blob=new Blob([_html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
