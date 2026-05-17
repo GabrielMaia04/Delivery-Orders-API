@@ -586,7 +586,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
               <button class="dtog active" id="a-de" onclick="setAE('Entrega')">Entrega</button>
               <button class="dtog" id="a-dr" onclick="setAE('Retirada')">Retirada</button>
             </div>
-            <div id="a-taxa" class="taxa-badge">Taxa: R$ 2,50</div>
+            <div id="a-taxa" class="taxa-badge">Taxa: R$ <span id="a-taxa-val">2,50</span></div>
           </div>
           <div class="field"><label>Pagamento</label><select id="a-pag"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartao">Cartao</option></select></div>
           <div class="field"><label>Observacoes</label><textarea id="a-obs" placeholder="Alguma observacao..."></textarea></div>
@@ -613,7 +613,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
             <div class="srow"><span>Itens</span><span id="a-si">0</span></div>
             <div class="srow"><span>Peso</span><span id="a-sp">0,00 kg</span></div>
             <div class="srow"><span>Subtotal</span><span id="a-ss">R$ 0,00</span></div>
-            <div class="srow taxa hidden" id="a-tr"><span>Entrega</span><span>+ R$ 2,50</span></div>
+            <div class="srow taxa hidden" id="a-tr"><span>Entrega</span><span id="a-tr-val">+ R$ 2,50</span></div>
             <div class="stotal"><span class="stotal-l">Total</span><span class="stotal-v" id="a-st">R$ 0,00</span></div>
           </div>
           <div class="abtns">
@@ -1934,6 +1934,8 @@ async function showAdmin(){
   document.getElementById('a-data').value='';
   const adb=document.getElementById('a-data-btn');
   if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
+  const tv=document.getElementById('a-taxa-val');if(tv)tv.textContent=fp(TAXA);
+  const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(TAXA);
   if(!fCatAdm&&cats.length)fCatAdm=cats[0].id;
   renderACpills();renderAGrid();renderCatSel();
   showAEl('ap-pedido');
@@ -1962,6 +1964,8 @@ function setAE(v){
   document.getElementById('a-dr').classList.toggle('active',v==='Retirada');
   document.getElementById('a-taxa').style.display=v==='Entrega'?'inline-flex':'none';
   document.getElementById('a-tr').classList.toggle('hidden',v!=='Entrega');
+  const tv=document.getElementById('a-taxa-val');if(tv)tv.textContent=fp(TAXA);
+  const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(TAXA);
   renderAOrder();
 }
 function renderACpills(){
@@ -2944,10 +2948,20 @@ function renderUPagina(q){
           <span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span>
           ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Você</span>'}
           <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">▾ Pedidos (${peds.length})</button>
+          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-dados-${u.id}')">👤 Info</button>
         </div>
       </div>
       <div id="u-inf-${u.id}" style="display:none;margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;max-height:160px;overflow-y:auto">
         ${pedRows}
+      </div>
+      <div id="u-dados-${u.id}" style="display:none;margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="color:var(--text3)">Nome: </span><strong>${u.nome}</strong></div>
+          <div><span style="color:var(--text3)">Telefone: </span><strong>${u.telefone||'—'}</strong></div>
+          <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
+          <div><span style="color:var(--text3)">Perfil: </span><strong>${u.role==='admin'?'Admin':'Cliente'}</strong></div>
+          ${u.endereco?`<div style="grid-column:1/-1"><span style="color:var(--text3)">Endereço: </span><strong>${u.endereco}${u.endereco_num?', '+u.endereco_num:''} — ${u.bairro||''} — ${u.cidade||''}</strong></div>`:''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -3115,6 +3129,9 @@ async function salvarTaxa(){
   const {error}=await sb.from('configuracoes').upsert({chave:'taxa_entrega',valor:String(val)},{onConflict:'chave'});
   if(error){toast('Erro: '+error.message,'err');return}
   TAXA=val;
+  const tv=document.getElementById('a-taxa-val');if(tv)tv.textContent=fp(val);
+  const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(val);
+  const ctv=document.getElementById('co-taxa-val');if(ctv)ctv.textContent=fp(val);
   const msg=document.getElementById('dash-taxa-msg');
   msg.textContent='✓ Taxa atualizada para R$ '+fp(val);
   setTimeout(()=>msg.textContent='',3000);
