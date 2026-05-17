@@ -1701,15 +1701,26 @@ async function aplicarCupom(){
   const nome=document.getElementById('cart-cupom-input').value.trim().toUpperCase();
   const msg=document.getElementById('cart-cupom-msg');
   if(!nome){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Digite o código do cupom.';return}
+  if(!perfil){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Faça login para usar cupons.';return}
+
+  // Busca o cupom
   const {data:c,error}=await sb.from('cupons').select('*').eq('nome',nome).eq('ativo',true).single();
   if(error||!c){
     msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Cupom inválido ou não encontrado.';return;
   }
   if(c.usos_restantes<=0){
     msg.style.display='block';msg.style.color='var(--orange)';
-    msg.textContent='Esse cupom fez sucesso e já esgotou!';
-    return;
+    msg.textContent='Esse cupom fez sucesso e já esgotou!';return;
   }
+
+  // Verifica se o cliente já usou este cupom antes
+  const {data:jaUsou}=await sb.from('pedidos')
+    .select('id').eq('user_id',perfil.id).eq('cupom',nome).limit(1);
+  if(jaUsou&&jaUsou.length>0){
+    msg.style.display='block';msg.style.color='var(--red)';
+    msg.textContent='Você já utilizou o cupom '+nome+' anteriormente.';return;
+  }
+
   cupomAtivo=c;
   msg.style.display='block';msg.style.color='var(--green-bright)';
   msg.textContent='✓ Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';
