@@ -704,16 +704,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <!-- USUARIOS -->
-  <div id="ap-usuarios" class="apage">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-      <div id="u-loading" class="loading"><div class="spin"></div> Carregando...</div>
-      <div class="twrap"><table class="tbl hidden" id="u-table"><thead><tr><th>Nome</th><th>Perfil</th><th>Cadastro</th><th>Acao</th></tr></thead><tbody id="u-tbody"></tbody></table></div>
-    </div>
-  </div>
-
-  <!-- DASHBOARD -->
+  <!-- PAINEL (Dashboard + Usuários) -->
   <div id="ap-dashboard" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Dashboard</div>
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Painel</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
       <!-- Taxa de entrega -->
       <div class="acard-sm">
@@ -739,7 +732,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <!-- Mensagem WhatsApp -->
       <div class="acard-sm" style="grid-column:1/-1">
         <div style="font-size:13px;font-weight:800;margin-bottom:4px">&#128172; Mensagem de Pedido (WhatsApp)</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis disponíveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
         <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
         <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
         <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
@@ -754,6 +747,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
         <button class="btn btn-g" style="width:100%;margin-bottom:10px" onclick="criarCupom()">+ Criar cupom</button>
         <div id="dash-cup-list"></div>
+      </div>
+      <!-- Usuários -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128100; Usuários</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="u-busca" type="text" placeholder="Buscar por nome, e-mail ou telefone..." style="flex:1" oninput="filtrarUsers()">
+        </div>
+        <div id="u-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+        <div id="u-lista"></div>
+        <div class="pag" id="u-pag" style="margin-top:8px"></div>
       </div>
     </div>
   </div>
@@ -1926,8 +1929,7 @@ async function showAdmin(){
     +'<button class="atab" onclick="showAPage(\'relatorio\',this)">Relatorio</button>'
     +'<button class="atab" onclick="showAPage(\'entregas\',this)">Entregas</button>'
     +'<button class="atab" onclick="showAPage(\'produtos\',this)">Produtos</button>'
-    +'<button class="atab" onclick="showAPage(\'usuarios\',this)">Usuarios</button>'
-    +'<button class="atab" onclick="showAPage(\'dashboard\',this)">Dashboard</button>'
+    +'<button class="atab" onclick="showAPage(\'dashboard\',this)">Painel</button>'
     +'<button class="atab" onclick="voltarLoja()">Loja</button>';
   document.getElementById('a-data').value='';
   const adb=document.getElementById('a-data-btn');
@@ -1944,7 +1946,6 @@ function showAPage(p,tab){
   showAEl('ap-'+p);
   if(p==='relatorio')renderRel();
   if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills()}
-  if(p==='usuarios')renderUsers();
   if(p==='entregas'){
     document.getElementById('e-data').value='';
     const eb=document.getElementById('e-data-btn');
@@ -2891,67 +2892,78 @@ function renderProdList(){
 }
 
 /* USUARIOS */
+let uCache=[],uPage=1;
+const U_PER=15;
+
 async function renderUsers(){
-  document.getElementById('u-loading').classList.remove('hidden');
-  document.getElementById('u-table').classList.add('hidden');
+  const loading=document.getElementById('u-loading');
+  loading.classList.remove('hidden');
   const {data}=await sb.from('profiles').select('*').order('created_at');
-  const {data:authData}=await sb.from('profiles').select('id,email_auth:id').limit(1); // just to check
-  document.getElementById('u-loading').classList.add('hidden');
-  document.getElementById('u-table').classList.remove('hidden');
-  const tbody=document.getElementById('u-tbody');
-  const lista=data||[];
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum usuario.</td></tr>';return}
-  // Busca pedidos de todos os usuarios de uma vez
   const {data:todospeds}=await sb.from('pedidos').select('id,user_id,codigo,data_pedido,total').order('created_at',{ascending:false});
+  loading.classList.add('hidden');
   const pedsByUser={};
   (todospeds||[]).forEach(p=>{
     if(!pedsByUser[p.user_id])pedsByUser[p.user_id]=[];
     pedsByUser[p.user_id].push(p);
   });
-  tbody.innerHTML=lista.map(u=>{
-    const peds=pedsByUser[u.id]||[];
+  uCache=(data||[]).map(u=>({...u,_peds:pedsByUser[u.id]||[]}));
+  uPage=1;
+  renderUPagina();
+}
+
+function filtrarUsers(){
+  const q=(document.getElementById('u-busca')?.value||'').toLowerCase();
+  uPage=1;renderUPagina(q);
+}
+
+function renderUPagina(q){
+  if(q===undefined)q=(document.getElementById('u-busca')?.value||'').toLowerCase();
+  const filtrado=q
+    ?uCache.filter(u=>u.nome.toLowerCase().includes(q)||(u.telefone||'').includes(q)||(u.email||'').toLowerCase().includes(q))
+    :uCache;
+  const total=Math.ceil(filtrado.length/U_PER);
+  const pagina=filtrado.slice((uPage-1)*U_PER,uPage*U_PER);
+  const el=document.getElementById('u-lista');
+  if(!pagina.length){el.innerHTML='<div class="empty">Nenhum usuário encontrado.</div>';document.getElementById('u-pag').innerHTML='';return}
+  el.innerHTML=pagina.map(u=>{
+    const peds=u._peds||[];
     const pedRows=peds.length
-      ?peds.map(p=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      ?peds.map(p=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
           <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${p.codigo||'#'+p.id}</span>
           <span style="font-size:11px;color:var(--text3)">${fd(p.data_pedido)}</span>
           <span style="font-size:11px;font-weight:700;color:var(--green-bright)">R$ ${fp(p.total)}</span>
         </div>`).join('')
-      :'<div style="font-size:11px;color:var(--text3);padding:6px 0">Nenhum pedido.</div>';
-    return `<tr>
-      <td style="font-weight:700;font-size:12px">${u.nome}</td>
-      <td><span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span></td>
-      <td style="color:var(--text2);font-size:11px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
-      <td style="display:flex;gap:5px;flex-wrap:wrap">
-        ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Voce</span>'}
-        <button class="btn btn-o btn-sm" onclick="toggleUserInfo('${u.id}')">&#9660; Info</button>
-      </td>
-    </tr>
-    <tr id="uinfo-${u.id}" style="display:none">
-      <td colspan="4" style="padding:0">
-        <div style="padding:12px 14px;background:var(--bg3);border-bottom:1px solid var(--border)">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">&#128203; Pedidos (${peds.length})</div>
-              <div style="max-height:160px;overflow-y:auto">${pedRows}</div>
-            </div>
-            <div>
-              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">&#128100; Dados</div>
-              <div style="font-size:12px;display:flex;flex-direction:column;gap:5px">
-                <div><span style="color:var(--text3)">Nome: </span><strong>${u.nome}</strong></div>
-                <div><span style="color:var(--text3)">Contato: </span><strong>${u.telefone||'—'}</strong></div>
-                <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
-                ${u.endereco?`<div><span style="color:var(--text3)">End: </span><strong>${u.endereco}, ${u.endereco_num||''} - ${u.bairro||''}</strong></div>`:''}
-              </div>
-            </div>
-          </div>
+      :'<div style="font-size:11px;color:var(--text3);padding:4px 0">Nenhum pedido.</div>';
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:13px">${u.nome}</div>
+          <div style="font-size:11px;color:var(--text2)">${u.telefone||'—'} · ${new Date(u.created_at).toLocaleDateString('pt-BR')}</div>
         </div>
-      </td>
-    </tr>`;
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span>
+          ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Você</span>'}
+          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">▾ Pedidos (${peds.length})</button>
+        </div>
+      </div>
+      <div id="u-inf-${u.id}" style="display:none;margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;max-height:160px;overflow-y:auto">
+        ${pedRows}
+      </div>
+    </div>`;
   }).join('');
+  // Paginação
+  const pag=document.getElementById('u-pag');
+  if(total<=1){pag.innerHTML='';return}
+  let html='<button class="pag-btn"'+(uPage===1?' disabled':'')+` onclick="uPage--;renderUPagina()">← Ant</button>`;
+  for(let i=1;i<=total;i++)html+=`<button class="pag-btn${i===uPage?' active':''}" onclick="uPage=${i};renderUPagina()">${i}</button>`;
+  html+=`<button class="pag-btn"${uPage===total?' disabled':''} onclick="uPage++;renderUPagina()">Prox →</button>`;
+  html+=`<span style="padding:4px 8px;font-size:11px;color:var(--text3)">${filtrado.length} usuário(s)</span>`;
+  pag.innerHTML=html;
 }
-function toggleUserInfo(uid){
-  const row=document.getElementById('uinfo-'+uid);
-  if(row)row.style.display=row.style.display==='none'?'':'none';
+
+function toggleUserInfo(id){
+  const el=document.getElementById(id);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
 }
 async function togRole(uid,cur){
   const nr=cur==='admin'?'cliente':'admin';
@@ -3057,7 +3069,6 @@ function updMobileCartBar(){
 let cupons=[];
 async function initDashboard(){
   document.getElementById('dash-taxa').value=TAXA.toFixed(2);
-  // Carrega configs salvas
   try{
     const {data}=await sb.from('configuracoes').select('chave,valor');
     (data||[]).forEach(r=>{
@@ -3067,6 +3078,7 @@ async function initDashboard(){
     });
   }catch(e){}
   await carregarCupons();
+  await renderUsers();
 }
 async function salvarRedes(){
   const wpp=document.getElementById('dash-wpp').value.trim().replace(/\D/g,'');
