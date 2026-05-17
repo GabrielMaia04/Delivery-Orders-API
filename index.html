@@ -2776,7 +2776,7 @@ function imprimirTodosPedidos(){
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     <scr'+'ipt>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/scr'+'ipt>
-    </body></html>`;
+    <\/body><\/html>`;
       const blob=new Blob([_html],{type:'text/html'});
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
@@ -2831,7 +2831,7 @@ function imprimirEntregas(){
   ${consLines}
   <div class="footer"><span>TOTAL GERAL</span><span>${total} un</span></div>
   <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
-  </body></html>`;
+  <\/body><\/html>`;
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -2956,7 +2956,7 @@ function exportRel(){
     .then(()=>toast('Relatório copiado!','ok'))
     .catch(()=>{
       const w=window.open('','_blank','width=600,height=700');
-      if(w){w.document.write('<html><body style="font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap">'+txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</body></html>');w.document.close();}
+      if(w){w.document.write('<html><body style="font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap">'+txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'<\/body><\/html>');w.document.close();}
     });
 }
 
@@ -3044,7 +3044,7 @@ function imprimirPedido(id){
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
-    </body></html>`;
+    <\/body><\/html>`;
   const blob=new Blob([_html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -4228,171 +4228,6 @@ async function carregarConfiguracoes(){
 }
 
 window.addEventListener('load',()=>init());
-</script>
-</body>
-</html>
-async function init(){
-  await _origInit.call(this);
-  // After catalog loaded, render new UI
-  renderHomeDestaque();
-  renderHomeKits();
-  renderCatTabs();
-  updCartBadgeNew();
-}
-
-// Override loadProfile to update new UI
-const _origLoadProfile = loadProfile;
-async function loadProfile(uid,user){
-  await _origLoadProfile(uid,user);
-  // Update topbar
-  const btn=document.getElementById('tb-login-btn');
-  if(btn&&perfil)btn.textContent='👤 '+perfil.nome.split(' ')[0];
-  const ddAdmin=document.getElementById('dd-admin');
-  if(ddAdmin)ddAdmin.style.display=perfil?.role==='admin'?'flex':'none';
-}
-
-// Override fazerLogout
-const _origLogout=fazerLogout;
-async function fazerLogout(){
-  await _origLogout();
-  const btn=document.getElementById('tb-login-btn');
-  if(btn)btn.textContent='👤';
-  navTo('home');
-}
-
-// Override mostrarSucesso to nav home
-function mostrarSucesso(){
-  document.getElementById('success-ov')?.classList.add('open');
-}
-
-// Preenche endereço do perfil no checkout automaticamente
-const _origAbrirCo=abrirCo;
-function abrirCo(){
-  // Reset step
-  coStep=1;
-  renderDateChips();
-  renderCheckoutStep();
-  // Pre-fill address
-  if(perfil?.cep){
-    document.getElementById('co-cep').value=perfil.cep||'';
-    document.getElementById('co-rua').value=perfil.endereco||'';
-    document.getElementById('co-bairro').value=perfil.bairro||'';
-    document.getElementById('co-cidade').value=perfil.cidade||'';
-    document.getElementById('co-num').value=perfil.endereco_num||'';
-    document.getElementById('co-end').value=(perfil.endereco||'')+', '+(perfil.bairro||'')+' - '+(perfil.cidade||'');
-    document.getElementById('co-end-fields')?.classList.remove('hidden');
-  }
-  if(perfil?.nome)document.getElementById('co-nome').value=perfil.nome||'';
-  if(perfil?.telefone)document.getElementById('co-tel').value=perfil.telefone||'';
-  const tv=document.getElementById('co-taxa-val');if(tv)tv.textContent=fp(TAXA);
-  // Reset pagamento
-  selecionarPag('pix');
-  updCoResumo();
-}
-
-// Override irCheckout to use new flow
-function irCheckout(){
-  if(!cart.itens.length){toast('Carrinho vazio!','err');return}
-  if(!perfil){window._coPend=true;abrirAuth();return}
-  navTo('checkout');
-}
-
-// Auth callback for pending checkout
-const _origFazerLogin=fazerLogin;
-async function fazerLogin(){
-  await _origFazerLogin.call(this);
-  if(perfil&&window._coPend){window._coPend=false;navTo('checkout');}
-}
-
-// Dashboard footer config
-async function carregarConfiguracoes(){
-  try{
-    const {data}=await sb.from('configuracoes').select('chave,valor');
-    (data||[]).forEach(r=>{
-      if(r.chave==='whatsapp_num'){
-        window._WHATSAPP_NUM_DB=r.valor;
-        const el=document.getElementById('footer-wpp');
-        if(el)el.textContent='('+r.valor.slice(2,4)+') '+r.valor.slice(4);
-      }
-      if(r.chave==='footer_horario'){const el=document.getElementById('footer-horario');if(el)el.textContent=r.valor;}
-      if(r.chave==='footer_regiao'){const el=document.getElementById('footer-regiao');if(el)el.textContent=r.valor;}
-      if(r.chave==='footer_pgto'){const el=document.getElementById('footer-pgto');if(el)el.textContent=r.valor;}
-      if(r.chave==='taxa_entrega')TAXA=parseFloat(r.valor)||TAXA;
-      if(r.chave==='instagram_url')INSTAGRAM_URL=r.valor;
-      if(r.chave==='wpp_msg_template')WPP_MSG_TEMPLATE=r.valor;
-    });
-  }catch(e){}
-}
-
-// Salvar configs rodapé
-async function salvarRodape(){
-  const campos=[
-    {chave:'footer_horario',val:document.getElementById('dash-footer-horario')?.value||''},
-    {chave:'footer_regiao',val:document.getElementById('dash-footer-regiao')?.value||''},
-    {chave:'footer_pgto',val:document.getElementById('dash-footer-pgto')?.value||''},
-  ].filter(c=>c.val);
-  if(!campos.length)return;
-  await sb.from('configuracoes').upsert(campos.map(c=>({chave:c.chave,valor:c.val})),{onConflict:'chave'});
-  toast('Rodapé atualizado!','ok');
-}
-
-// Destaque toggle
-async function togDestaque(id){
-  const p=prods.find(x=>x.id===id);if(!p)return;
-  const novo=!p.destaque;
-  await sb.from('produtos').update({destaque:novo}).eq('id',id);
-  p.destaque=novo;
-  renderProdList();renderHomeDestaque();
-  toast(novo?'Produto em destaque!':'Removido do destaque','ok');
-}
-
-// editProd: add benefits and destaque fields
-const _origAbrirEditProd=abrirEditProd;
-function abrirEditProd(id){
-  _origAbrirEditProd(id);
-  const p=prods.find(x=>x.id===id);if(!p)return;
-  const bf=document.getElementById('edit-p-benefits');
-  if(bf)bf.value=(p.benefits||p.beneficios||'');
-  const df=document.getElementById('edit-p-destaque');
-  if(df)df.value=p.destaque?'true':'false';
-}
-const _origSalvarEditProd=salvarEditProd;
-async function salvarEditProd(){
-  await _origSalvarEditProd();
-  const id=parseInt(document.getElementById('edit-prod-id').value);
-  const p=prods.find(x=>x.id===id);if(!p)return;
-  const benefits=document.getElementById('edit-p-benefits')?.value||'';
-  const destaque=document.getElementById('edit-p-destaque')?.value==='true';
-  await sb.from('produtos').update({benefits,destaque}).eq('id',id);
-  p.benefits=benefits;p.destaque=destaque;
-  renderHomeDestaque();
-}
-
-// Render prod list with destaque toggle
-const _origRenderProdList=renderProdList;
-function renderProdList(){
-  _origRenderProdList();
-  // Add destaque buttons
-  const items=document.querySelectorAll('.prod-row');
-  // Already handled in the row — skip, togDestaque called from button
-}
-
-// Override renderProdList to include destaque button
-(function(){
-  const orig=renderProdList.bind({});
-  // We'll add destaque in the prod row HTML by overriding the function
-  window._pllLoaded=true;
-})();
-
-// Call carregarConfiguracoes on load
-const _origInitOuter=init;
-window.addEventListener('DOMContentLoaded',()=>{
-  carregarConfiguracoes();
-});
-
-// init() called via DOMContentLoaded
-window.addEventListener("load", ()=>init());
-
 </script>
 </body>
 </html>
