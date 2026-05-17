@@ -714,21 +714,41 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <!-- DASHBOARD -->
   <div id="ap-dashboard" class="apage">
     <div style="font-size:17px;font-weight:800;margin-bottom:16px">Dashboard</div>
-    <div class="pg-grid">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+      <!-- Taxa de entrega -->
       <div class="acard-sm">
         <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128661; Taxa de Entrega</div>
         <div class="field"><label>Valor atual (R$)</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="dash-taxa" type="number" step="0.01" min="0" placeholder="2.50" style="flex:1">
-          </div>
+          <input id="dash-taxa" type="number" step="0.01" min="0" placeholder="2.50">
         </div>
         <button class="btn btn-g" style="width:100%" onclick="salvarTaxa()">Aplicar taxa</button>
         <div id="dash-taxa-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
+      <!-- Redes Sociais -->
       <div class="acard-sm">
+        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128242; Redes Sociais</div>
+        <div class="field"><label>Número WhatsApp (com DDI+DDD)</label>
+          <input id="dash-wpp" type="text" placeholder="5521976081746">
+        </div>
+        <div class="field"><label>Link Instagram</label>
+          <input id="dash-ig" type="text" placeholder="https://instagram.com/seuperfil">
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarRedes()">Salvar redes</button>
+        <div id="dash-redes-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Mensagem WhatsApp -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">&#128172; Mensagem de Pedido (WhatsApp)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis disponíveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code></div>
+        <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
+        <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
+        <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Cupons de Desconto -->
+      <div class="acard-sm" style="grid-column:1/-1">
         <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#127973; Cupons de Desconto</div>
-        <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="Ex: BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
-        <div class="row2">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
           <div class="field"><label>Desconto (%)</label><input id="dash-cup-pct" type="number" min="1" max="100" placeholder="10"></div>
           <div class="field"><label>Quantidade</label><input id="dash-cup-qty" type="number" min="1" placeholder="50"></div>
         </div>
@@ -951,6 +971,8 @@ const IMG_BASE='https://zfvppqpufiuwuvveounk.supabase.co/storage/v1/object/publi
 const WHATSAPP_NUM='5521976081746'; // Troque pelo seu numero com DDI+DDD
 const SB_KEY='sb_publishable_PeyAs38u9Ji4FGzshDNdmw_Wvl5czAS';
 let TAXA=2.50;
+let INSTAGRAM_URL='https://instagram.com';
+let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
 const sb=supabase.createClient(SB_URL,SB_KEY);
 
@@ -1600,6 +1622,9 @@ function irCheckout(){
   abrirCo();
 }
 function abrirCo(){
+  // Esconde barra mobile
+  const bar=document.getElementById('mobile-cart-bar');
+  if(bar)bar.classList.remove('show');
   document.getElementById('co-nome').value=perfil?.nome||'';
   document.getElementById('co-data').value='';
   const cob=document.getElementById('co-data-btn');
@@ -1631,7 +1656,10 @@ function abrirCo(){
   updCoResumo();
   document.getElementById('co-ov').classList.add('open');
 }
-function fecharCo(){document.getElementById('co-ov').classList.remove('open')}
+function fecharCo(){
+  document.getElementById('co-ov').classList.remove('open');
+  updMobileCartBar();
+}
 function fecharCoOv(e){if(e.target===document.getElementById('co-ov'))fecharCo()}
 function setCoE(v){
   cart.entrega=v;
@@ -1697,27 +1725,47 @@ function updCoResumo(){
 
 function buildTextoWhatsApp(pedido,itens){
   const end=[pedido.endereco,pedido.numero].filter(Boolean).join(', no ');
+  const sub=itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+  const taxa=pedido.entrega==='Entrega'?TAXA:0;
+  const desc=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+  const totalFinal=sub+taxa-desc;
+  const itensTxt=itens.map(it=>{
+    const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
+    return it.qty+'x '+p.nome+(p.peso?' ('+p.peso+')':'')+' = R$ '+fp(p.preco*it.qty);
+  }).filter(Boolean).join('\n');
+  // Se tiver template personalizado, usa ele
+  if(WPP_MSG_TEMPLATE){
+    return WPP_MSG_TEMPLATE
+      .replace(/{nome}/g,pedido.nome||'')
+      .replace(/{contato}/g,pedido.contato||'')
+      .replace(/{itens}/g,itensTxt)
+      .replace(/{total}/g,'R$ '+fp(totalFinal))
+      .replace(/{subtotal}/g,'R$ '+fp(sub))
+      .replace(/{taxa}/g,'R$ '+fp(taxa))
+      .replace(/{entrega}/g,pedido.entrega||'')
+      .replace(/{pagamento}/g,pedido.pagamento||'')
+      .replace(/{data}/g,pedido.data||'')
+      .replace(/{endereco}/g,end||pedido.endereco||'')
+      .replace(/{obs}/g,pedido.obs||'');
+  }
+  // Template padrão
   const linhas=[
     '=== PEDIDO ===',
     'Cliente: '+pedido.nome,
     pedido.contato?'Contato: '+pedido.contato:'',
     'Entrega prevista: '+pedido.data,
     end?'Endereco: '+end:'',
+    pedido.complemento?'Complemento: '+pedido.complemento:'',
     'Entrega: '+pedido.entrega,
     'Pagamento: '+pedido.pagamento,
     pedido.obs?'Obs: '+pedido.obs:'',
-    '---'
+    '---',
+    itensTxt,
+    '---',
+    pedido.entrega==='Entrega'?'Taxa entrega = R$ '+fp(taxa):'',
+    cupomAtivo?'Desconto cupom '+cupomAtivo.nome+' = - R$ '+fp(desc):'',
+    'TOTAL: R$ '+fp(totalFinal)
   ];
-  itens.forEach(it=>{
-    const p=prods.find(x=>x.id===it.prodId);
-    if(!p)return;
-    linhas.push(it.qty+'x '+p.nome+(p.peso?' ('+p.peso+')':'')+' = R$ '+fp(p.preco*it.qty));
-  });
-  linhas.push('---');
-  if(pedido.entrega==='Entrega') linhas.push('Taxa entrega = R$ 2,50');
-  const sub=itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const taxa=pedido.entrega==='Entrega'?TAXA:0;
-  linhas.push('TOTAL: R$ '+fp(sub+taxa));
   return linhas.filter(Boolean).join('\n');
 }
 
@@ -3008,7 +3056,45 @@ function updMobileCartBar(){
 let cupons=[];
 async function initDashboard(){
   document.getElementById('dash-taxa').value=TAXA.toFixed(2);
+  // Carrega configs salvas
+  try{
+    const {data}=await sb.from('configuracoes').select('chave,valor');
+    (data||[]).forEach(r=>{
+      if(r.chave==='whatsapp_num')document.getElementById('dash-wpp').value=r.valor;
+      if(r.chave==='instagram_url')document.getElementById('dash-ig').value=r.valor;
+      if(r.chave==='wpp_msg_template')document.getElementById('dash-wpp-msg').value=r.valor;
+    });
+  }catch(e){}
   await carregarCupons();
+}
+async function salvarRedes(){
+  const wpp=document.getElementById('dash-wpp').value.trim().replace(/\D/g,'');
+  const ig=document.getElementById('dash-ig').value.trim();
+  const msg=document.getElementById('dash-redes-msg');
+  const upserts=[];
+  if(wpp)upserts.push({chave:'whatsapp_num',valor:wpp});
+  if(ig)upserts.push({chave:'instagram_url',valor:ig});
+  if(!upserts.length){msg.style.color='var(--red)';msg.textContent='Preencha ao menos um campo.';return}
+  const {error}=await sb.from('configuracoes').upsert(upserts,{onConflict:'chave'});
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
+  if(wpp)window._WHATSAPP_NUM_DB=wpp;
+  if(ig)INSTAGRAM_URL=ig;
+  // Atualiza ícones imediatamente
+  const wppBtn=document.querySelector('.dd-icon-btn.wpp');
+  if(wppBtn&&wpp)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${wpp}','_blank')`);
+  const igBtn=document.querySelector('.dd-icon-btn.ig');
+  if(igBtn&&ig)igBtn.setAttribute('onclick',`fecharDropdown();window.open('${ig}','_blank')`);
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Redes sociais atualizadas!';
+  setTimeout(()=>msg.textContent='',3000);
+}
+async function salvarMsgWpp(){
+  const template=document.getElementById('dash-wpp-msg').value.trim();
+  const msg=document.getElementById('dash-msg-msg');
+  const {error}=await sb.from('configuracoes').upsert({chave:'wpp_msg_template',valor:template},{onConflict:'chave'});
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
+  WPP_MSG_TEMPLATE=template;
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Mensagem salva!';
+  setTimeout(()=>msg.textContent='',3000);
 }
 async function salvarTaxa(){
   const val=parseFloat(document.getElementById('dash-taxa').value);
@@ -3023,8 +3109,19 @@ async function salvarTaxa(){
 }
 async function carregarTaxaRemota(){
   try{
-    const {data}=await sb.from('configuracoes').select('valor').eq('chave','taxa_entrega').single();
-    if(data?.valor)TAXA=parseFloat(data.valor)||TAXA;
+    const {data}=await sb.from('configuracoes').select('chave,valor');
+    if(!data)return;
+    data.forEach(r=>{
+      if(r.chave==='taxa_entrega')TAXA=parseFloat(r.valor)||TAXA;
+      if(r.chave==='whatsapp_num')window._WHATSAPP_NUM_DB=r.valor;
+      if(r.chave==='instagram_url')INSTAGRAM_URL=r.valor;
+      if(r.chave==='wpp_msg_template')WPP_MSG_TEMPLATE=r.valor;
+    });
+    // Atualiza ícones com links do banco
+    const wppBtn=document.querySelector('.dd-icon-btn.wpp');
+    if(wppBtn&&window._WHATSAPP_NUM_DB)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${window._WHATSAPP_NUM_DB}','_blank')`);
+    const igBtn=document.querySelector('.dd-icon-btn.ig');
+    if(igBtn&&INSTAGRAM_URL)igBtn.setAttribute('onclick',`fecharDropdown();window.open('${INSTAGRAM_URL}','_blank')`);
   }catch(e){}
 }
 async function carregarCupons(){
