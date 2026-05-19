@@ -10,7 +10,7 @@
 </script>
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-<title>Hortifruti - Pedidos</title>
+<title>Cortadinhos com Carinho</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -364,7 +364,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- LOJA PUBLICA -->
 <div id="screen-shop" class="screen active">
   <div class="topbar">
-    <div class="brand"><div class="logo">&#127807;</div><div class="brand-name">Hortifruti<span>Legumes e Verduras</span></div></div>
+    <div class="brand"><div class="logo">&#127807;</div><div class="brand-name">Cortadinhos com Carinho<span>Praticidade na sua rotina!</span></div></div>
     <div class="topbar-right">
       <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown">
         <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">Conta</button>
@@ -550,7 +550,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
   <nav class="admin-nav">
-    <div class="admin-brand"><div class="admin-logo">&#127807;</div><div class="admin-name">Hortifruti<span id="adm-label">Admin</span></div></div>
+    <div class="admin-brand"><div class="admin-logo">&#127807;</div><div class="admin-name">Cortadinhos com Carinho<span id="adm-label">Admin</span></div></div>
     <div class="admin-tabs" id="adm-tabs"></div>
     <div class="admin-right">
       <button class="icon-btn" onclick="toggleTheme()">&#127769;</button>
@@ -1312,8 +1312,8 @@ function iniciarRealtime(){
       notifNativa(titulo, corpo);
 
       // Atualizar badge na aba do navegador
-      document.title = '(1) Hortifruti - Pedidos';
-      setTimeout(()=>{ document.title = 'Hortifruti - Pedidos'; }, 5000);
+      document.title = '(1) Cortadinhos com Carinho';
+      setTimeout(()=>{ document.title = 'Cortadinhos com Carinho'; }, 5000);
     })
     .subscribe();
 }
@@ -1701,15 +1701,26 @@ async function aplicarCupom(){
   const nome=document.getElementById('cart-cupom-input').value.trim().toUpperCase();
   const msg=document.getElementById('cart-cupom-msg');
   if(!nome){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Digite o código do cupom.';return}
+  if(!perfil){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Faça login para usar cupons.';return}
+
+  // Busca o cupom
   const {data:c,error}=await sb.from('cupons').select('*').eq('nome',nome).eq('ativo',true).single();
   if(error||!c){
     msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Cupom inválido ou não encontrado.';return;
   }
   if(c.usos_restantes<=0){
     msg.style.display='block';msg.style.color='var(--orange)';
-    msg.textContent='Esse cupom fez sucesso e já esgotou!';
-    return;
+    msg.textContent='Esse cupom fez sucesso e já esgotou!';return;
   }
+
+  // Verifica se o cliente já usou este cupom antes
+  const {data:jaUsou}=await sb.from('pedidos')
+    .select('id').eq('user_id',perfil.id).eq('cupom',nome).limit(1);
+  if(jaUsou&&jaUsou.length>0){
+    msg.style.display='block';msg.style.color='var(--red)';
+    msg.textContent='Você já utilizou o cupom '+nome+' anteriormente.';return;
+  }
+
   cupomAtivo=c;
   msg.style.display='block';msg.style.color='var(--green-bright)';
   msg.textContent='✓ Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';
@@ -2378,7 +2389,7 @@ function imprimirTodosPedidos(){
     <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
-    <scr'+'ipt>window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
+    ${'<script>'}window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
     </body></html>`;
       const blob=new Blob([_html],{type:'text/html'});
       const url=URL.createObjectURL(blob);
@@ -2433,7 +2444,7 @@ function imprimirEntregas(){
   </div>
   ${consLines}
   <div class="footer"><span>TOTAL GERAL</span><span>${total} un</span></div>
-  <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
+  ${'<script>'}window.onload=function(){window.print();}<\/script>
   </body></html>`;
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -2646,7 +2657,7 @@ function imprimirPedido(id){
     <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
-    <scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>
+    ${'<script>'}window.onload=function(){window.print();}<\/script>
     </body></html>`;
   const blob=new Blob([_html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
