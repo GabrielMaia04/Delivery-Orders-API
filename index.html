@@ -487,11 +487,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
             <div class="field"><label>Cidade / UF</label><input id="co-cidade" type="text" style="background:var(--bg4)" readonly></div>
           </div>
           <div class="row2">
-            <div class="field"><label>Numero <span style="color:var(--red)">*</span></label><input id="co-num" type="text" placeholder="Ex: 123" required></div>
+            <div class="field"><label>Numero <span style="color:var(--red)">*</span></label><input id="co-num" type="text" placeholder="Ex: 123" required onblur="verificarZonaEntrega()"></div>
             <div class="field"><label>Complemento</label><input id="co-comp" type="text" placeholder="Apto, bloco..."></div>
           </div>
         </div>
         <input id="co-end" type="hidden">
+        <div id="co-zona-info" style="margin-top:8px;display:none"></div>
       </div>
       <!-- LOCAL RETIRADA (só Retirada) -->
       <div id="co-retirada-bloco" class="hidden">
@@ -752,6 +753,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
         <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
+      <!-- Zonas de Entrega -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">&#128205; Zonas de Entrega (por distância)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Configure o endereço da loja e as taxas por distância. O cliente será bloqueado se estiver fora do raio máximo.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="field" style="grid-column:1/-1"><label>Endereço da loja (para calcular distância)</label>
+            <input id="dash-loja-end" type="text" placeholder="Ex: Rua Borda do Mato 53, Grajaú, Rio de Janeiro">
+          </div>
+          <div class="field"><label>Raio máximo de entrega (km)</label>
+            <input id="dash-raio" type="number" step="0.5" min="1" max="50" placeholder="5">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn btn-g" style="width:100%" onclick="salvarConfigLoja()">Salvar endereço</button>
+          </div>
+        </div>
+        <div id="dash-loja-msg" style="font-size:11px;margin-bottom:12px;text-align:center;color:var(--green-bright)"></div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Zonas cadastradas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:6px;margin-bottom:6px">
+          <div><label>Nome da zona</label><input id="z-nome" type="text" placeholder="Ex: Zona 1"></div>
+          <div><label>De (km)</label><input id="z-min" type="number" step="0.5" min="0" value="0"></div>
+          <div><label>Até (km)</label><input id="z-max" type="number" step="0.5" min="0.5" placeholder="5"></div>
+          <div><label>Taxa (R$)</label><input id="z-taxa" type="number" step="0.5" min="0" placeholder="5.00"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-g btn-sm" onclick="addZona()">+ Adicionar</button></div>
+        </div>
+        <div id="dash-zonas-list"></div>
+      </div>
       <!-- Cupons de Desconto -->
       <div class="acard-sm" style="grid-column:1/-1">
         <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#127973; Cupons de Desconto</div>
@@ -989,7 +1016,12 @@ const IMG_BASE='https://zfvppqpufiuwuvveounk.supabase.co/storage/v1/object/publi
 const WHATSAPP_NUM='5521976081746'; // Troque pelo seu numero com DDI+DDD
 const SB_KEY='sb_publishable_PeyAs38u9Ji4FGzshDNdmw_Wvl5czAS';
 let TAXA=2.50;
-let PEDIDO_MIN=0; // Valor minimo para Entrega (0 = sem minimo)
+let PEDIDO_MIN=0;
+let LOJA_LAT=null; // Latitude da loja (configurado no painel)
+let LOJA_LNG=null; // Longitude da loja
+let LOJA_ENDERECO=''; // Endereço da loja para geocoding
+let RAIO_MAX=5; // Raio máximo de entrega em km
+let zonas=[]; // [{id,nome,km_min,km_max,taxa,ativo}]
 let INSTAGRAM_URL='https://instagram.com';
 let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
@@ -1061,6 +1093,8 @@ async function buscarCep(){
     document.getElementById('co-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
     document.getElementById('co-end-fields').classList.remove('hidden');
     document.getElementById('co-num').focus();
+    // Verificar zona de entrega automaticamente após preencher CEP
+    setTimeout(verificarZonaEntrega, 500);
   }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
 }
@@ -1341,8 +1375,176 @@ function pararRealtime(){
   }
 }
 
+
+// ══════════════════════════════════════
+// ZONAS DE ENTREGA POR DISTÂNCIA
+// ══════════════════════════════════════
+
+// Fórmula Haversine — distância em km entre dois pontos lat/lng
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)
+    +Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)
+    *Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Geocodificar endereço via Nominatim (OpenStreetMap) — gratuito, sem API key
+async function geocodificar(endereco){
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(endereco);
+    const r=await fetch(url,{headers:{'Accept-Language':'pt-BR'}});
+    const d=await r.json();
+    if(!d.length)return null;
+    return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+  }catch(e){return null}
+}
+
+// Calcular zona do cliente baseado na distância
+function calcularZona(distKm){
+  if(!zonas.length)return null;
+  const ativos=zonas.filter(z=>z.ativo);
+  return ativos.find(z=>distKm>=z.km_min&&distKm<=z.km_max)||null;
+}
+
+// Carregar zonas do banco
+async function carregarZonas(){
+  const {data}=await sb.from('zonas_entrega').select('*').eq('ativo',true).order('km_max');
+  zonas=data||[];
+}
+
+// Verificar distância e aplicar taxa no checkout
+let _clienteLat=null,_clienteLng=null,_zonaAtiva=null;
+
+async function verificarZonaEntrega(){
+  const el=document.getElementById('co-zona-info');
+  if(!el)return;
+
+  if(!LOJA_LAT||!LOJA_LNG){
+    el.style.display='none';
+    return;
+  }
+  const endCliente=document.getElementById('co-end').value.trim();
+  const numCliente=document.getElementById('co-num').value.trim();
+  if(!endCliente){el.style.display='none';return}
+
+  el.innerHTML='<div style="color:var(--text2);font-size:12px">📍 Calculando distância...</div>';
+  el.style.display='block';
+
+  const endFull=endCliente+(numCliente?', '+numCliente:'')+', Rio de Janeiro';
+  const coords=await geocodificar(endFull);
+  if(!coords){
+    el.innerHTML='<div style="color:var(--orange);font-size:12px">⚠️ Não foi possível calcular a distância. Prossiga normalmente.</div>';
+    _zonaAtiva=null;
+    return;
+  }
+  _clienteLat=coords.lat;_clienteLng=coords.lng;
+  const dist=haversine(LOJA_LAT,LOJA_LNG,coords.lat,coords.lng);
+  const zona=calcularZona(dist);
+
+  if(dist>RAIO_MAX){
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--red-soft);border:1px solid var(--red);color:var(--red);font-size:12px;font-weight:700">'
+      +'🚫 Fora do raio de entrega ('+dist.toFixed(1)+'km). Máximo: '+RAIO_MAX+'km.<br>'
+      +'<span style="font-weight:400">Escolha Retirada ou adicione um endereço mais próximo.</span></div>';
+    _zonaAtiva=null;
+    updCoResumo();
+    return;
+  }
+
+  if(zona){
+    TAXA=zona.taxa;
+    _zonaAtiva=zona;
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px">'
+      +'<div style="font-weight:700;color:var(--green-bright)">✅ '+zona.nome+'</div>'
+      +'<div style="color:var(--text2);margin-top:2px">Distância: '+dist.toFixed(1)+'km · Taxa de entrega: R$ '+fp(zona.taxa)+'</div></div>';
+  }else{
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:700">'
+      +'⚠️ '+dist.toFixed(1)+'km — fora das zonas configuradas. Verifique com o admin.</div>';
+    _zonaAtiva=null;
+  }
+  updCoResumo();
+}
+
+// Salvar endereço da loja
+async function salvarConfigLoja(){
+  const end=document.getElementById('dash-loja-end').value.trim();
+  const raio=parseFloat(document.getElementById('dash-raio').value)||5;
+  const msg=document.getElementById('dash-loja-msg');
+  if(!end){toast('Informe o endereço da loja.','err');return}
+  msg.style.color='var(--text2)';msg.textContent='Geocodificando endereço...';
+  const coords=await geocodificar(end);
+  if(!coords){msg.style.color='var(--red)';msg.textContent='Endereço não encontrado. Tente ser mais específico.';return}
+  LOJA_LAT=coords.lat;LOJA_LNG=coords.lng;RAIO_MAX=raio;
+  // Salvar no banco
+  await Promise.all([
+    sb.from('configuracoes').upsert({chave:'loja_lat',valor:String(coords.lat)},{onConflict:'chave'}),
+    sb.from('configuracoes').upsert({chave:'loja_lng',valor:String(coords.lng)},{onConflict:'chave'}),
+    sb.from('configuracoes').upsert({chave:'loja_endereco',valor:end},{onConflict:'chave'}),
+    sb.from('configuracoes').upsert({chave:'raio_max',valor:String(raio)},{onConflict:'chave'}),
+  ]);
+  msg.style.color='var(--green-bright)';
+  msg.textContent='✅ Loja localizada! Lat: '+coords.lat.toFixed(4)+', Lng: '+coords.lng.toFixed(4)+' · Raio: '+raio+'km';
+  toast('Endereço da loja salvo!','ok');
+}
+
+// Carregar config da loja
+async function carregarConfigLoja(configs){
+  configs.forEach(r=>{
+    if(r.chave==='loja_lat')LOJA_LAT=parseFloat(r.valor)||null;
+    if(r.chave==='loja_lng')LOJA_LNG=parseFloat(r.valor)||null;
+    if(r.chave==='loja_endereco')LOJA_ENDERECO=r.valor||'';
+    if(r.chave==='raio_max')RAIO_MAX=parseFloat(r.valor)||5;
+  });
+}
+
+// Gerenciar zonas no painel
+async function renderZonas(){
+  const el=document.getElementById('dash-zonas-list');if(!el)return;
+  if(!zonas.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhuma zona cadastrada.</div>';return}
+  el.innerHTML=zonas.map(z=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">'
+    +'<div style="flex:1">'
+    +'<div style="font-size:12px;font-weight:700">'+z.nome+'</div>'
+    +'<div style="font-size:11px;color:var(--text2)">'+z.km_min+' – '+z.km_max+' km · R$ '+fp(z.taxa)+'</div>'
+    +'</div>'
+    +'<span class="badge '+(z.ativo?'bg-green':'bg-gray')+'">'+(z.ativo?'Ativa':'Off')+'</span>'
+    +'<input type="number" step="0.5" value="'+z.taxa+'" style="width:70px;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" onchange="editarZonaTaxa('+z.id+',this.value)">'
+    +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">×</button>'
+    +'</div>').join('');
+}
+
+async function addZona(){
+  const nome=document.getElementById('z-nome').value.trim();
+  const min=parseFloat(document.getElementById('z-min').value)||0;
+  const max=parseFloat(document.getElementById('z-max').value);
+  const taxa=parseFloat(document.getElementById('z-taxa').value);
+  if(!nome||isNaN(max)||isNaN(taxa)){toast('Preencha todos os campos.','err');return}
+  if(max<=min){toast('KM máximo deve ser maior que o mínimo.','err');return}
+  const {data,error}=await sb.from('zonas_entrega').insert({nome,km_min:min,km_max:max,taxa,ativo:true}).select().single();
+  if(error){toast('Erro: '+error.message,'err');return}
+  zonas.push(data);
+  ['z-nome','z-max','z-taxa'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('z-min').value='0';
+  renderZonas();toast('Zona adicionada!','ok');
+}
+
+async function editarZonaTaxa(id,val){
+  const taxa=parseFloat(val);if(isNaN(taxa)||taxa<0)return;
+  await sb.from('zonas_entrega').update({taxa}).eq('id',id);
+  const z=zonas.find(x=>x.id===id);if(z)z.taxa=taxa;
+  toast('Taxa atualizada!','ok');
+}
+
+async function rmZona(id){
+  if(!confirm('Remover zona?'))return;
+  await sb.from('zonas_entrega').delete().eq('id',id);
+  zonas=zonas.filter(z=>z.id!==id);renderZonas();
+}
+
 async function init(){
   carregarTaxaRemota();
+  carregarZonas();
   // r-data intencionalmente em branco — relatório começa sem filtro de data
 
   // Verifica sessao primeiro, depois carrega catalogo
@@ -1752,6 +1954,9 @@ function abrirCo(){
 }
 function fecharCo(){
   document.getElementById('co-ov').classList.remove('open');
+  _clienteLat=null;_clienteLng=null;_zonaAtiva=null;
+  const zi=document.getElementById('co-zona-info');
+  if(zi)zi.style.display='none';
   updMobileCartBar();
 }
 function fecharCoOv(e){if(e.target===document.getElementById('co-ov'))fecharCo()}
@@ -1962,6 +2167,17 @@ async function enviarPedido(){
   if(!pag) erros.push('Forma de pagamento');
   if(pag==='Dinheiro'&&!troco){popAlert('💵','Troco obrigatório','Informe o valor para troco ou clique em "Não preciso de troco!"');return}
   if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
+  // Bloquear se fora do raio de entrega
+  if(!isRetirada&&LOJA_LAT&&_clienteLat===null&&document.getElementById('co-end').value){
+    await verificarZonaEntrega();
+  }
+  if(!isRetirada&&LOJA_LAT&&_clienteLat!==null){
+    const dist=haversine(LOJA_LAT,LOJA_LNG,_clienteLat,_clienteLng);
+    if(dist>RAIO_MAX){
+      popAlert('🚫','Fora do raio de entrega','Seu endereço está a '+dist.toFixed(1)+'km da loja. O máximo é '+RAIO_MAX+'km.\n\nEscolha Retirada para continuar.');
+      return;
+    }
+  }
   // Validar pedido minimo (so para Entrega)
   if(!isRetirada&&PEDIDO_MIN>0){
     const subCheck=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
@@ -3213,6 +3429,10 @@ let cupons=[];
 async function initDashboard(){
   document.getElementById('dash-taxa').value=TAXA.toFixed(2);
   document.getElementById('dash-pedmin').value=PEDIDO_MIN>0?PEDIDO_MIN.toFixed(2):'';
+  if(LOJA_ENDERECO)document.getElementById('dash-loja-end').value=LOJA_ENDERECO;
+  document.getElementById('dash-raio').value=RAIO_MAX;
+  await carregarZonas();
+  renderZonas();
   try{
     const {data}=await sb.from('configuracoes').select('chave,valor');
     (data||[]).forEach(r=>{
@@ -3283,6 +3503,7 @@ async function carregarTaxaRemota(){
   try{
     const {data}=await sb.from('configuracoes').select('chave,valor');
     if(!data)return;
+    await carregarConfigLoja(data);
     data.forEach(r=>{
       if(r.chave==='taxa_entrega')TAXA=parseFloat(r.valor)||TAXA;
       if(r.chave==='pedido_minimo')PEDIDO_MIN=parseFloat(r.valor)||0;
