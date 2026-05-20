@@ -404,8 +404,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="drawer-header"><span class="drawer-title">&#128722; Carrinho</span><button class="close-btn" onclick="fecharCart()">&#10005;</button></div>
     <div class="cart-list" id="cart-list"><div class="empty">Carrinho vazio</div></div>
     <div class="cart-footer">
+      <!-- Modalidade no carrinho -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Como vai querer?</div>
+        <div class="dtog-wrap">
+          <button class="dtog active" id="cart-de" onclick="setCartModalidade('Entrega')">&#128665; Entrega</button>
+          <button class="dtog" id="cart-dr" onclick="setCartModalidade('Retirada')">&#127978; Retirada</button>
+        </div>
+      </div>
       <!-- Cupom -->
-      <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
         <input id="cart-cupom-input" type="text" placeholder="Código do cupom" style="flex:1;font-size:13px;padding:8px 12px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
         <button class="btn btn-o btn-sm" style="flex-shrink:0;padding:8px 12px" onclick="aplicarCupom()">Aplicar</button>
       </div>
@@ -415,7 +423,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="sum-row taxa hidden" id="c-taxa"><span>&#128661; Taxa</span><span id="c-taxa-val">+ R$ 2,50</span></div>
       <div class="sum-row hidden" id="c-desc-row" style="color:var(--green-bright)"><span id="c-desc-label">Desconto</span><span id="c-desc-val" style="color:var(--green-bright)">- R$ 0,00</span></div>
       <div class="total-row"><span class="total-label">Total</span><span class="total-val" id="c-total">R$ 0,00</span></div>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px"><button class="big-btn" style="margin-top:0" onclick="irCheckout()">Continuar</button><button style="padding:0 16px;border-radius:12px;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)" onclick="limparCarrinho()">Limpar</button></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px">
+        <button class="big-btn" style="margin-top:0" id="cart-continuar-btn" onclick="irCheckout()">Continuar</button>
+        <button style="padding:0 16px;border-radius:12px;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)" onclick="limparCarrinho()">Limpar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1781,6 +1792,12 @@ function updCartBadge(){
 }
 function abrirCart(){
   renderCart();
+  // Sincronizar toggles com cart.entrega atual
+  const de=document.getElementById('cart-de');
+  const dr=document.getElementById('cart-dr');
+  if(de)de.classList.toggle('active',cart.entrega==='Entrega');
+  if(dr)dr.classList.toggle('active',cart.entrega==='Retirada');
+  atualizarBtnContinuar();
   document.getElementById('cart-ov').classList.add('open');
   setTimeout(()=>document.getElementById('cart-drawer').classList.add('open'),10);
   // Esconde barra mobile para não atrapalhar
@@ -1836,29 +1853,7 @@ function updSums(){
   const taxaVal=document.getElementById('c-taxa-val');
   if(taxaVal)taxaVal.textContent='+ R$ '+fp(taxa);
 
-  // Aviso pedido minimo — mostra no carrinho mas so para info, bloqueio real é no checkout
-  let minMsgEl=document.getElementById('c-min-aviso');
-  if(!minMsgEl){
-    const ref=document.getElementById('c-itens')?.closest('.sum-row');
-    if(ref){
-      minMsgEl=document.createElement('div');
-      minMsgEl.id='c-min-aviso';
-      minMsgEl.style.cssText='font-size:11px;font-weight:600;padding:7px 10px;border-radius:8px;margin-bottom:8px;display:none';
-      ref.parentNode.insertBefore(minMsgEl,ref);
-    }
-  }
-  if(minMsgEl){
-    // Só avisa se PEDIDO_MIN > 0 e subtotal nao atinge (cliente pode escolher retirada no checkout)
-    if(PEDIDO_MIN>0&&sub<PEDIDO_MIN){
-      minMsgEl.style.display='block';
-      minMsgEl.style.background='var(--orange-soft)';
-      minMsgEl.style.color='var(--orange)';
-      minMsgEl.style.border='1px solid var(--orange)';
-      minMsgEl.textContent='ℹ️ Mínimo p/ entrega: R$ '+fp(PEDIDO_MIN)+' — faltam R$ '+fp(PEDIDO_MIN-sub)+'. Retirada sem mínimo!';
-    }else{
-      minMsgEl.style.display='none';
-    }
-  }
+  // Aviso mínimo integrado no botão (via atualizarBtnContinuar)
 
   // Promo row
   let promoRow=document.getElementById('c-promo-row');
@@ -1893,6 +1888,8 @@ function updSums(){
     }
   }
   document.getElementById('c-total').textContent='R$ '+fp(Math.max(0,sub+taxa-descTotal));
+  // Atualiza botao Continuar
+  atualizarBtnContinuar();
 }
 
 
@@ -1903,6 +1900,26 @@ function limparCarrinho(){
     updCartBadge();renderCart();
   });
 }
+
+function setCartModalidade(v){
+  cart.entrega=v;
+  document.getElementById('cart-de').classList.toggle('active',v==='Entrega');
+  document.getElementById('cart-dr').classList.toggle('active',v==='Retirada');
+  updSums();
+  // Atualizar botao Continuar baseado no pedido minimo
+  atualizarBtnContinuar();
+}
+
+function atualizarBtnContinuar(){
+  const btn=document.getElementById('cart-continuar-btn');
+  if(!btn)return;
+  const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+  const bloqueado=cart.entrega==='Entrega'&&PEDIDO_MIN>0&&sub<PEDIDO_MIN;
+  btn.disabled=bloqueado;
+  btn.style.opacity=bloqueado?'0.5':'1';
+  btn.title=bloqueado?('Mínimo para entrega: R$ '+fp(PEDIDO_MIN)):'';
+}
+
 function irCheckout(){
   if(!cart.itens.length){toast('Carrinho vazio!','err');return}
   // Bloquear se entrega e nao atinge pedido minimo
@@ -1926,13 +1943,14 @@ function abrirCo(){
   const cob=document.getElementById('co-data-btn');
   if(cob){cob.textContent='Selecionar data';cob.classList.remove('selected');}
   // Reset modalidade para Entrega
-  cart.entrega='Entrega';
-  document.getElementById('co-de').classList.add('active');
-  document.getElementById('co-dr').classList.remove('active');
+  // Manter a modalidade que o cliente escolheu no carrinho
+  document.getElementById('co-de').classList.toggle('active',cart.entrega==='Entrega');
+  document.getElementById('co-dr').classList.toggle('active',cart.entrega==='Retirada');
   const eb=document.getElementById('co-endereco-bloco');
   const rb=document.getElementById('co-retirada-bloco');
-  if(eb)eb.classList.remove('hidden');
-  if(rb)rb.classList.add('hidden');
+  if(eb)eb.classList.toggle('hidden',cart.entrega==='Retirada');
+  if(rb)rb.classList.toggle('hidden',cart.entrega==='Entrega');
+  if(cart.entrega==='Retirada')renderRetOpts();
   // Atualiza taxa dinamicamente
   const tv=document.getElementById('co-taxa-val');
   if(tv)tv.textContent=fp(TAXA);
