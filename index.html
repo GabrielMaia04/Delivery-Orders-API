@@ -1052,7 +1052,8 @@ let LOJA_LAT=null; // Latitude da loja (configurado no painel)
 let LOJA_LNG=null; // Longitude da loja
 let LOJA_ENDERECO=''; // Endereço da loja para geocoding
 let RAIO_MAX=5; // Raio máximo de entrega em km
-let zonas=[]; // [{id,nome,km_min,km_max,taxa,ativo}]
+let zonas=[];
+const ORS_KEY='eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImVlOTFkOThhOGFkZDRhMmE4Y2MxMTVhYTkxZmQzZjBhIiwiaCI6Im11cm11cjY0In0=';
 let INSTAGRAM_URL='https://instagram.com';
 let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
@@ -1412,6 +1413,33 @@ function pararRealtime(){
 // ══════════════════════════════════════
 
 // Fórmula Haversine — distância em km entre dois pontos lat/lng
+// Distância por ROTA REAL via OpenRouteService
+async function distanciaRota(lat1,lng1,lat2,lng2){
+  try{
+    const url='https://api.openrouteservice.org/v2/directions/driving-car';
+    const body={
+      coordinates:[[lng1,lat1],[lng2,lat2]], // ORS usa [lng,lat]
+      units:'km'
+    };
+    const r=await fetch(url,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':ORS_KEY
+      },
+      body:JSON.stringify(body)
+    });
+    if(!r.ok)throw new Error('ORS status '+r.status);
+    const d=await r.json();
+    const km=d.routes?.[0]?.summary?.distance;
+    if(!km)throw new Error('Sem rota');
+    return km; // distância em km por rota real
+  }catch(e){
+    console.warn('ORS falhou, usando linha reta:',e.message);
+    return haversine(lat1,lng1,lat2,lng2); // fallback
+  }
+}
+
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371;
   const dLat=(lat2-lat1)*Math.PI/180;
@@ -1494,7 +1522,7 @@ async function verificarZonaEntrega(){
     return;
   }
   _clienteLat=coords.lat;_clienteLng=coords.lng;
-  const dist=haversine(LOJA_LAT,LOJA_LNG,coords.lat,coords.lng);
+  const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,coords.lat,coords.lng);
   const zona=calcularZona(dist);
 
   if(dist>RAIO_MAX){
@@ -1578,7 +1606,7 @@ async function testarCEP(){
   if(!result||!result.viacep){res.textContent='CEP não encontrado ou erro de geocoding.';return}
 
   const dv=result.viacep;
-  const dist=LOJA_LAT?haversine(LOJA_LAT,LOJA_LNG,result.lat,result.lng):null;
+  const dist=LOJA_LAT?await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng):null;
   const zona=dist?calcularZona(dist):null;
 
   let html='<div style="line-height:1.8">';
@@ -2018,7 +2046,7 @@ async function calcularFreteCarrinho(){
       return;
     }
 
-    const dist = haversine(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
+    const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
     const distTxt = dist.toFixed(1)+'km';
 
     if(dist > RAIO_MAX){
@@ -2382,7 +2410,7 @@ async function enviarPedido(){
     await verificarZonaEntrega();
   }
   if(!isRetirada&&LOJA_LAT&&_clienteLat!==null){
-    const dist=haversine(LOJA_LAT,LOJA_LNG,_clienteLat,_clienteLng);
+    const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,_clienteLat,_clienteLng);
     if(dist>RAIO_MAX){
       popAlert('🚫','Fora do raio de entrega','Seu endereço está a '+dist.toFixed(1)+'km da loja. O máximo é '+RAIO_MAX+'km.\n\nEscolha Retirada para continuar.');
       return;
