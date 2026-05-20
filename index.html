@@ -1465,20 +1465,29 @@ async function geocodificar(endereco){
 }
 
 async function geocodificarCEP(cep){
-  // Tenta geocodificar pelo CEP primeiro (mais preciso)
   const cepLimpo=cep.replace(/\D/g,'');
   try{
-    // 1. Busca via ViaCEP para obter endereço completo
+    // 1. ViaCEP para obter dados do endereço
     const rv=await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
     const dv=await rv.json();
     if(dv.erro)return null;
-    // 2. Geocodifica com endereço estruturado (mais preciso)
-    const busca=(dv.logradouro?dv.logradouro+', ':'')+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil';
-    const c1=await geocodificar(busca);
-    if(c1)return{...c1,viacep:dv};
-    // 3. Fallback: só cidade+bairro
-    const c2=await geocodificar(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
-    if(c2)return{...c2,viacep:dv};
+
+    // 2. Tentar várias combinações de busca, da mais para a menos específica
+    const tentativas=[];
+    if(dv.logradouro&&dv.bairro)
+      tentativas.push(dv.logradouro+', '+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
+    if(dv.bairro)
+      tentativas.push(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
+    tentativas.push(dv.localidade+', '+dv.uf+', Brasil');
+    // Tenta também direto pelo CEP
+    tentativas.push(cepLimpo+', Brasil');
+
+    for(const busca of tentativas){
+      const c=await geocodificar(busca);
+      if(c)return{...c,viacep:dv};
+      // Pequena pausa para não sobrecarregar o Nominatim
+      await new Promise(r=>setTimeout(r,300));
+    }
     return null;
   }catch(e){return null}
 }
