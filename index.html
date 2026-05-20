@@ -1048,7 +1048,8 @@ const WHATSAPP_NUM='5521976081746'; // Troque pelo seu numero com DDI+DDD
 const SB_KEY='sb_publishable_PeyAs38u9Ji4FGzshDNdmw_Wvl5czAS';
 let TAXA=2.50;
 let PEDIDO_MIN=0;
-let LOJA_LAT=null; // Latitude da loja (configurado no painel)
+let LOJA_LAT=null;
+let _freteCalculado=false; // true somente após calcular CEP no carrinho // Latitude da loja (configurado no painel)
 let LOJA_LNG=null; // Longitude da loja
 let LOJA_ENDERECO=''; // Endereço da loja para geocoding
 let RAIO_MAX=5; // Raio máximo de entrega em km
@@ -1467,25 +1468,37 @@ async function geocodificar(endereco){
 async function geocodificarCEP(cep){
   const cepLimpo=cep.replace(/\D/g,'');
   try{
-    // 1. ViaCEP para obter dados do endereço
+    // 1. ViaCEP para dados do endereço
     const rv=await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
     const dv=await rv.json();
     if(dv.erro)return null;
 
-    // 2. Tentar várias combinações de busca, da mais para a menos específica
+    // 2. Tentar BrasilAPI (tem coordenadas por CEP)
+    try{
+      const rb=await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
+      if(rb.ok){
+        const db=await rb.json();
+        if(db.location?.coordinates?.latitude){
+          return{
+            lat:db.location.coordinates.latitude,
+            lng:db.location.coordinates.longitude,
+            viacep:dv
+          };
+        }
+      }
+    }catch(e2){}
+
+    // 3. Nominatim com múltiplas tentativas
     const tentativas=[];
     if(dv.logradouro&&dv.bairro)
       tentativas.push(dv.logradouro+', '+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
     if(dv.bairro)
       tentativas.push(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
     tentativas.push(dv.localidade+', '+dv.uf+', Brasil');
-    // Tenta também direto pelo CEP
-    tentativas.push(cepLimpo+', Brasil');
 
     for(const busca of tentativas){
       const c=await geocodificar(busca);
       if(c)return{...c,viacep:dv};
-      // Pequena pausa para não sobrecarregar o Nominatim
       await new Promise(r=>setTimeout(r,300));
     }
     return null;
@@ -1957,16 +1970,29 @@ function updSums(){
   // Promo automatica acima de R$200
   const promo=calcPromoAuto(sub);
   const freteGratis=promo?.freteGratis||false;
-  const taxa=cart.entrega==='Entrega'&&!freteGratis?TAXA:0;
+  // Só aplica taxa se frete foi calculado pelo CEP
+  const taxa=cart.entrega==='Entrega'&&!freteGratis&&_freteCalculado?TAXA:0;
   const descCupom=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
   const descPromo=promo?.desconto||0;
   const descTotal=descCupom+descPromo;
   const qtd=cart.itens.reduce((s,i)=>s+i.qty,0);
   document.getElementById('c-itens').textContent=qtd;
   document.getElementById('c-sub').textContent='R$ '+fp(sub);
-  document.getElementById('c-taxa').classList.toggle('hidden',taxa===0);
+  const taxaEl=document.getElementById('c-taxa');
   const taxaVal=document.getElementById('c-taxa-val');
-  if(taxaVal)taxaVal.textContent='+ R$ '+fp(taxa);
+  if(cart.entrega==='Entrega'&&!freteGratis){
+    taxaEl.classList.remove('hidden');
+    if(_freteCalculado){
+      taxaVal.textContent='+ R$ '+fp(taxa);
+      taxaEl.style.color='';
+    }else{
+      taxaVal.textContent='calcule o CEP acima';
+      taxaEl.style.color='var(--text3)';
+    }
+  }else{
+    taxaEl.classList.add('hidden');
+    if(taxaVal)taxaVal.textContent='+ R$ '+fp(TAXA);
+  }
 
   // Aviso mínimo integrado no botão (via atualizarBtnContinuar)
 
@@ -2073,6 +2099,7 @@ async function calcularFreteCarrinho(){
 
     if(zona){
       TAXA = zona.taxa;
+      _freteCalculado=true;
       info.style.color='var(--green-bright)';
       info.innerHTML='✅ <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
         +'<span style="color:var(--text2)">Frete: <strong style="color:var(--green-bright)">R$ '+fp(zona.taxa)+'</strong></span>';
@@ -2100,9 +2127,12 @@ function setCartModalidade(v){
   // Resetar zona se trocou para retirada
   if(v==='Retirada'){
     _cartZona=null;
-    // Restaurar taxa padrão
-    const primeiraZona=zonas[0];
-    if(primeiraZona)TAXA=primeiraZona.taxa;
+    _freteCalculado=false;
+    // Limpar campo CEP
+    const ci=document.getElementById('cart-cep');
+    const fi=document.getElementById('cart-frete-info');
+    if(ci)ci.value='';
+    if(fi){fi.style.display='none';fi.innerHTML='';}
   }
   updSums();
   atualizarBtnContinuar();
