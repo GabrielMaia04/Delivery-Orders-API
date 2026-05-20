@@ -405,13 +405,24 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="cart-list" id="cart-list"><div class="empty">Carrinho vazio</div></div>
     <div class="cart-footer">
       <!-- Modalidade no carrinho -->
-      <div style="margin-bottom:12px">
+      <div style="margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Como vai querer?</div>
         <div class="dtog-wrap">
           <button class="dtog active" id="cart-de" onclick="setCartModalidade('Entrega')">&#128665; Entrega</button>
           <button class="dtog" id="cart-dr" onclick="setCartModalidade('Retirada')">&#127978; Retirada</button>
         </div>
       </div>
+      <!-- CEP para calcular frete (só entrega) -->
+      <div id="cart-cep-bloco" style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">CEP para calcular frete</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="cart-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" oninput="mascaraCep(this)">
+          <button class="btn btn-o btn-sm" style="flex-shrink:0;padding:8px 12px" onclick="calcularFreteCarrinho()">Calcular</button>
+        </div>
+        <div id="cart-frete-info" style="font-size:11px;margin-top:6px;display:none"></div>
+      </div>
+      <!-- Aviso pedido mínimo (só entrega) -->
+      <div id="cart-min-aviso" style="display:none;font-size:12px;font-weight:600;padding:8px 10px;border-radius:8px;margin-bottom:8px;background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange)"></div>
       <!-- Cupom -->
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <input id="cart-cupom-input" type="text" placeholder="Código do cupom" style="flex:1;font-size:13px;padding:8px 12px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
@@ -420,7 +431,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div id="cart-cupom-msg" style="font-size:11px;margin-bottom:8px;display:none"></div>
       <div class="sum-row"><span>Itens</span><span id="c-itens">0</span></div>
       <div class="sum-row"><span>Subtotal</span><span id="c-sub">R$ 0,00</span></div>
-      <div class="sum-row taxa hidden" id="c-taxa"><span>&#128661; Taxa</span><span id="c-taxa-val">+ R$ 2,50</span></div>
+      <div class="sum-row taxa hidden" id="c-taxa"><span>&#128661; Frete</span><span id="c-taxa-val">+ R$ 2,50</span></div>
       <div class="sum-row hidden" id="c-desc-row" style="color:var(--green-bright)"><span id="c-desc-label">Desconto</span><span id="c-desc-val" style="color:var(--green-bright)">- R$ 0,00</span></div>
       <div class="total-row"><span class="total-label">Total</span><span class="total-val" id="c-total">R$ 0,00</span></div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px">
@@ -1797,6 +1808,8 @@ function abrirCart(){
   const dr=document.getElementById('cart-dr');
   if(de)de.classList.toggle('active',cart.entrega==='Entrega');
   if(dr)dr.classList.toggle('active',cart.entrega==='Retirada');
+  const cepBloco=document.getElementById('cart-cep-bloco');
+  if(cepBloco)cepBloco.style.display=cart.entrega==='Entrega'?'block':'none';
   atualizarBtnContinuar();
   document.getElementById('cart-ov').classList.add('open');
   setTimeout(()=>document.getElementById('cart-drawer').classList.add('open'),10);
@@ -1901,12 +1914,103 @@ function limparCarrinho(){
   });
 }
 
+
+// ── CEP E FRETE NO CARRINHO ──
+let _cartZona = null; // zona calculada no carrinho
+
+async function calcularFreteCarrinho(){
+  const cep = document.getElementById('cart-cep').value.replace(/\D/g,'');
+  const info = document.getElementById('cart-frete-info');
+  if(cep.length!==8){
+    info.style.display='block';
+    info.style.color='var(--orange)';
+    info.textContent='Digite um CEP válido (8 dígitos).';
+    return;
+  }
+  info.style.display='block';
+  info.style.color='var(--text2)';
+  info.textContent='🔍 Buscando endereço...';
+
+  try{
+    // Busca endereço pelo CEP
+    const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d = await r.json();
+    if(d.erro){
+      info.style.color='var(--red)';
+      info.textContent='CEP não encontrado.';
+      return;
+    }
+    const endFull = (d.logradouro||d.bairro||'')+', '+(d.localidade||'Rio de Janeiro')+' - '+d.uf;
+    info.textContent='📍 Calculando distância...';
+
+    // Salvar CEP para usar no checkout depois
+    window._cartCepData = d;
+
+    if(!LOJA_LAT || !LOJA_LNG){
+      // Sem raio configurado — usa taxa fixa
+      _cartZona = null;
+      TAXA = zonas.length? zonas[0].taxa : TAXA;
+      info.style.color='var(--text2)';
+      info.textContent='📍 '+d.bairro+', '+(d.localidade||'')+ ' — Taxa: R$ '+fp(TAXA);
+      updSums();
+      return;
+    }
+
+    const coords = await geocodificar(endFull);
+    if(!coords){
+      info.style.color='var(--orange)';
+      info.textContent='⚠️ Não foi possível calcular. Taxa padrão aplicada.';
+      updSums();
+      return;
+    }
+
+    const dist = haversine(LOJA_LAT, LOJA_LNG, coords.lat, coords.lng);
+    window._cartCoords = coords;
+
+    if(dist > RAIO_MAX){
+      _cartZona = null;
+      info.style.display='block';
+      info.style.color='var(--red)';
+      info.textContent='🚫 Fora do raio de entrega ('+dist.toFixed(1)+'km). Máx: '+RAIO_MAX+'km. Use Retirada.';
+      // Desabilitar botao continuar para entrega
+      const btn=document.getElementById('cart-continuar-btn');
+      if(btn&&cart.entrega==='Entrega'){btn.disabled=true;btn.style.opacity='0.5';}
+      return;
+    }
+
+    const zona = calcularZona(dist);
+    _cartZona = zona;
+
+    if(zona){
+      TAXA = zona.taxa;
+      info.style.color='var(--green-bright)';
+      info.textContent='✅ '+d.bairro+' · '+dist.toFixed(1)+'km · '+zona.nome+' — Frete: R$ '+fp(zona.taxa);
+    }else{
+      info.style.color='var(--orange)';
+      info.textContent='⚠️ '+dist.toFixed(1)+'km — fora das zonas. Verifique com o atendimento.';
+    }
+    updSums();
+  }catch(e){
+    info.style.color='var(--red)';
+    info.textContent='Erro ao calcular frete.';
+  }
+}
+
 function setCartModalidade(v){
   cart.entrega=v;
   document.getElementById('cart-de').classList.toggle('active',v==='Entrega');
   document.getElementById('cart-dr').classList.toggle('active',v==='Retirada');
+  // Mostrar/ocultar bloco CEP
+  const cepBloco=document.getElementById('cart-cep-bloco');
+  if(cepBloco)cepBloco.style.display=v==='Entrega'?'block':'none';
+  // Resetar zona se trocou para retirada
+  if(v==='Retirada'){
+    _cartZona=null;
+    // Restaurar taxa padrão
+    const primeiraZona=zonas[0];
+    if(primeiraZona)TAXA=primeiraZona.taxa;
+  }
   updSums();
-  // Atualizar botao Continuar baseado no pedido minimo
   atualizarBtnContinuar();
 }
 
@@ -1914,10 +2018,24 @@ function atualizarBtnContinuar(){
   const btn=document.getElementById('cart-continuar-btn');
   if(!btn)return;
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const bloqueado=cart.entrega==='Entrega'&&PEDIDO_MIN>0&&sub<PEDIDO_MIN;
+  const isEntrega=cart.entrega==='Entrega';
+  // Verificar pedido minimo
+  const abaixoMin=isEntrega&&PEDIDO_MIN>0&&sub<PEDIDO_MIN;
+  // Verificar se CEP foi calculado e está fora do raio
+  const foraRaio=isEntrega&&_cartZona===null&&window._cartCoords!==undefined&&LOJA_LAT;
+  const bloqueado=abaixoMin||foraRaio;
   btn.disabled=bloqueado;
   btn.style.opacity=bloqueado?'0.5':'1';
-  btn.title=bloqueado?('Mínimo para entrega: R$ '+fp(PEDIDO_MIN)):'';
+  // Aviso de pedido mínimo
+  const aviso=document.getElementById('cart-min-aviso');
+  if(aviso){
+    if(abaixoMin&&isEntrega){
+      aviso.style.display='block';
+      aviso.textContent='⚠️ Mínimo para entrega: R$ '+fp(PEDIDO_MIN)+' — faltam R$ '+fp(PEDIDO_MIN-sub)+'. Retirada sem mínimo!';
+    }else{
+      aviso.style.display='none';
+    }
+  }
 }
 
 function irCheckout(){
@@ -1957,8 +2075,25 @@ function abrirCo(){
   // Reset pagamento
   setPagMomento('agora');
   document.getElementById('co-pag').value='Pix';
-  // Pre-preenche CEP e endereco se o cliente ja salvou
-  if(perfil?.cep){
+  // Pre-preenche CEP do carrinho se foi calculado
+  if(window._cartCepData){
+    const d=window._cartCepData;
+    document.getElementById('co-cep').value=document.getElementById('cart-cep').value;
+    document.getElementById('co-rua').value=d.logradouro||'';
+    document.getElementById('co-bairro').value=d.bairro||'';
+    document.getElementById('co-cidade').value=(d.localidade||'')+' / '+(d.uf||'');
+    document.getElementById('co-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
+    document.getElementById('co-end-fields').classList.remove('hidden');
+    if(window._cartCoords){_clienteLat=window._cartCoords.lat;_clienteLng=window._cartCoords.lng;}
+    if(_cartZona){_zonaAtiva=_cartZona;TAXA=_cartZona.taxa;}
+    // Mostra info da zona no checkout
+    setTimeout(()=>{
+      const zi=document.getElementById('co-zona-info');
+      const infoCart=document.getElementById('cart-frete-info');
+      if(zi&&infoCart&&infoCart.textContent)zi.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px;color:var(--green-bright)">'+infoCart.textContent+'</div>';
+      if(zi)zi.style.display='block';
+    },100);
+  } else if(perfil?.cep){
     document.getElementById('co-cep').value=perfil.cep;
     document.getElementById('co-rua').value=perfil.endereco||'';
     document.getElementById('co-bairro').value=perfil.bairro||'';
