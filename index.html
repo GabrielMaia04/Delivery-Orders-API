@@ -341,6 +341,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .qty-big-in{flex:1;font-size:24px;font-weight:800;text-align:center;padding:9px;border-radius:9px}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+/* ── PAGINAÇÃO ── */
+.pag{display:flex;align-items:center;gap:5px;padding:12px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
+.pag-btn{min-width:34px;height:34px;padding:0 10px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;justify-content:center}
+.pag-btn:hover:not(:disabled){background:var(--bg4);border-color:var(--green);color:var(--green-bright)}
+.pag-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 8px rgba(45,140,78,.3)}
+.pag-btn:disabled{opacity:.35;cursor:not-allowed}
 
 .dropdown-wrap{position:relative;display:inline-block}
 .dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.25);min-width:170px;z-index:500;overflow:hidden;padding:6px 0}
@@ -1628,25 +1634,25 @@ function updSums(){
   const taxaVal=document.getElementById('c-taxa-val');
   if(taxaVal)taxaVal.textContent='+ R$ '+fp(taxa);
 
-  // Aviso pedido minimo (so para Entrega)
+  // Aviso pedido minimo — mostra no carrinho mas so para info, bloqueio real é no checkout
   let minMsgEl=document.getElementById('c-min-aviso');
   if(!minMsgEl){
-    const cartFooter=document.querySelector('.cart-footer');
-    if(cartFooter){
+    const ref=document.getElementById('c-itens')?.closest('.sum-row');
+    if(ref){
       minMsgEl=document.createElement('div');
       minMsgEl.id='c-min-aviso';
-      minMsgEl.style.cssText='font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;margin-bottom:8px;display:none';
-      cartFooter.insertBefore(minMsgEl,cartFooter.firstChild);
+      minMsgEl.style.cssText='font-size:11px;font-weight:600;padding:7px 10px;border-radius:8px;margin-bottom:8px;display:none';
+      ref.parentNode.insertBefore(minMsgEl,ref);
     }
   }
   if(minMsgEl){
-    const showMin=cart.entrega==='Entrega'&&PEDIDO_MIN>0&&sub<PEDIDO_MIN;
-    if(showMin){
+    // Só avisa se PEDIDO_MIN > 0 e subtotal nao atinge (cliente pode escolher retirada no checkout)
+    if(PEDIDO_MIN>0&&sub<PEDIDO_MIN){
       minMsgEl.style.display='block';
-      minMsgEl.style.background='var(--red-soft)';
-      minMsgEl.style.color='var(--red)';
-      minMsgEl.style.border='1px solid var(--red)';
-      minMsgEl.textContent='⚠️ Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+' (faltam R$ '+fp(PEDIDO_MIN-sub)+')';
+      minMsgEl.style.background='var(--orange-soft)';
+      minMsgEl.style.color='var(--orange)';
+      minMsgEl.style.border='1px solid var(--orange)';
+      minMsgEl.textContent='ℹ️ Mínimo p/ entrega: R$ '+fp(PEDIDO_MIN)+' — faltam R$ '+fp(PEDIDO_MIN-sub)+'. Retirada sem mínimo!';
     }else{
       minMsgEl.style.display='none';
     }
@@ -2589,7 +2595,10 @@ async function renderRel(){
   }
   const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
   const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
-  document.getElementById('r-stats').innerHTML=`<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">${lista.filter(p=>p.status!=='Cancelado').length}${!temFiltroData&&!busca?'':''}</div></div><div class="scard"><div class="scard-l">Faturamento${!temFiltroData&&!busca?' (total)':''}</div><div class="scard-v green">R$ ${fp(totG)}</div></div><div class="scard"><div class="scard-l">Ticket medio${!temFiltroData&&!busca?' (total)':''}</div><div class="scard-v">R$ ${statsAtivos.length?fp(totG/statsAtivos.length):'0,00'}</div></div>`;
+  document.getElementById('r-stats').innerHTML=
+    '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
   const pedEl=document.getElementById('r-peds');
   if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>'}
   else{
