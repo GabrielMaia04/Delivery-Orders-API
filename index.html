@@ -1962,6 +1962,14 @@ async function enviarPedido(){
   if(!pag) erros.push('Forma de pagamento');
   if(pag==='Dinheiro'&&!troco){popAlert('💵','Troco obrigatório','Informe o valor para troco ou clique em "Não preciso de troco!"');return}
   if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
+  // Validar pedido minimo (so para Entrega)
+  if(!isRetirada&&PEDIDO_MIN>0){
+    const subCheck=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+    if(subCheck<PEDIDO_MIN){
+      popAlert('🚚','Pedido mínimo para entrega','O valor mínimo para entrega é R$ '+fp(PEDIDO_MIN)+'.\nSeu pedido está em R$ '+fp(subCheck)+'.\n\nAdicione mais itens ou escolha Retirada.');
+      return;
+    }
+  }
   if(!document.getElementById('co-data').value){popAlert('📅','Data obrigatória','Selecione uma data.');return}
   if(!cart.itens.length){toast('Carrinho vazio.','err');return}
   const btn=document.getElementById('co-btn');
