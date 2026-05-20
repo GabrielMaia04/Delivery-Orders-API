@@ -1473,33 +1473,45 @@ async function geocodificarCEP(cep){
     const dv=await rv.json();
     if(dv.erro)return null;
 
-    // 2. Tentar BrasilAPI (tem coordenadas por CEP)
+    // 2. ORS Geocoding (mais confiável para BR, usa nossa chave existente)
+    try{
+      const texto=(dv.logradouro?dv.logradouro+', ':'')+
+        (dv.bairro?dv.bairro+', ':'')+
+        dv.localidade+', '+dv.uf+', Brasil';
+      const orsUrl='https://api.openrouteservice.org/geocode/search?'
+        +'text='+encodeURIComponent(texto)
+        +'&boundary.country=BRA&size=1&lang=pt';
+      const ro=await fetch(orsUrl,{headers:{'Authorization':ORS_KEY,'Accept':'application/json, application/geo+json'}});
+      if(ro.ok){
+        const dors=await ro.json();
+        const feat=dors.features?.[0];
+        if(feat){
+          const[lng,lat]=feat.geometry.coordinates;
+          return{lat,lng,viacep:dv};
+        }
+      }
+    }catch(e2){}
+
+    // 3. BrasilAPI v2 (coordenadas por CEP)
     try{
       const rb=await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
       if(rb.ok){
         const db=await rb.json();
         if(db.location?.coordinates?.latitude){
-          return{
-            lat:db.location.coordinates.latitude,
-            lng:db.location.coordinates.longitude,
-            viacep:dv
-          };
+          return{lat:db.location.coordinates.latitude,lng:db.location.coordinates.longitude,viacep:dv};
         }
       }
-    }catch(e2){}
+    }catch(e3){}
 
-    // 3. Nominatim com múltiplas tentativas
+    // 4. Nominatim fallback
     const tentativas=[];
-    if(dv.logradouro&&dv.bairro)
-      tentativas.push(dv.logradouro+', '+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
-    if(dv.bairro)
-      tentativas.push(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
+    if(dv.logradouro&&dv.bairro)tentativas.push(dv.logradouro+', '+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
+    if(dv.bairro)tentativas.push(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
     tentativas.push(dv.localidade+', '+dv.uf+', Brasil');
-
     for(const busca of tentativas){
       const c=await geocodificar(busca);
       if(c)return{...c,viacep:dv};
-      await new Promise(r=>setTimeout(r,300));
+      await new Promise(r=>setTimeout(r,400));
     }
     return null;
   }catch(e){return null}
