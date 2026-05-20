@@ -800,6 +800,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div style="display:flex;align-items:flex-end"><button class="btn btn-g btn-sm" onclick="addZona()">+ Adicionar</button></div>
         </div>
         <div id="dash-zonas-list"></div>
+        <!-- Teste de zona -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px">&#128270; Testar CEP</div>
+          <div style="display:flex;gap:8px">
+            <input id="test-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)">
+            <button class="btn btn-g btn-sm" onclick="testarCEP()">Testar</button>
+          </div>
+          <div id="test-cep-result" style="margin-top:8px;font-size:12px;display:none;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border)"></div>
+        </div>
       </div>
       <!-- Cupons de Desconto -->
       <div class="acard-sm" style="grid-column:1/-1">
@@ -1416,11 +1425,33 @@ function haversine(lat1,lng1,lat2,lng2){
 // Geocodificar endereço via Nominatim (OpenStreetMap) — gratuito, sem API key
 async function geocodificar(endereco){
   try{
-    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(endereco);
-    const r=await fetch(url,{headers:{'Accept-Language':'pt-BR'}});
+    // Tenta busca direta
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=3&countrycodes=br&q='+encodeURIComponent(endereco);
+    const r=await fetch(url,{headers:{'Accept-Language':'pt-BR','User-Agent':'HortifrutiApp/1.0'}});
     const d=await r.json();
     if(!d.length)return null;
-    return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+    // Prefere resultado com maior importância
+    d.sort((a,b)=>(b.importance||0)-(a.importance||0));
+    return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
+  }catch(e){return null}
+}
+
+async function geocodificarCEP(cep){
+  // Tenta geocodificar pelo CEP primeiro (mais preciso)
+  const cepLimpo=cep.replace(/\D/g,'');
+  try{
+    // 1. Busca via ViaCEP para obter endereço completo
+    const rv=await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
+    const dv=await rv.json();
+    if(dv.erro)return null;
+    // 2. Geocodifica com endereço estruturado (mais preciso)
+    const busca=(dv.logradouro?dv.logradouro+', ':'')+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil';
+    const c1=await geocodificar(busca);
+    if(c1)return{...c1,viacep:dv};
+    // 3. Fallback: só cidade+bairro
+    const c2=await geocodificar(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
+    if(c2)return{...c2,viacep:dv};
+    return null;
   }catch(e){return null}
 }
 
@@ -1534,6 +1565,40 @@ async function renderZonas(){
     +'<input type="number" step="0.5" value="'+z.taxa+'" style="width:70px;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" onchange="editarZonaTaxa('+z.id+',this.value)">'
     +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">×</button>'
     +'</div>').join('');
+}
+
+
+async function testarCEP(){
+  const cep=document.getElementById('test-cep').value.replace(/\D/g,'');
+  const res=document.getElementById('test-cep-result');
+  if(cep.length!==8){res.style.display='block';res.textContent='CEP inválido.';return}
+  res.style.display='block';res.textContent='Calculando...';
+
+  const result=await geocodificarCEP(cep);
+  if(!result||!result.viacep){res.textContent='CEP não encontrado ou erro de geocoding.';return}
+
+  const dv=result.viacep;
+  const dist=LOJA_LAT?haversine(LOJA_LAT,LOJA_LNG,result.lat,result.lng):null;
+  const zona=dist?calcularZona(dist):null;
+
+  let html='<div style="line-height:1.8">';
+  html+='<div>📍 <strong>'+(dv.logradouro||dv.bairro)+', '+dv.bairro+'</strong></div>';
+  html+='<div>🏙️ '+dv.localidade+' / '+dv.uf+'</div>';
+  html+='<div>🌐 Lat: '+result.lat.toFixed(5)+' · Lng: '+result.lng.toFixed(5)+'</div>';
+  if(dist!==null){
+    html+='<div>📏 Distância da loja: <strong>'+dist.toFixed(2)+'km</strong></div>';
+    if(dist>RAIO_MAX){
+      html+='<div style="color:var(--red)">🚫 FORA DO RAIO (máx '+RAIO_MAX+'km)</div>';
+    }else if(zona){
+      html+='<div style="color:var(--green-bright)">✅ '+zona.nome+' — Taxa: <strong>R$ '+fp(zona.taxa)+'</strong></div>';
+    }else{
+      html+='<div style="color:var(--orange)">⚠️ Dentro do raio mas sem zona configurada para '+dist.toFixed(2)+'km</div>';
+    }
+  }else{
+    html+='<div style="color:var(--orange)">⚠️ Endereço da loja não configurado. Configure acima primeiro.</div>';
+  }
+  html+='</div>';
+  res.innerHTML=html;
 }
 
 async function addZona(){
@@ -1919,9 +1984,9 @@ function limparCarrinho(){
 let _cartZona = null; // zona calculada no carrinho
 
 async function calcularFreteCarrinho(){
-  const cep = document.getElementById('cart-cep').value.replace(/\D/g,'');
+  const cepInput = document.getElementById('cart-cep').value.replace(/\D/g,'');
   const info = document.getElementById('cart-frete-info');
-  if(cep.length!==8){
+  if(cepInput.length!==8){
     info.style.display='block';
     info.style.color='var(--orange)';
     info.textContent='Digite um CEP válido (8 dígitos).';
@@ -1929,52 +1994,40 @@ async function calcularFreteCarrinho(){
   }
   info.style.display='block';
   info.style.color='var(--text2)';
-  info.textContent='🔍 Buscando endereço...';
+  info.textContent='🔍 Calculando frete...';
 
   try{
-    // Busca endereço pelo CEP
-    const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
-    const d = await r.json();
-    if(d.erro){
+    const result = await geocodificarCEP(cepInput);
+    if(!result||!result.viacep){
       info.style.color='var(--red)';
-      info.textContent='CEP não encontrado.';
+      info.textContent='CEP não encontrado. Verifique e tente novamente.';
       return;
     }
-    const endFull = (d.logradouro||d.bairro||'')+', '+(d.localidade||'Rio de Janeiro')+' - '+d.uf;
-    info.textContent='📍 Calculando distância...';
 
-    // Salvar CEP para usar no checkout depois
-    window._cartCepData = d;
+    const dv = result.viacep;
+    window._cartCepData = dv;
+    window._cartCoords = {lat:result.lat, lng:result.lng};
 
-    if(!LOJA_LAT || !LOJA_LNG){
-      // Sem raio configurado — usa taxa fixa
-      _cartZona = null;
-      TAXA = zonas.length? zonas[0].taxa : TAXA;
+    if(!LOJA_LAT||!LOJA_LNG||LOJA_LAT===0){
+      // Loja não configurada — usa primeira zona disponível
+      _cartZona = zonas[0]||null;
+      if(_cartZona)TAXA=_cartZona.taxa;
       info.style.color='var(--text2)';
-      info.textContent='📍 '+d.bairro+', '+(d.localidade||'')+ ' — Taxa: R$ '+fp(TAXA);
+      info.textContent='📍 '+(dv.bairro||dv.localidade)+' — Frete padrão: R$ '+fp(TAXA);
       updSums();
       return;
     }
 
-    const coords = await geocodificar(endFull);
-    if(!coords){
-      info.style.color='var(--orange)';
-      info.textContent='⚠️ Não foi possível calcular. Taxa padrão aplicada.';
-      updSums();
-      return;
-    }
-
-    const dist = haversine(LOJA_LAT, LOJA_LNG, coords.lat, coords.lng);
-    window._cartCoords = coords;
+    const dist = haversine(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
+    const distTxt = dist.toFixed(1)+'km';
 
     if(dist > RAIO_MAX){
       _cartZona = null;
-      info.style.display='block';
+      window._cartCoords = undefined; // sinaliza fora do raio
       info.style.color='var(--red)';
-      info.textContent='🚫 Fora do raio de entrega ('+dist.toFixed(1)+'km). Máx: '+RAIO_MAX+'km. Use Retirada.';
-      // Desabilitar botao continuar para entrega
-      const btn=document.getElementById('cart-continuar-btn');
-      if(btn&&cart.entrega==='Entrega'){btn.disabled=true;btn.style.opacity='0.5';}
+      info.innerHTML='🚫 <strong>Fora do raio de entrega</strong> ('+distTxt+' · máx '+RAIO_MAX+'km)<br>'
+        +'<span style="font-weight:400">Escolha Retirada para continuar.</span>';
+      atualizarBtnContinuar();
       return;
     }
 
@@ -1984,15 +2037,19 @@ async function calcularFreteCarrinho(){
     if(zona){
       TAXA = zona.taxa;
       info.style.color='var(--green-bright)';
-      info.textContent='✅ '+d.bairro+' · '+dist.toFixed(1)+'km · '+zona.nome+' — Frete: R$ '+fp(zona.taxa);
+      info.innerHTML='✅ <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
+        +'<span style="color:var(--text2)">Frete: <strong style="color:var(--green-bright)">R$ '+fp(zona.taxa)+'</strong></span>';
     }else{
+      _cartZona=null;
       info.style.color='var(--orange)';
-      info.textContent='⚠️ '+dist.toFixed(1)+'km — fora das zonas. Verifique com o atendimento.';
+      info.innerHTML='⚠️ '+(dv.bairro||dv.localidade)+' · '+distTxt+'<br>'
+        +'<span style="font-weight:400">Endereço fora das zonas configuradas.</span>';
     }
     updSums();
+    atualizarBtnContinuar();
   }catch(e){
     info.style.color='var(--red)';
-    info.textContent='Erro ao calcular frete.';
+    info.textContent='Erro ao calcular frete. Tente novamente.';
   }
 }
 
