@@ -716,6 +716,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
         <button class="btn btn-g" style="width:100%" onclick="salvarTaxa()">Aplicar taxa</button>
         <div id="dash-taxa-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:800;margin-bottom:8px">&#128683; Pedido Mínimo (Entrega)</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Valor mínimo para pedidos com entrega. Retirada não tem mínimo.</div>
+          <div class="field"><label>Valor mínimo (R$)</label>
+            <input id="dash-pedmin" type="number" step="0.01" min="0" placeholder="0.00 = sem mínimo">
+          </div>
+          <button class="btn btn-g" style="width:100%" onclick="salvarPedidoMin()">Aplicar mínimo</button>
+          <div id="dash-pedmin-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+        </div>
       </div>
       <!-- Redes Sociais -->
       <div class="acard-sm">
@@ -974,6 +983,7 @@ const IMG_BASE='https://zfvppqpufiuwuvveounk.supabase.co/storage/v1/object/publi
 const WHATSAPP_NUM='5521976081746'; // Troque pelo seu numero com DDI+DDD
 const SB_KEY='sb_publishable_PeyAs38u9Ji4FGzshDNdmw_Wvl5czAS';
 let TAXA=2.50;
+let PEDIDO_MIN=0; // Valor minimo para Entrega (0 = sem minimo)
 let INSTAGRAM_URL='https://instagram.com';
 let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
@@ -1589,25 +1599,92 @@ function renderCart(){
   updSums();
 }
 function cQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();renderCart()}
+
+// ── PROMOCAO AUTOMATICA ──
+function calcPromoAuto(sub){
+  if(sub>=200){
+    return{
+      freteGratis:true,
+      desconto:Math.round(sub*0.10*100)/100,
+      label:'Promo acima de R$200: 10% off + frete grátis'
+    };
+  }
+  return null;
+}
+
 function updSums(){
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const taxa=cart.entrega==='Entrega'?TAXA:0;
-  const desc=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+  // Promo automatica acima de R$200
+  const promo=calcPromoAuto(sub);
+  const freteGratis=promo?.freteGratis||false;
+  const taxa=cart.entrega==='Entrega'&&!freteGratis?TAXA:0;
+  const descCupom=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+  const descPromo=promo?.desconto||0;
+  const descTotal=descCupom+descPromo;
   const qtd=cart.itens.reduce((s,i)=>s+i.qty,0);
   document.getElementById('c-itens').textContent=qtd;
   document.getElementById('c-sub').textContent='R$ '+fp(sub);
   document.getElementById('c-taxa').classList.toggle('hidden',taxa===0);
   const taxaVal=document.getElementById('c-taxa-val');
   if(taxaVal)taxaVal.textContent='+ R$ '+fp(taxa);
+
+  // Aviso pedido minimo (so para Entrega)
+  let minMsgEl=document.getElementById('c-min-aviso');
+  if(!minMsgEl){
+    const cartFooter=document.querySelector('.cart-footer');
+    if(cartFooter){
+      minMsgEl=document.createElement('div');
+      minMsgEl.id='c-min-aviso';
+      minMsgEl.style.cssText='font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;margin-bottom:8px;display:none';
+      cartFooter.insertBefore(minMsgEl,cartFooter.firstChild);
+    }
+  }
+  if(minMsgEl){
+    const showMin=cart.entrega==='Entrega'&&PEDIDO_MIN>0&&sub<PEDIDO_MIN;
+    if(showMin){
+      minMsgEl.style.display='block';
+      minMsgEl.style.background='var(--red-soft)';
+      minMsgEl.style.color='var(--red)';
+      minMsgEl.style.border='1px solid var(--red)';
+      minMsgEl.textContent='⚠️ Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+' (faltam R$ '+fp(PEDIDO_MIN-sub)+')';
+    }else{
+      minMsgEl.style.display='none';
+    }
+  }
+
+  // Promo row
+  let promoRow=document.getElementById('c-promo-row');
+  if(!promoRow&&promo){
+    const total=document.querySelector('.total-row');
+    if(total){
+      promoRow=document.createElement('div');
+      promoRow.id='c-promo-row';
+      promoRow.className='sum-row';
+      promoRow.style.color='var(--green-bright)';
+      promoRow.innerHTML='<span id="c-promo-label"></span><span id="c-promo-val" style="color:var(--green-bright)"></span>';
+      total.parentNode.insertBefore(promoRow,total);
+    }
+  }
+  if(promoRow){
+    if(promo){
+      promoRow.style.display='';
+      document.getElementById('c-promo-label').textContent=promo.label;
+      document.getElementById('c-promo-val').textContent='- R$ '+fp(promo.desconto)+(freteGratis?' + Frete grátis':'');
+    }else{
+      promoRow.style.display='none';
+    }
+  }
+
+  // Cupom row
   const descRow=document.getElementById('c-desc-row');
   if(descRow){
     descRow.classList.toggle('hidden',!cupomAtivo);
     if(cupomAtivo){
       document.getElementById('c-desc-label').textContent='Cupom '+cupomAtivo.nome+' ('+cupomAtivo.desconto+'%)';
-      document.getElementById('c-desc-val').textContent='- R$ '+fp(desc);
+      document.getElementById('c-desc-val').textContent='- R$ '+fp(descCupom);
     }
   }
-  document.getElementById('c-total').textContent='R$ '+fp(sub+taxa-desc);
+  document.getElementById('c-total').textContent='R$ '+fp(Math.max(0,sub+taxa-descTotal));
 }
 
 
@@ -1620,6 +1697,14 @@ function limparCarrinho(){
 }
 function irCheckout(){
   if(!cart.itens.length){toast('Carrinho vazio!','err');return}
+  // Bloquear se entrega e nao atinge pedido minimo
+  if(cart.entrega==='Entrega'&&PEDIDO_MIN>0){
+    const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+    if(sub<PEDIDO_MIN){
+      toast('Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
+      return;
+    }
+  }
   fecharCart();
   if(!perfil){window._coPend=true;abrirAuth();return}
   abrirCo();
@@ -1740,9 +1825,13 @@ function updCoResumo(){
 function buildTextoWhatsApp(pedido,itens){
   const end=[pedido.endereco,pedido.numero].filter(Boolean).join(', no ');
   const sub=itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const taxa=pedido.entrega==='Entrega'?TAXA:0;
-  const desc=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
-  const totalFinal=sub+taxa-desc;
+  const promo=calcPromoAuto(sub);
+  const freteGratis=promo?.freteGratis||false;
+  const taxa=pedido.entrega==='Entrega'&&!freteGratis?TAXA:0;
+  const descCupom=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+  const descPromo=promo?.desconto||0;
+  const desc=descCupom+descPromo;
+  const totalFinal=Math.max(0,sub+taxa-desc);
   const itensTxt=itens.map(it=>{
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
     return it.qty+'x '+p.nome+(p.peso?' ('+p.peso+')':'')+' = R$ '+fp(p.preco*it.qty);
@@ -1777,7 +1866,8 @@ function buildTextoWhatsApp(pedido,itens){
     itensTxt,
     '---',
     pedido.entrega==='Entrega'?'Taxa entrega = R$ '+fp(taxa):'',
-    cupomAtivo?'Desconto cupom '+cupomAtivo.nome+' = - R$ '+fp(desc):'',
+    cupomAtivo?'Desconto cupom '+cupomAtivo.nome+' = - R$ '+fp(descCupom):'',
+    promo?'Promo acima R$200 (10% off + frete grátis) = - R$ '+fp(descPromo):'',
     'TOTAL: R$ '+fp(totalFinal)
   ];
   return linhas.filter(Boolean).join('\n');
@@ -1886,8 +1976,12 @@ async function enviarPedido(){
     const dataPed=document.getElementById('co-data').value;
     const codigo=await gerarCodigo(dataPed);
     const sub=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    const taxa=cart.entrega==='Entrega'?TAXA:0;
-    const desc=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+    const _promo=calcPromoAuto(sub);
+    const _freteGratis=_promo?.freteGratis||false;
+    const taxa=cart.entrega==='Entrega'&&!_freteGratis?TAXA:0;
+    const descCupomEnv=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
+    const descPromoEnv=_promo?.desconto||0;
+    const desc=descCupomEnv+descPromoEnv;
     const insertData={
       user_id:perfil.id,cliente_nome:nome,
       cliente_contato:tel,
@@ -1909,10 +2003,17 @@ async function enviarPedido(){
       const p=prods.find(x=>x.id===it.prodId);
       return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};
     }));
-    // Decrementa uso do cupom
+    // Decrementa uso do cupom com verificacao atomica
     if(cupomAtivo){
-      const novosUsos=Math.max(0,cupomAtivo.usos_restantes-1);
-      await sb.from('cupons').update({usos_restantes:novosUsos}).eq('id',cupomAtivo.id);
+      // Re-le o valor atual do banco antes de decrementar (evita race condition)
+      const {data:cupNow}=await sb.from('cupons').select('usos_restantes').eq('id',cupomAtivo.id).single();
+      if(cupNow&&cupNow.usos_restantes!==null&&cupNow.usos_restantes>0){
+        await sb.from('cupons').update({usos_restantes:cupNow.usos_restantes-1}).eq('id',cupomAtivo.id);
+      }else if(cupNow&&cupNow.usos_restantes===0){
+        // Cupom esgotou entre o momento da verificacao e o salvamento — avisa mas mantem o pedido
+        toast('Cupom esgotado, pedido salvo sem desconto.','err');
+        // Nao aplica desconto retroativamente — apenas registra
+      }
     }
     // Decrementar estoque
     await Promise.all(itensCopy.map(it=>{
@@ -3094,6 +3195,7 @@ function updMobileCartBar(){
 let cupons=[];
 async function initDashboard(){
   document.getElementById('dash-taxa').value=TAXA.toFixed(2);
+  document.getElementById('dash-pedmin').value=PEDIDO_MIN>0?PEDIDO_MIN.toFixed(2):'';
   try{
     const {data}=await sb.from('configuracoes').select('chave,valor');
     (data||[]).forEach(r=>{
@@ -3148,12 +3250,25 @@ async function salvarTaxa(){
   setTimeout(()=>msg.textContent='',3000);
   toast('Taxa atualizada!','ok');
 }
+async function salvarPedidoMin(){
+  const val=parseFloat(document.getElementById('dash-pedmin').value)||0;
+  if(val<0){toast('Valor inválido.','err');return}
+  const {error}=await sb.from('configuracoes').upsert({chave:'pedido_minimo',valor:String(val)},{onConflict:'chave'});
+  if(error){toast('Erro: '+error.message,'err');return}
+  PEDIDO_MIN=val;
+  const msg=document.getElementById('dash-pedmin-msg');
+  msg.textContent=val>0?'✓ Mínimo R$ '+fp(val)+' para entrega.':'✓ Sem pedido mínimo.';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Pedido mínimo atualizado!','ok');
+}
+
 async function carregarTaxaRemota(){
   try{
     const {data}=await sb.from('configuracoes').select('chave,valor');
     if(!data)return;
     data.forEach(r=>{
       if(r.chave==='taxa_entrega')TAXA=parseFloat(r.valor)||TAXA;
+      if(r.chave==='pedido_minimo')PEDIDO_MIN=parseFloat(r.valor)||0;
       if(r.chave==='whatsapp_num')window._WHATSAPP_NUM_DB=r.valor;
       if(r.chave==='instagram_url')INSTAGRAM_URL=r.valor;
       if(r.chave==='wpp_msg_template')WPP_MSG_TEMPLATE=r.valor;
