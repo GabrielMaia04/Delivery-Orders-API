@@ -6,12 +6,13 @@
   const _sv=localStorage.getItem("hf-theme");
   const _sys=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
   document.documentElement.setAttribute("data-theme",_sv||_sys);
-  window.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('dd-theme-btn');if(b)b.textContent=((_sv||_sys)==='dark'?'🌙':'☀️')});
+  window.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('dd-theme-btn');if(b)b.innerHTML=((_sv||_sys)==='dark'?'<i data-lucide="moon"></i>':'<i data-lucide="sun"></i>');if(window.lucide)window.lucide.createIcons()});
 </script>
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Cortadinhos com Carinho</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--green:#2d8c4e;--green-h:#25763f;--green-bright:#1a6e38;--green-light:#e8f5ee;--green-mid:#b8dfc7;--bg:#f5f9f6;--bg2:#fff;--bg3:#f0f7f3;--bg4:#e8f5ee;--border:#d8ece1;--border2:#c2ddd0;--text:#1a2e1c;--text2:#4a6b4e;--text3:#8aab8e;--red:#e53935;--red-soft:#fdecea;--orange:#f57c00;--orange-soft:#fff3e0;--shadow:0 2px 12px rgba(45,140,78,.12);--r:14px;--font:'DM Sans',sans-serif}
@@ -19,23 +20,29 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;touch-action:manipulation}
 button,input,select,textarea{touch-action:manipulation}
+[data-lucide]{width:1.1em;height:1.1em;stroke-width:2.2;vertical-align:-.16em;flex-shrink:0}
+.ico-inline{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.ico-gap{display:inline-flex;align-items:center;gap:6px}
+.logo [data-lucide],.admin-logo [data-lucide]{width:19px;height:19px;color:#fff}
+.cart-fab [data-lucide],.drawer-title [data-lucide],.dtog [data-lucide],.taxa-badge [data-lucide],.sum-row [data-lucide],.pag-ico [data-lucide],.success-emoji [data-lucide]{display:block}
 
 /* TOPBAR */
 .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
-.brand{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
 .logo{width:34px;height:34px;background:var(--green);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.brand-name{font-size:16px;font-weight:800;color:var(--text);line-height:1}
+.brand-name{font-size:16px;font-weight:800;color:var(--text);line-height:1;min-width:0}
 .brand-name span{font-size:11px;font-weight:400;color:var(--text2);display:block}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .cart-fab{width:40px;height:40px;border-radius:9px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;position:relative}
 .cart-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)}
 .login-top{padding:8px 14px;border-radius:9px;background:var(--green-light);color:var(--green-bright);border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)}
+@media(max-width:420px){.topbar{padding:10px 16px}.brand-name{font-size:15px;max-width:180px}.brand-name span{font-size:10px}.topbar-right{gap:6px}.login-top{padding:8px 12px}.cart-fab{width:38px;height:38px}}
 
 /* HERO */
 .hero{background:linear-gradient(135deg,#2d8c4e,#1a5c30);padding:22px 16px 28px;color:#fff;position:relative;overflow:hidden}
 [data-theme="dark"] .hero{background:linear-gradient(135deg,#1a3d22,#0f2015)}
-.hero::after{content:'\1F343';position:absolute;right:-10px;bottom:-10px;font-size:90px;opacity:.12}
+.hero::after{content:'';position:absolute;right:-22px;bottom:-22px;width:110px;height:110px;border:2px solid rgba(255,255,255,.16);border-radius:28px;transform:rotate(18deg);opacity:.55}
 .hero-sub{font-size:13px;opacity:.85;margin-bottom:4px}
 .hero-title{font-size:20px;font-weight:800;line-height:1.2;margin-bottom:14px}
 .search-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px 14px}
@@ -47,7 +54,7 @@ button,input,select,textarea{touch-action:manipulation}
 .cat-scroll{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;align-items:flex-start}
 .cat-scroll::-webkit-scrollbar{display:none}
 .cat-chip{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer}
-.cat-icon{width:50px;height:50px;border-radius:12px;background:var(--bg2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;box-shadow:var(--shadow)}
+.cat-icon{width:50px;height:50px;border-radius:12px;background:var(--bg2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;box-shadow:var(--shadow);overflow:hidden}
 .cat-chip.active .cat-icon{background:var(--green);border-color:var(--green)}
 .cat-label{font-size:10px;font-weight:600;color:var(--text2);text-align:center;max-width:56px;line-height:1.2}
 .cat-chip.active .cat-label{color:var(--green-bright)}
@@ -56,12 +63,14 @@ button,input,select,textarea{touch-action:manipulation}
 .prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 90px}
 @media(min-width:480px){.prod-grid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:720px){.prod-grid{grid-template-columns:repeat(4,1fr)}}
-.prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .15s}
+.prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,border-color .15s;cursor:pointer}
 .prod-card:active{transform:scale(.97)}
-.prod-card-img{width:100%;height:100px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:44px}
+.prod-card:focus-within{border-color:var(--green);box-shadow:0 0 0 2px var(--green-light)}
+.prod-card-img{width:100%;height:auto;aspect-ratio:1.55/1;background:linear-gradient(135deg,var(--bg3),var(--bg4));display:flex;align-items:center;justify-content:center;font-size:44px}
+.prod-card-img img{width:100%;height:100%;object-fit:cover;display:block}
 .prod-card-body{padding:10px}
-.prod-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
-.prod-card-peso{font-size:11px;color:var(--text2)}
+.prod-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;min-height:32px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod-card-peso{font-size:11px;color:var(--text2);min-height:14px}
 .prod-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
 .prod-price{font-size:14px;font-weight:800;color:var(--green-bright)}
 .add-btn{width:28px;height:28px;border-radius:7px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
@@ -276,7 +285,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .cal-trigger{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;font-family:var(--font);text-align:left;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .cal-trigger:hover{border-color:var(--green)}
 .cal-trigger.selected{color:var(--green-bright);border-color:var(--green);background:var(--green-light)}
-.cal-trigger::after{content:'📅';font-size:16px;flex-shrink:0}
+.cal-trigger::after{content:'';width:16px;height:16px;flex-shrink:0;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'/%3E%3C/svg%3E") center/contain no-repeat;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'/%3E%3C/svg%3E") center/contain no-repeat}
 .cal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9980;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
 .cal-ov.open{opacity:1;pointer-events:all}
 .cal-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;width:320px;max-width:100%;box-shadow:0 12px 48px rgba(0,0,0,.4);transform:translateY(14px) scale(.97);transition:transform .2s}
@@ -315,6 +324,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .popup-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35);transform:translateY(12px) scale(.97);transition:transform .18s}
 .popup-ov.open .popup-box{transform:none}
 .popup-icon{font-size:32px;text-align:center;margin-bottom:10px}
+.popup-icon [data-lucide]{width:34px;height:34px;color:var(--green-bright)}
 .popup-title{font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)}
 .popup-msg{font-size:13px;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:18px;white-space:pre-line}
 .popup-btns{display:flex;gap:8px}
@@ -370,7 +380,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- LOJA PUBLICA -->
 <div id="screen-shop" class="screen active">
   <div class="topbar">
-    <div class="brand"><div class="logo">&#127807;</div><div class="brand-name">Cortadinhos com Carinho<span>Praticidade na sua rotina!</span></div></div>
+    <div class="brand"><div class="logo"><i data-lucide="leaf"></i></div><div class="brand-name">Cortadinhos com Carinho<span>Praticidade na sua rotina!</span></div></div>
     <div class="topbar-right">
       <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown">
         <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">Conta</button>
@@ -379,16 +389,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="dd-icon-row">
           <button class="dd-icon-btn wpp" title="WhatsApp" onclick="fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><svg width="20" height="20" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg></button>
           <button class="dd-icon-btn ig" title="Instagram" onclick="fecharDropdown();window.open('https://instagram.com','_blank')"><svg width="20" height="20" viewBox="0 0 24 24"><defs><radialGradient id="ig-g" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><path fill="url(#ig-g)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></button>
-          <button class="dd-icon-btn" title="Alternar tema" onclick="toggleTheme()" id="dd-theme-btn">🌙</button>
+          <button class="dd-icon-btn" title="Alternar tema" onclick="toggleTheme()" id="dd-theme-btn"><i data-lucide="moon"></i></button>
         </div>
         <button class="dropdown-item danger" onclick="fecharDropdown();fazerLogout()">Sair</button>
       </div></div>
-      <button class="cart-fab" onclick="abrirCart()">&#128722;<span class="cart-badge hidden" id="cart-badge">0</span></button>
+      <button class="cart-fab" onclick="abrirCart()" aria-label="Abrir carrinho"><i data-lucide="shopping-cart"></i><span class="cart-badge hidden" id="cart-badge">0</span></button>
     </div>
   </div>
   <div class="hero">
-    <div class="hero-sub" id="hero-msg">Bem-vindo! &#128075;</div>
-    <div class="hero-title">Fresquinho e direto pra sua mesa &#127869;</div>
+    <div class="hero-sub" id="hero-msg">Bem-vindo!</div>
+    <div class="hero-title ico-gap">Fresquinho e direto pra sua mesa <i data-lucide="utensils"></i></div>
     <div class="search-box"><input id="shop-search" type="text" placeholder="Buscar produtos..." oninput="renderShop()"></div>
   </div>
   <div class="sec-title">Categorias</div>
@@ -398,18 +408,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <!-- CART OVERLAY -->
-<div class="overlay" id="cart-ov" onclick="fecharCartOv(event)">
+<div class="overlay" id="cart-ov" onclick="fecharCartOv(event)" aria-hidden="true">
   <div class="drawer" id="cart-drawer">
     <div class="drawer-handle"></div>
-    <div class="drawer-header"><span class="drawer-title">&#128722; Carrinho</span><button class="close-btn" onclick="fecharCart()">&#10005;</button></div>
+    <div class="drawer-header"><span class="drawer-title ico-gap"><i data-lucide="shopping-cart"></i> Carrinho</span><button class="close-btn" onclick="fecharCart()">&#10005;</button></div>
     <div class="cart-list" id="cart-list"><div class="empty">Carrinho vazio</div></div>
     <div class="cart-footer">
       <!-- Modalidade no carrinho -->
       <div style="margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Como vai querer?</div>
         <div class="dtog-wrap">
-          <button class="dtog active" id="cart-de" onclick="setCartModalidade('Entrega')">&#128665; Entrega</button>
-          <button class="dtog" id="cart-dr" onclick="setCartModalidade('Retirada')">&#127978; Retirada</button>
+          <button class="dtog active ico-gap" id="cart-de" onclick="setCartModalidade('Entrega')"><i data-lucide="truck"></i> Entrega</button>
+          <button class="dtog ico-gap" id="cart-dr" onclick="setCartModalidade('Retirada')"><i data-lucide="store"></i> Retirada</button>
         </div>
       </div>
       <!-- CEP para calcular frete (só entrega) -->
@@ -431,7 +441,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div id="cart-cupom-msg" style="font-size:11px;margin-bottom:8px;display:none"></div>
       <div class="sum-row"><span>Itens</span><span id="c-itens">0</span></div>
       <div class="sum-row"><span>Subtotal</span><span id="c-sub">R$ 0,00</span></div>
-      <div class="sum-row taxa hidden" id="c-taxa"><span>&#128661; Frete</span><span id="c-taxa-val">+ R$ 2,50</span></div>
+      <div class="sum-row taxa hidden" id="c-taxa"><span class="ico-gap"><i data-lucide="truck"></i> Frete</span><span id="c-taxa-val">+ R$ 2,50</span></div>
       <div class="sum-row hidden" id="c-desc-row" style="color:var(--green-bright)"><span id="c-desc-label">Desconto</span><span id="c-desc-val" style="color:var(--green-bright)">- R$ 0,00</span></div>
       <div class="total-row"><span class="total-label">Total</span><span class="total-val" id="c-total">R$ 0,00</span></div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px">
@@ -443,7 +453,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <!-- AUTH SHEET -->
-<div class="sheet-overlay" id="auth-ov" onclick="fecharAuthOv(event)">
+<div class="sheet-overlay" id="auth-ov" onclick="fecharAuthOv(event)" aria-hidden="true">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header"><span class="sheet-title">Entrar</span><button class="close-btn" onclick="fecharAuth()">&#10005;</button></div>
@@ -472,7 +482,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <!-- CHECKOUT SHEET -->
-<div class="sheet-overlay" id="co-ov" onclick="fecharCoOv(event)">
+<div class="sheet-overlay" id="co-ov" onclick="fecharCoOv(event)" aria-hidden="true">
   <div class="co-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header"><span class="sheet-title">Finalizar pedido</span><button class="close-btn" onclick="fecharCo()">&#10005;</button></div>
@@ -494,7 +504,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- ENDEREÇO (só Entrega) -->
       <div id="co-endereco-bloco">
-        <div id="co-taxa" class="taxa-badge">&#128661; Taxa de entrega: R$ <span id="co-taxa-val">2,50</span></div>
+        <div id="co-taxa" class="taxa-badge ico-gap"><i data-lucide="truck"></i> Taxa de entrega: R$ <span id="co-taxa-val">2,50</span></div>
         <div class="field" style="margin-top:8px">
           <label>CEP</label>
           <div style="display:flex;gap:8px;align-items:center">
@@ -528,12 +538,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <label>Pagamento</label>
         <div class="pag-toggle">
           <button type="button" class="pag-opt active" id="co-pag-agora" onclick="setPagMomento('agora')">
-            <span class="pag-ico">📱</span>
+            <span class="pag-ico"><i data-lucide="smartphone"></i></span>
             <div class="pag-lbl">Pagar agora</div>
             <div class="pag-sub">Via Pix</div>
           </button>
           <button type="button" class="pag-opt" id="co-pag-entrega" onclick="setPagMomento('entrega')">
-            <span class="pag-ico">🚚</span>
+            <span class="pag-ico"><i data-lucide="truck"></i></span>
             <div class="pag-lbl">Pagar na entrega</div>
             <div class="pag-sub">Cartão ou dinheiro</div>
           </button>
@@ -579,10 +589,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
   <nav class="admin-nav">
-    <div class="admin-brand"><div class="admin-logo">&#127807;</div><div class="admin-name">Cortadinhos com Carinho<span id="adm-label">Admin</span></div></div>
+    <div class="admin-brand"><div class="admin-logo"><i data-lucide="leaf"></i></div><div class="admin-name">Cortadinhos com Carinho<span id="adm-label">Admin</span></div></div>
     <div class="admin-tabs" id="adm-tabs"></div>
     <div class="admin-right">
-      <button class="icon-btn" onclick="toggleTheme()">&#127769;</button>
+      <button class="icon-btn" onclick="toggleTheme()" title="Alternar tema"><i data-lucide="moon"></i></button>
       <div class="ava" id="adm-ava">?</div>
       <button class="btn btn-o btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
@@ -646,12 +656,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
             <div class="stotal"><span class="stotal-l">Total</span><span class="stotal-v" id="a-st">R$ 0,00</span></div>
           </div>
           <div class="abtns">
-            <button class="btn btn-g" id="a-save-btn" onclick="aSalvar()">&#128190; Salvar pedido</button>
+          <button class="btn btn-g ico-gap" id="a-save-btn" onclick="aSalvar()"><i data-lucide="save"></i> Salvar pedido</button>
             <div class="btns2">
-              <button class="btn btn-o" onclick="aImprimir()">&#128424; Imprimir</button>
+              <button class="btn btn-o ico-gap" onclick="aImprimir()"><i data-lucide="printer"></i> Imprimir</button>
               <button class="btn btn-o" onclick="aCopiar()">Copiar</button>
             </div>
-            <button class="btn btn-r" onclick="aLimpar()">&#128465; Limpar</button>
+            <button class="btn btn-r ico-gap" onclick="aLimpar()"><i data-lucide="trash-2"></i> Limpar</button>
           </div>
         </div>
       </div>
@@ -695,7 +705,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="field"><label>Imagem (400x200px)</label>
             <input id="cat-img-file" type="file" accept="image/*" style="display:none" onchange="previewCatImg(this)">
             <div style="display:flex;gap:10px;align-items:center">
-              <div id="cat-img-preview" style="width:56px;height:28px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">🌿</div>
+              <div id="cat-img-preview" style="width:56px;height:28px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden"><i data-lucide="leaf"></i></div>
               <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('cat-img-file').click()">Escolher foto</button>
             </div>
           </div>
@@ -714,7 +724,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="field"><label>Imagem do produto (800x800px)</label>
             <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="previewProdImg(this)">
             <div style="display:flex;gap:10px;align-items:center">
-              <div id="p-img-preview" style="width:56px;height:56px;border-radius:10px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden">🥦</div>
+              <div id="p-img-preview" style="width:56px;height:56px;border-radius:10px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden"><i data-lucide="sprout"></i></div>
               <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('p-img-file').click()">Escolher foto</button>
             </div>
           </div>
@@ -739,14 +749,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
       <!-- Taxa de entrega -->
       <div class="acard-sm">
-        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128661; Taxa de Entrega</div>
+          <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="truck"></i> Taxa de Entrega</div>
         <div class="field"><label>Valor atual (R$)</label>
           <input id="dash-taxa" type="number" step="0.01" min="0" placeholder="2.50">
         </div>
         <button class="btn btn-g" style="width:100%" onclick="salvarTaxa()">Aplicar taxa</button>
         <div id="dash-taxa-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:12px;font-weight:800;margin-bottom:8px">&#128683; Pedido Mínimo (Entrega)</div>
+          <div class="ico-gap" style="font-size:12px;font-weight:800;margin-bottom:8px"><i data-lucide="circle-slash"></i> Pedido Mínimo (Entrega)</div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Valor mínimo para pedidos com entrega. Retirada não tem mínimo.</div>
           <div class="field"><label>Valor mínimo (R$)</label>
             <input id="dash-pedmin" type="number" step="0.01" min="0" placeholder="0.00 = sem mínimo">
@@ -757,7 +767,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Redes Sociais -->
       <div class="acard-sm">
-        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128242; Redes Sociais</div>
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="share-2"></i> Redes Sociais</div>
         <div class="field"><label>Número WhatsApp (com DDI+DDD)</label>
           <input id="dash-wpp" type="text" placeholder="5521976081746">
         </div>
@@ -769,7 +779,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Mensagem WhatsApp -->
       <div class="acard-sm" style="grid-column:1/-1">
-        <div style="font-size:13px;font-weight:800;margin-bottom:4px">&#128172; Mensagem de Pedido (WhatsApp)</div>
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="message-circle"></i> Mensagem de Pedido (WhatsApp)</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
         <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
         <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
@@ -777,7 +787,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Zonas de Entrega -->
       <div class="acard-sm" style="grid-column:1/-1">
-        <div style="font-size:13px;font-weight:800;margin-bottom:4px">&#128205; Zonas de Entrega (por distância)</div>
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="map-pin"></i> Zonas de Entrega (por distância)</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Configure o endereço da loja e as taxas por distância. O cliente será bloqueado se estiver fora do raio máximo.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div class="field" style="grid-column:1/-1"><label>Endereço da loja (para calcular distância)</label>
@@ -802,7 +812,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div id="dash-zonas-list"></div>
         <!-- Teste de zona -->
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px">&#128270; Testar CEP</div>
+          <div class="ico-gap" style="font-size:12px;font-weight:700;margin-bottom:8px"><i data-lucide="search"></i> Testar CEP</div>
           <div style="display:flex;gap:8px">
             <input id="test-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)">
             <button class="btn btn-g btn-sm" onclick="testarCEP()">Testar</button>
@@ -812,7 +822,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Cupons de Desconto -->
       <div class="acard-sm" style="grid-column:1/-1">
-        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#127973; Cupons de Desconto</div>
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="ticket-percent"></i> Cupons de Desconto</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
           <div class="field"><label>Desconto (%)</label><input id="dash-cup-pct" type="number" min="1" max="100" placeholder="10"></div>
@@ -823,7 +833,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Usuários -->
       <div class="acard-sm" style="grid-column:1/-1">
-        <div style="font-size:13px;font-weight:800;margin-bottom:12px">&#128100; Usuários</div>
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="user"></i> Usuários</div>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <input id="u-busca" type="text" placeholder="Buscar por nome, e-mail ou telefone..." style="flex:1" oninput="filtrarUsers()">
         </div>
@@ -861,14 +871,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="acard-sm">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
-          <button class="btn btn-o btn-sm" onclick="imprimirTodosPedidos()">🖨 Imprimir todos</button>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
         </div>
         <div class="r-scroll-box"><div id="e-pedidos"></div></div>
       </div>
       <div class="acard-sm">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <span style="font-size:12px;font-weight:700">Consolidado</span>
-          <button class="btn btn-o btn-sm" onclick="imprimirEntregas()">🖨 Imprimir</button>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirEntregas()"><i data-lucide="printer"></i> Imprimir</button>
         </div>
         <div class="r-scroll-box"><div id="e-cons"></div></div>
       </div>
@@ -951,12 +961,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <!-- ORDER SUCCESS POPUP -->
-<div class="success-ov" id="success-ov" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="success-ov" id="success-ov" aria-hidden="true" onclick="if(event.target===this)fecharSucesso()">
   <div class="success-box">
-    <span class="success-emoji">🥦</span>
+    <span class="success-emoji"><i data-lucide="circle-check-big"></i></span>
     <div class="success-title">Pedido realizado com sucesso!</div>
     <div class="success-sub">Obrigado pela sua compra!<br>Logo entraremos em contato.</div>
-    <button class="success-btn" onclick="document.getElementById('success-ov').classList.remove('open')">Continuar</button>
+    <button class="success-btn" onclick="fecharSucesso()">Continuar</button>
   </div>
 </div>
 
@@ -1012,7 +1022,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- MODAL EDITAR PRODUTO -->
 <div class="modal-ov" id="edit-prod-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box" style="width:360px">
-    <div class="modal-title">&#9999; Editar Produto</div>
+    <div class="modal-title ico-gap"><i data-lucide="pencil"></i> Editar Produto</div>
     <div class="modal-sub" id="edit-prod-sub"></div>
     <input type="hidden" id="edit-prod-id">
     <div class="field"><label>Nome *</label><input id="edit-p-nome" type="text" placeholder="Nome do produto"></div>
@@ -1021,7 +1031,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="field"><label>Peso</label><input id="edit-p-peso" type="text" placeholder="350g"></div>
       <div class="field"><label>Preco (R$) *</label><input id="edit-p-preco" type="number" step="0.01" placeholder="0.00"></div>
     </div>
-    <div class="field"><label>Emoji</label><input id="edit-p-emoji" type="text" placeholder="🥦" style="font-size:20px;text-align:center"></div>
+    <div class="field"><label>Ícone opcional</label><input id="edit-p-emoji" type="text" placeholder="Ex: folha, legume ou deixe vazio" style="font-size:14px;text-align:center"></div>
     <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px;margin-top:4px" onclick="salvarEditProd()">&#10003; Salvar alteracoes</button>
     <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('edit-prod-modal').classList.remove('open')">Cancelar</button>
   </div>
@@ -1087,13 +1097,16 @@ function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(
 const hoje=()=>new Date().toISOString().split('T')[0];
 const ini=n=>n?n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?';
 const emoji=p=>p.emoji||'\u{1F966}';
+const lucideIcon=(name,cls='')=>`<i data-lucide="${name}"${cls?` class="${cls}"`:''}></i>`;
+function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
 
 function toggleTheme(){
   const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
   document.documentElement.setAttribute('data-theme',t);
   localStorage.setItem('hf-theme',t);
   const btn=document.getElementById('dd-theme-btn');
-  if(btn)btn.textContent=t==='dark'?'🌙':'☀️';
+  if(btn)btn.innerHTML=t==='dark'?lucideIcon('moon'):lucideIcon('sun');
+  refreshIcons();
 }
 
 
@@ -1271,9 +1284,9 @@ function verPedCliente(id){
   document.getElementById('ped-det-status').innerHTML=`<span style="font-weight:700;color:${statusColor}">${status}</span> · Entrega: ${fdLabel(p.data_pedido)}`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
-      ${end?`<div>📍 ${end}</div>`:''}
-      <div>💳 ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-      ${p.observacoes?`<div>📝 ${p.observacoes}</div>`:''}
+      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
+      <div class="ico-gap">${lucideIcon('credit-card')} ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${p.observacoes}</div>`:''}
     </div>
     <div>${its}${taxa}${total}</div>`;
   // Botões conforme status
@@ -1600,7 +1613,7 @@ async function salvarConfigLoja(){
     sb.from('configuracoes').upsert({chave:'raio_max',valor:String(raio)},{onConflict:'chave'}),
   ]);
   msg.style.color='var(--green-bright)';
-  msg.textContent='✅ Loja localizada! Lat: '+coords.lat.toFixed(4)+', Lng: '+coords.lng.toFixed(4)+' · Raio: '+raio+'km';
+  msg.textContent='Loja localizada! Lat: '+coords.lat.toFixed(4)+', Lng: '+coords.lng.toFixed(4)+' · Raio: '+raio+'km';
   toast('Endereço da loja salvo!','ok');
 }
 
@@ -1769,8 +1782,14 @@ document.addEventListener('click',function(e){
   const wrap=document.querySelector('.dropdown-wrap');
   if(wrap&&!wrap.contains(e.target)){fecharDropdown();}
 });
-function abrirAuth(){document.getElementById('auth-ov').classList.add('open')}
-function fecharAuth(){document.getElementById('auth-ov').classList.remove('open')}
+function setOverlayState(id,open){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.toggle('open',open);
+  el.setAttribute('aria-hidden',open?'false':'true');
+}
+function abrirAuth(){setOverlayState('auth-ov',true)}
+function fecharAuth(){setOverlayState('auth-ov',false)}
 function fecharAuthOv(e){if(e.target===document.getElementById('auth-ov'))fecharAuth()}
 function switchTab(t){
   document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',(t==='login'&&i===0)||(t==='register'&&i===1)));
@@ -1845,25 +1864,26 @@ function renderShopCats(){
     'Massas':'massas.png','Verduras':'verduras.png','Macarroes':'massas.png',
     'Macarrões':'massas.png'
   };
-  const emojiMap={
-    'Legumes Puros':'\u{1F955}','Legumes Misturados':'\u{1F96C}',
-    'Ralados':'\u{1F9C4}','Sopoes':'\u{1F372}','Sopões':'\u{1F372}',
-    'Yakisoba':'\u{1F35C}','Temperos':'\u{1F9C4}','Doces':'\u{1F370}',
-    'Coco/Queijos':'\u{1F9C0}','Molhos':'\u{1F375}','Outros':'\u{1F4E6}'
+  const iconMap={
+    'Alhos':'badge-plus','Bandejas':'package','Bolos':'cake-slice',
+    'Cogumelo':'sprout','Doces':'cake-slice','Kits':'boxes',
+    'Legumes Misturados':'salad','Legumes Puros':'carrot','Macarrões':'wheat',
+    'Massas':'wheat','Molhos':'cup-soda','Outros':'package','Ralados':'chef-hat',
+    'Sopões':'soup','Temperos':'leaf','Verduras':'leafy-green','Yakisoba':'utensils'
   };
-  const todosIcon='\u{1F6D2}';
-  const todosChip='<div class="cat-chip'+(fCatShop===null?' active':'')+'" onclick="setCatShop(null)"><div class="cat-icon">'+todosIcon+'</div><div class="cat-label">Todos</div></div>';
+  const todosChip='<div class="cat-chip'+(fCatShop===null?' active':'')+'" onclick="setCatShop(null)"><div class="cat-icon">'+lucideIcon('shopping-cart')+'</div><div class="cat-label">Todos</div></div>';
   document.getElementById('shop-cats').innerHTML=todosChip+cats.map(c=>{
-    const em=c.emoji||'\u{1F33F}';
+    const iconName=iconMap[c.nome]||'leaf';
     const icone=c.imagem_url
-      ?`<img src="${c.imagem_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" onerror="this.parentNode.textContent='${em}'">`
-      :em;
+      ?`<img src="${c.imagem_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" onerror="this.replaceWith(document.createRange().createContextualFragment('${lucideIcon(iconName)}'))">`
+      :lucideIcon(iconName);
     const iconStyle=c.imagem_url?'padding:0;overflow:hidden;':'';
     return '<div class="cat-chip'+(fCatShop===c.id?' active':'')+'" onclick="setCatShop('+c.id+')">'
       +'<div class="cat-icon" style="'+iconStyle+'">'+icone+'</div>'
       +'<div class="cat-label">'+c.nome+'</div>'
       +'</div>';
   }).join('');
+  refreshIcons();
 }
 function setCatShop(id){
   fCatShop=fCatShop===id?null:id;
@@ -1891,8 +1911,8 @@ function renderShop(){
         </div>`
       :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
     const imgEl=p.imagem_url
-      ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`
-      :`<span style="font-size:44px">${emoji(p)}</span>`;
+      ?`<img src="${p.imagem_url}" alt="${p.nome}" loading="lazy">`
+      :`<span class="ico-inline" style="font-size:44px;color:var(--green-bright)">${lucideIcon('sprout')}</span>`;
     return `<div class="prod-card" onclick="abrirProdModal(${p.id})">
       <div class="prod-card-img">${imgEl}</div>
       <div class="prod-card-body">
@@ -1905,6 +1925,7 @@ function renderShop(){
       </div>
     </div>`;
   }).join('');
+  refreshIcons();
   updMobileCartBar();
 }
 
@@ -1938,7 +1959,7 @@ function abrirCart(){
   const cepBloco=document.getElementById('cart-cep-bloco');
   if(cepBloco)cepBloco.style.display=cart.entrega==='Entrega'?'block':'none';
   atualizarBtnContinuar();
-  document.getElementById('cart-ov').classList.add('open');
+  setOverlayState('cart-ov',true);
   setTimeout(()=>document.getElementById('cart-drawer').classList.add('open'),10);
   // Esconde barra mobile para não atrapalhar
   const bar=document.getElementById('mobile-cart-bar');
@@ -1946,7 +1967,7 @@ function abrirCart(){
 }
 function fecharCart(){
   document.getElementById('cart-drawer').classList.remove('open');
-  setTimeout(()=>document.getElementById('cart-ov').classList.remove('open'),300);
+  setTimeout(()=>setOverlayState('cart-ov',false),300);
   // Mostra barra novamente se tiver itens
   updMobileCartBar();
 }
@@ -1959,8 +1980,10 @@ function renderCart(){
   el.innerHTML=cart.itens.map((it,i)=>{
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
     const s=p.preco*it.qty;sub+=s;qtd+=it.qty;
-    return`<div class="cart-item"><div class="cart-item-ico">${emoji(p)}</div><div class="cart-item-info"><div class="cart-item-name">${p.nome}</div><div class="cart-item-price">${p.peso||''} · R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
+    const thumb=p.imagem_url?`<img src="${p.imagem_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`:lucideIcon('sprout');
+    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${p.nome}</div><div class="cart-item-price">${p.peso||''} · R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
   }).join('');
+  refreshIcons();
   updSums();
 }
 function cQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();renderCart()}
@@ -2069,7 +2092,8 @@ async function calcularFreteCarrinho(){
   }
   info.style.display='block';
   info.style.color='var(--text2)';
-  info.textContent='🔍 Calculando frete...';
+  info.innerHTML='<span class="ico-gap">'+lucideIcon('search')+' Calculando frete...</span>';
+  refreshIcons();
 
   try{
     const result = await geocodificarCEP(cepInput);
@@ -2088,7 +2112,8 @@ async function calcularFreteCarrinho(){
       _cartZona = zonas[0]||null;
       if(_cartZona)TAXA=_cartZona.taxa;
       info.style.color='var(--text2)';
-      info.textContent='📍 '+(dv.bairro||dv.localidade)+' — Frete padrão: R$ '+fp(TAXA);
+      info.innerHTML='<span class="ico-gap">'+lucideIcon('map-pin')+' '+(dv.bairro||dv.localidade)+' — Frete padrão: R$ '+fp(TAXA)+'</span>';
+      refreshIcons();
       updSums();
       return;
     }
@@ -2100,7 +2125,7 @@ async function calcularFreteCarrinho(){
       _cartZona = null;
       window._cartCoords = undefined; // sinaliza fora do raio
       info.style.color='var(--red)';
-      info.innerHTML='🚫 <strong>Fora do raio de entrega</strong> ('+distTxt+' · máx '+RAIO_MAX+'km)<br>'
+      info.innerHTML=lucideIcon('ban')+' <strong>Fora do raio de entrega</strong> ('+distTxt+' · máx '+RAIO_MAX+'km)<br>'
         +'<span style="font-weight:400">Escolha Retirada para continuar.</span>';
       atualizarBtnContinuar();
       return;
@@ -2113,12 +2138,12 @@ async function calcularFreteCarrinho(){
       TAXA = zona.taxa;
       _freteCalculado=true;
       info.style.color='var(--green-bright)';
-      info.innerHTML='✅ <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
+      info.innerHTML=lucideIcon('check-circle')+' <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
         +'<span style="color:var(--text2)">Frete: <strong style="color:var(--green-bright)">R$ '+fp(zona.taxa)+'</strong></span>';
     }else{
       _cartZona=null;
       info.style.color='var(--orange)';
-      info.innerHTML='⚠️ '+(dv.bairro||dv.localidade)+' · '+distTxt+'<br>'
+      info.innerHTML=lucideIcon('triangle-alert')+' '+(dv.bairro||dv.localidade)+' · '+distTxt+'<br>'
         +'<span style="font-weight:400">Endereço fora das zonas configuradas.</span>';
     }
     updSums();
@@ -2167,7 +2192,7 @@ function atualizarBtnContinuar(){
   if(aviso){
     if(abaixoMin&&isEntrega){
       aviso.style.display='block';
-      aviso.textContent='⚠️ Mínimo para entrega: R$ '+fp(PEDIDO_MIN)+' — faltam R$ '+fp(PEDIDO_MIN-sub)+'. Retirada sem mínimo!';
+      aviso.textContent='Mínimo para entrega: R$ '+fp(PEDIDO_MIN)+' — faltam R$ '+fp(PEDIDO_MIN-sub)+'. Retirada sem mínimo!';
     }else{
       aviso.style.display='none';
     }
@@ -2239,10 +2264,10 @@ function abrirCo(){
     document.getElementById('co-end-fields').classList.remove('hidden');
   }
   updCoResumo();
-  document.getElementById('co-ov').classList.add('open');
+  setOverlayState('co-ov',true);
 }
 function fecharCo(){
-  document.getElementById('co-ov').classList.remove('open');
+  setOverlayState('co-ov',false);
   _clienteLat=null;_clienteLng=null;_zonaAtiva=null;
   const zi=document.getElementById('co-zona-info');
   if(zi)zi.style.display='none';
@@ -2276,9 +2301,10 @@ function renderRetOpts(){
   }
   document.getElementById('co-ret-local').value=local.end;
   info.innerHTML=`
-    <div style="font-size:12px;font-weight:800;color:var(--green-bright);margin-bottom:4px">📍 ${local.nome}</div>
+    <div class="ico-gap" style="font-size:12px;font-weight:800;color:var(--green-bright);margin-bottom:4px">${lucideIcon('map-pin')} ${local.nome}</div>
     <div style="font-size:12px;color:var(--text)">${local.end}</div>
     <div style="font-size:11px;color:var(--text2);margin-top:3px">${local.ref}</div>`;
+  refreshIcons();
 }
 let cupomAtivo=null;
 
@@ -2710,23 +2736,27 @@ function selecionarData(iso){
 }
 
 function mostrarSucesso(){
-  const ov=document.getElementById('success-ov');
-  ov.classList.add('open');
+  setOverlayState('success-ov',true);
+}
+function fecharSucesso(){
+  setOverlayState('success-ov',false);
 }
 
 /* ── POPUP & TOAST ── */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
-  const icons={ok:'✅',err:'❌',info:'ℹ️'};
+  const icons={ok:lucideIcon('check-circle'),err:lucideIcon('circle-x'),info:lucideIcon('info')};
   el.className='toast '+(type==='ok'?'t-ok':type==='err'?'t-err':'');
   el.innerHTML='<span>'+icons[type]+'</span><span>'+msg+'</span>';
   wrap.appendChild(el);
+  refreshIcons();
   setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),320)},dur);
 }
 function popup(icon,title,msg,btns){
   // btns: [{label, cls:'pbtn-ok'|'pbtn-cancel'|'pbtn-danger', cb}]
-  document.getElementById('g-popup-icon').textContent=icon;
+  const iconMap={'❌':'circle-x','⚠️':'triangle-alert','🚫':'ban','🚚':'truck','📅':'calendar','💵':'banknote','🗑️':'trash-2','👤':'user','📋':'clipboard-list'};
+  document.getElementById('g-popup-icon').innerHTML=lucideIcon(iconMap[icon]||icon||'info');
   document.getElementById('g-popup-title').textContent=title;
   document.getElementById('g-popup-msg').textContent=msg;
   const bd=document.getElementById('g-popup-btns');
@@ -2738,6 +2768,7 @@ function popup(icon,title,msg,btns){
     btn.onclick=()=>{closePopup();if(b.cb)b.cb()};
     bd.appendChild(btn);
   });
+  refreshIcons();
   document.getElementById('g-popup').classList.add('open');
 }
 function closePopup(){document.getElementById('g-popup').classList.remove('open')}
@@ -2861,7 +2892,7 @@ async function aSalvar(){
       p.estoque=novo;
       return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
     }));
-    toast('Pedido salvo! ✅','ok');aLimpar();
+    toast('Pedido salvo!','ok');aLimpar();
   }catch(e){toast('Erro: '+e.message,'err')}
   btn.disabled=false;btn.textContent='Salvar pedido';
 }
@@ -2919,8 +2950,8 @@ async function renderEntregas(){
     </div>`;
   }
   let html='';
-  if(entregas.length){html+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:4px">🚚 Entregas (${entregas.length})</div>`;html+=entregas.map(cardPed).join('');}
-  if(retiradas.length){if(entregas.length)html+=`<div style="margin-top:10px"></div>`;html+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#3b82f6;margin-bottom:4px">🏪 Retiradas (${retiradas.length})</div>`;html+=retiradas.map(cardPed).join('');}
+  if(entregas.length){html+=`<div class="ico-gap" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:4px">${lucideIcon('truck')} Entregas (${entregas.length})</div>`;html+=entregas.map(cardPed).join('');}
+  if(retiradas.length){if(entregas.length)html+=`<div style="margin-top:10px"></div>`;html+=`<div class="ico-gap" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#3b82f6;margin-bottom:4px">${lucideIcon('store')} Retiradas (${retiradas.length})</div>`;html+=retiradas.map(cardPed).join('');}
   pedEl.innerHTML=html;
   // Consolidado
   const consEl=document.getElementById('e-cons');
@@ -3424,7 +3455,7 @@ async function addCat(){
   cats.push(data);
   document.getElementById('cat-nome').value='';
   const cf=document.getElementById('cat-img-file');if(cf)cf.value='';
-  const cp=document.getElementById('cat-img-preview');if(cp)cp.innerHTML='🌿';
+  const cp=document.getElementById('cat-img-preview');if(cp){cp.innerHTML=lucideIcon('leaf');refreshIcons();}
   renderCatList();renderCatSel();renderPPills();renderACpills();renderShopCats();
   toast('Categoria adicionada!','ok');
 }
@@ -3474,7 +3505,7 @@ async function addProd(){
     const el=document.getElementById(id);if(el)el.value='';
   });
   const pf=document.getElementById('p-img-file');if(pf)pf.value='';
-  const pp=document.getElementById('p-img-preview');if(pp)pp.innerHTML='🥦';
+  const pp=document.getElementById('p-img-preview');if(pp){pp.innerHTML=lucideIcon('sprout');refreshIcons();}
   renderProdList();renderAGrid();renderShop();
   toast('Produto adicionado!','ok');
 }
@@ -3582,7 +3613,7 @@ function renderUPagina(q){
           <span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span>
           ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Você</span>'}
           <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">▾ Pedidos (${peds.length})</button>
-          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-dados-${u.id}')">👤 Info</button>
+          <button class="btn btn-o btn-sm ico-gap" onclick="toggleUserInfo('u-dados-${u.id}')">${lucideIcon('user')} Info</button>
         </div>
       </div>
       <div id="u-inf-${u.id}" style="display:none;margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;max-height:160px;overflow-y:auto">
@@ -3856,6 +3887,7 @@ document.body.insertAdjacentHTML('beforeend',`<div id="mobile-cart-bar" class="m
   <div id="mbar-count" style="font-size:11px;color:var(--text2)">0 items</div></div>
   <button class="btn btn-g" style="padding:10px 20px;font-size:14px;font-weight:700" onclick="abrirCart()">Ver sacola ›</button>
 </div>`);
+refreshIcons();
 </script>
 </body>
 </html>
