@@ -682,6 +682,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
       </div>
       <div class="ava" id="adm-ava">?</div>
+      <span id="adm-label" style="font-size:11px;color:var(--text2);font-weight:600;display:none"></span>
       <button class="btn btn-o btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
   </div>
@@ -866,10 +867,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <canvas id="dash-pie" width="180" height="180" style="display:block;margin:0 auto 12px"></canvas>
         <div id="dm-pie-legend"></div>
       </div>
+    </div>
   </div>
 
 
-    <!-- RELATÓRIO -->
+  <!-- RELATÓRIO -->
   <div id="ap-relatorio" class="apage">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <span style="font-size:17px;font-weight:800">Relatório</span>
@@ -1092,10 +1094,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
         <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700">
-      </div>
-<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:700">Produtos cadastrados</span>
           <div class="cpills" id="p-pills" style="margin:0 0 0 7px"></div>
         </div>
@@ -1203,9 +1201,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="pag" id="u-pag" style="margin-top:8px"></div>
       </div>
     
-    </div>
-  </div>
-
     </div>
   </div>
 
@@ -4344,12 +4339,12 @@ async function renderFinanceiro(){
 }
 
 async function carregarGastos(){
-  const {data}=await sb.from('gastos').select('*').order('data',{ascending:false}).limit(50).catch(()=>({data:[]}));
+  const {data}=await sb.from('gastos').select('*').order('data',{ascending:false}).limit(50);
   renderGastos(data||[]);
   renderPieGastos(data||[]);
   atualizarResultado();
   // Carregar categorias de gastos
-  const {data:cats}=await sb.from('categorias_gasto').select('*').order('nome').catch(()=>({data:[]}));
+  const {data:cats}=await sb.from('categorias_gasto').select('*').order('nome');
   const sel=document.getElementById('fin-gasto-cat');
   if(sel&&cats?.length){sel.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');}
 }
@@ -4398,11 +4393,12 @@ async function atualizarResultado(){
   const de=document.getElementById('fin-de')?.value;
   const ate=document.getElementById('fin-ate')?.value;
   if(!de||!ate)return;
-  const {data:peds}=await sb.from('pedidos').select('total,status,data_pedido')
-    .gte('data_pedido',de).lte('data_pedido',ate).catch(()=>({data:[]}));
+  let peds_data=[],gastos_data=[];
+  try{const r=await sb.from('pedidos').select('total,status,data_pedido').gte('data_pedido',de).lte('data_pedido',ate);peds_data=r.data||[];}catch(e){}
+  const peds=peds_data;
   const totalVendas=(peds||[]).filter(p=>p.status!=='Cancelado').reduce((s,p)=>s+p.total,0);
-  const {data:gastos}=await sb.from('gastos').select('valor,data')
-    .gte('data',de).lte('data',ate).catch(()=>({data:[]}));
+  try{const r=await sb.from('gastos').select('valor,data').gte('data',de).lte('data',ate);gastos_data=r.data||[];}catch(e){}
+  const gastos=gastos_data;
   const totalGastos=(gastos||[]).reduce((s,g)=>s+g.valor,0);
   const resultado=totalVendas-totalGastos;
   const el=document.getElementById('fin-resultado');
