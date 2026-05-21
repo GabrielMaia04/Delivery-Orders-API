@@ -12,6 +12,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Cortadinhos com Carinho</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -153,18 +154,46 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .resumo-total{display:flex;justify-content:space-between;align-items:baseline}
 .resumo-total-val{font-size:18px;font-weight:800;color:var(--green-bright)}
 
-/* ADMIN */
-.admin-nav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;height:50px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
-.admin-brand{display:flex;align-items:center;gap:7px;margin-right:14px;flex-shrink:0}
-.admin-logo{width:26px;height:26px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
-.admin-name{font-size:13px;font-weight:800;color:var(--text);line-height:1}
+/* ADMIN — SIDEBAR LAYOUT */
+#screen-admin{display:none;background:var(--bg)}
+#screen-admin.active{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.admin-topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;z-index:60;box-shadow:var(--shadow)}
+.admin-brand{display:flex;align-items:center;gap:9px}
+.admin-logo{width:30px;height:30px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0}
+.admin-name{font-size:14px;font-weight:800;color:var(--text);line-height:1.1}
 .admin-name span{font-size:10px;font-weight:400;color:var(--text2);display:block}
-.admin-tabs{display:flex;align-items:center;flex:1;overflow-x:auto;scrollbar-width:none}
-.admin-tabs::-webkit-scrollbar{display:none}
-.atab{padding:0 13px;height:50px;font-size:12px;font-weight:500;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:color .15s,border-color .15s}
-.atab.active{color:var(--green-bright);border-bottom-color:var(--green-bright);font-weight:700}
-.admin-right{display:flex;align-items:center;gap:7px;margin-left:auto;flex-shrink:0}
-.ava{width:28px;height:28px;border-radius:6px;background:var(--green);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.admin-topbar-right{display:flex;align-items:center;gap:8px}
+.ava{width:30px;height:30px;border-radius:8px;background:var(--green);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+/* SIDEBAR */
+.admin-body{display:flex;flex:1;min-height:0;overflow:hidden}
+.admin-sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;height:100%}
+.admin-sidebar-menu{padding:10px 8px;flex:1}
+.aside-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;width:100%;font-family:var(--font);text-align:left;transition:all .15s;margin-bottom:2px}
+.aside-item svg,.aside-item i{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.aside-item:hover{background:var(--bg3);color:var(--text)}
+.aside-item.active{background:var(--green-light);color:var(--green-bright);font-weight:700}
+.aside-item.active svg,.aside-item.active i{opacity:1}
+.aside-divider{height:1px;background:var(--border);margin:8px 4px}
+.aside-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 12px 4px}
+.aside-footer{padding:12px 8px;border-top:1px solid var(--border)}
+/* CONTEUDO */
+.admin-content{flex:1;overflow-y:auto;min-width:0}
+/* MOBILE — sidebar vira drawer */
+.admin-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55}
+@media(max-width:768px){
+  .admin-sidebar{position:fixed;top:52px;left:0;bottom:0;z-index:56;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+  .admin-sidebar.open{transform:translateX(0)}
+  .admin-sidebar-overlay.open{display:block}
+  .admin-content{padding-bottom:60px}
+  .admin-menu-btn{display:flex!important}
+}
+.admin-menu-btn{display:none;width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:18px}
+/* LEGACY (não quebrar apage) */
+.apage{display:none;padding:20px;max-width:1200px}
+.apage.active{display:block}
+.apage-3col{display:none;padding:12px;height:calc(100vh - 52px);overflow:hidden}
+.apage-3col.active{display:flex;flex-direction:column}
+.atab{display:none} /* esconder tabs antigas */
 
 /* ADMIN PAGES */
 .apage{display:none;padding:14px;max-width:1100px;margin:0 auto}
@@ -351,6 +380,39 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .qty-big-in{flex:1;font-size:24px;font-weight:800;text-align:center;padding:9px;border-radius:9px}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+/* ── DASHBOARD ── */
+.dash-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.dash-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.dash-metrics{grid-template-columns:1fr 1fr}}
+.dash-metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.dash-metric-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.dash-metric-val{font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
+.dash-metric-val.green{color:var(--green-bright)}
+.dash-metric-sub{font-size:11px;color:var(--text3);font-weight:500}
+.dash-metric-sub.up{color:#22c55e}
+.dash-metric-sub.down{color:var(--red)}
+.dash-mid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:860px){.dash-mid{grid-template-columns:1fr}}
+.dash-chart-card{display:flex;flex-direction:column}
+.dash-recent-card{display:flex;flex-direction:column}
+.dash-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dash-section-title{font-size:13px;font-weight:700;color:var(--text)}
+.dash-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:680px){.dash-bottom{grid-template-columns:1fr}}
+.dash-recent-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:8px}
+.dash-recent-item:last-child{border-bottom:none}
+.dash-recent-code{font-size:11px;font-weight:700;font-family:monospace;color:var(--text3);min-width:50px}
+.dash-recent-name{font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-recent-val{font-size:12px;font-weight:700;color:var(--green-bright);white-space:nowrap}
+.top-prod-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.top-prod-row:last-child{border-bottom:none}
+.top-prod-rank{width:22px;height:22px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3);flex-shrink:0}
+.top-prod-rank.gold{background:#fef9c3;border-color:#eab308;color:#a16207}
+.top-prod-rank.silver{background:#f1f5f9;border-color:#94a3b8;color:#475569}
+.top-prod-rank.bronze{background:#fff7ed;border-color:#f97316;color:#c2410c}
+.top-prod-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.top-prod-qty{font-size:11px;color:var(--text3)}
+.top-prod-val{font-size:12px;font-weight:700;color:var(--green-bright)}
 /* ── PAGINAÇÃO ── */
 .pag{display:flex;align-items:center;gap:5px;padding:12px 14px;flex-wrap:wrap;border-top:1px solid var(--border)}
 .pag-btn{min-width:34px;height:34px;padding:0 10px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;justify-content:center}
@@ -380,7 +442,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- LOJA PUBLICA -->
 <div id="screen-shop" class="screen active">
   <div class="topbar">
-    <div class="brand"><div class="logo"><i data-lucide="leaf"></i></div><div class="brand-name">Cortadinhos com Carinho<span>Praticidade na sua rotina!</span></div></div>
+    <div class="brand"><div class="logo"><i data-lucide="leaf"></i></div><div class="brand-name">Cortadinhos<span>com carinho</span></div></div>
     <div class="topbar-right">
       <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown">
         <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">Conta</button>
@@ -588,15 +650,92 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
-  <nav class="admin-nav">
-    <div class="admin-brand"><div class="admin-logo"><i data-lucide="leaf"></i></div><div class="admin-name">Cortadinhos com Carinho<span id="adm-label">Admin</span></div></div>
-    <div class="admin-tabs" id="adm-tabs"></div>
-    <div class="admin-right">
+  <!-- TOPBAR -->
+  <div class="admin-topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="admin-menu-btn" onclick="toggleSidebar()" title="Menu">&#9776;</button>
+      <div class="admin-brand" onclick="voltarLoja()" style="cursor:pointer" title="Ir para a loja">
+        <div class="admin-logo"><i data-lucide="leaf"></i></div>
+        <div class="admin-name">Cortadinhos<span>com carinho</span></div>
+      </div>
+    </div>
+    <div class="admin-topbar-right">
       <button class="icon-btn" onclick="toggleTheme()" title="Alternar tema"><i data-lucide="moon"></i></button>
+      <!-- SININHO -->
+      <div style="position:relative">
+        <button class="icon-btn" id="bell-btn" onclick="toggleBell()" title="Pedidos pendentes">
+          <i data-lucide="bell"></i>
+        </button>
+        <span id="bell-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2);pointer-events:none"></span>
+        <!-- Dropdown de notificações -->
+        <div id="bell-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:500;overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:13px;font-weight:700">Pedidos pendentes</span>
+            <button onclick="marcarTodosLidos()" style="font-size:11px;color:var(--green-bright);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Marcar todos como lido</button>
+          </div>
+          <div id="bell-list" style="max-height:360px;overflow-y:auto"></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border)">
+            <button onclick="fecharBell();showAPage('relatorio',document.getElementById('aside-relatorio'))" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Ver todos os pedidos</button>
+          </div>
+        </div>
+      </div>
       <div class="ava" id="adm-ava">?</div>
       <button class="btn btn-o btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
-  </nav>
+  </div>
+  <!-- OVERLAY MOBILE -->
+  <div class="admin-sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
+  <!-- BODY -->
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <nav class="admin-sidebar-menu">
+        <div class="aside-section">Dashboard</div>
+        <button class="aside-item active" id="aside-painel" onclick="showAPage('dashboard',this)">
+          <i data-lucide="layout-dashboard"></i> Painel
+        </button>
+        <button class="aside-item" id="aside-relatorio" onclick="showAPage('relatorio',this)">
+          <i data-lucide="bar-chart-2"></i> Relatório
+        </button>
+        <button class="aside-item" id="aside-financeiro" onclick="showAPage('financeiro',this)">
+          <i data-lucide="trending-up"></i> Financeiro
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Vendas</div>
+        <button class="aside-item" id="aside-pedido" onclick="showAPage('pedido',this)">
+          <i data-lucide="plus-circle"></i> Novo Pedido
+        </button>
+        <button class="aside-item" id="aside-pedidos" onclick="showAPage('pedidos',this)">
+          <i data-lucide="clipboard-list"></i> Pedidos
+        </button>
+        <button class="aside-item" id="aside-entregas" onclick="showAPage('entregas',this)">
+          <i data-lucide="truck"></i> Entregas
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Produtos</div>
+        <button class="aside-item" id="aside-categorias" onclick="showAPage('categorias',this)">
+          <i data-lucide="tag"></i> Categorias
+        </button>
+        <button class="aside-item" id="aside-produtos" onclick="showAPage('produtos',this)">
+          <i data-lucide="package"></i> Produtos
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Sistema</div>
+        <button class="aside-item" id="aside-config" onclick="showAPage('config',this)">
+          <i data-lucide="settings"></i> Configurações
+        </button>
+        <button class="aside-item" id="aside-clientes" onclick="showAPage('clientes',this)">
+          <i data-lucide="users"></i> Clientes
+        </button>
+      </nav>
+      <div class="aside-footer">
+        <button class="aside-item" onclick="voltarLoja()" style="width:100%">
+          <i data-lucide="store"></i> Ver loja
+        </button>
+      </div>
+    </aside>
+    <!-- CONTEÚDO -->
+    <div class="admin-content" id="admin-content">
 
   <!-- PEDIDO 3COL -->
   <div id="ap-pedido" class="apage-3col">
@@ -743,11 +882,99 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <!-- USUARIOS -->
+  <!-- FINANCEIRO -->
+  <div id="ap-financeiro" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Financeiro</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — relatórios financeiros detalhados.</div>
+  </div>
+
+  <!-- PEDIDOS -->
+  <div id="ap-pedidos" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Pedidos</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão completa de pedidos.</div>
+  </div>
+
+  <!-- CATEGORIAS -->
+  <div id="ap-categorias" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Categorias</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão de categorias.</div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="ap-config" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Configurações</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — configurações do sistema.</div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="ap-clientes" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Clientes</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão de clientes.</div>
+  </div>
+
   <!-- PAINEL (Dashboard + Usuários) -->
   <div id="ap-dashboard" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Painel</div>
+
+    <!-- MÉTRICAS TOPO -->
+    <div class="dash-metrics" id="dash-metrics">
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Pedidos hoje</div>
+        <div class="dash-metric-val" id="dm-pedidos">—</div>
+        <div class="dash-metric-sub" id="dm-pedidos-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Faturamento hoje</div>
+        <div class="dash-metric-val green" id="dm-fat">—</div>
+        <div class="dash-metric-sub" id="dm-fat-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total do mês</div>
+        <div class="dash-metric-val green" id="dm-mes">—</div>
+        <div class="dash-metric-sub" id="dm-mes-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Ticket médio</div>
+        <div class="dash-metric-val" id="dm-ticket">—</div>
+        <div class="dash-metric-sub" id="dm-ticket-sub"></div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO + PEDIDOS RECENTES -->
+    <div class="dash-mid">
+      <div class="acard-sm dash-chart-card">
+        <div class="dash-section-header">
+          <span class="dash-section-title">Vendas — últimos 7 dias</span>
+          <div id="dm-chart-total" style="font-size:13px;font-weight:700;color:var(--green-bright)"></div>
+        </div>
+        <canvas id="dash-chart" height="180"></canvas>
+      </div>
+      <div class="acard-sm dash-recent-card">
+        <div class="dash-section-header">
+          <span class="dash-section-title">Pedidos recentes</span>
+          <button class="btn btn-o btn-sm" onclick="showAPage('relatorio',document.querySelector('.atab:nth-child(2)'))">Ver todos</button>
+        </div>
+        <div id="dm-recentes"></div>
+      </div>
+    </div>
+
+    <!-- TOP PRODUTOS + VENDAS POR CATEGORIA -->
+    <div class="dash-bottom">
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Top produtos</div>
+        <div id="dm-top-prods"></div>
+      </div>
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Vendas por categoria</div>
+        <canvas id="dash-pie" width="180" height="180" style="display:block;margin:0 auto 12px"></canvas>
+        <div id="dm-pie-legend"></div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:24px 0"></div>
+    <div style="font-size:15px;font-weight:800;margin-bottom:16px;color:var(--text)">Configurações</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
-      <!-- Taxa de entrega -->
+
+<!-- Taxa de entrega -->
       <div class="acard-sm">
           <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="truck"></i> Taxa de Entrega</div>
         <div class="field"><label>Valor atual (R$)</label>
@@ -841,6 +1068,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div id="u-lista"></div>
         <div class="pag" id="u-pag" style="margin-top:8px"></div>
       </div>
+    
     </div>
   </div>
 
@@ -886,6 +1114,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+    </div><!-- /admin-content -->
+  </div><!-- /admin-body -->
 
 <!-- PERFIL CLIENTE SHEET -->
 <div class="sheet-overlay" id="perfil-ov" onclick="fecharPerfilOv(event)">
@@ -1384,6 +1614,91 @@ function notifNativa(titulo, corpo){
 }
 
 // Iniciar escuta em tempo real de novos pedidos
+
+// ══════════════════════════════════════
+// SININHO — notificações de pedidos pendentes
+// ══════════════════════════════════════
+let _pedidosPendentes = []; // cache de pendentes
+let _bellOpen = false;
+
+async function carregarPendentes(){
+  const {data} = await sb.from('pedidos')
+    .select('id,codigo,cliente_nome,total,created_at,data_pedido')
+    .eq('status','Pendente')
+    .order('created_at',{ascending:false})
+    .limit(20);
+  _pedidosPendentes = data || [];
+  atualizarBadge();
+  renderBellList();
+}
+
+function atualizarBadge(){
+  const badge = document.getElementById('bell-badge');
+  if(!badge) return;
+  const n = _pedidosPendentes.length;
+  if(n > 0){
+    badge.style.display = 'flex';
+    badge.textContent = n > 99 ? '99+' : n;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderBellList(){
+  const el = document.getElementById('bell-list');
+  if(!el) return;
+  if(!_pedidosPendentes.length){
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Nenhum pedido pendente</div>';
+    return;
+  }
+  el.innerHTML = _pedidosPendentes.map(p => {
+    const dt = p.created_at ? new Date(p.created_at) : null;
+    const hora = dt ? dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+    const data = dt ? dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''" onclick="fecharBell();verPed(${p.id})">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${p.cliente_nome}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.codigo||'#'+p.id} · ${data} às ${hora}</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:var(--green-bright);white-space:nowrap">R$ ${fp(p.total)}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBell(){
+  _bellOpen = !_bellOpen;
+  const dd = document.getElementById('bell-dropdown');
+  if(dd) dd.style.display = _bellOpen ? 'block' : 'none';
+  if(_bellOpen) carregarPendentes();
+}
+
+function fecharBell(){
+  _bellOpen = false;
+  const dd = document.getElementById('bell-dropdown');
+  if(dd) dd.style.display = 'none';
+}
+
+async function marcarTodosLidos(){
+  // Marca todos como "Em preparo" para tirar do pendente
+  if(!_pedidosPendentes.length) return;
+  const ids = _pedidosPendentes.map(p => p.id);
+  await sb.from('pedidos').update({status:'Em preparo'}).in('id', ids);
+  _pedidosPendentes = [];
+  atualizarBadge();
+  renderBellList();
+  toast('Todos marcados como Em preparo','ok');
+}
+
+// Fechar ao clicar fora
+document.addEventListener('click', e => {
+  const bell = document.getElementById('bell-btn');
+  const dd = document.getElementById('bell-dropdown');
+  if(bell && dd && !bell.contains(e.target) && !dd.contains(e.target)){
+    fecharBell();
+  }
+});
+
 function iniciarRealtime(){
   if(realtimeSub) return; // ja esta ouvindo
 
@@ -1400,12 +1715,16 @@ function iniciarRealtime(){
       if(ultimoPedidoId === ped.id) return;
       ultimoPedidoId = ped.id;
 
-      const titulo = '\u{1F6D2} Novo pedido!';
-      const corpo = (ped.cliente_nome||'Cliente') + ' - R$ ' + (ped.total||0).toFixed(2).replace('.',',');
+      const titulo = 'Novo pedido!';
+      const corpo = (ped.cliente_nome||'Cliente') + ' — R$ ' + (ped.total||0).toFixed(2).replace('.',',');
 
       tocarSom();
       mostrarNotifPopup(titulo, corpo);
       notifNativa(titulo, corpo);
+      // Atualizar sininho
+      _pedidosPendentes.unshift(ped);
+      atualizarBadge();
+      if(_bellOpen) renderBellList();
 
       // Atualizar badge na aba do navegador
       document.title = '(1) Cortadinhos com Carinho';
@@ -2201,11 +2520,23 @@ function atualizarBtnContinuar(){
 
 function irCheckout(){
   if(!cart.itens.length){toast('Carrinho vazio!','err');return}
-  // Bloquear se entrega e nao atinge pedido minimo
-  if(cart.entrega==='Entrega'&&PEDIDO_MIN>0){
+  if(cart.entrega==='Entrega'){
     const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    if(sub<PEDIDO_MIN){
+    // Bloquear se nao atingiu pedido minimo
+    if(PEDIDO_MIN>0&&sub<PEDIDO_MIN){
       toast('Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
+      return;
+    }
+    // Forçar CEP antes de prosseguir
+    if(!_freteCalculado){
+      const cepEl=document.getElementById('cart-cep');
+      if(cepEl)cepEl.focus();
+      toast('Calcule o frete pelo CEP antes de continuar.','err',4000);
+      return;
+    }
+    // Bloquear se CEP foi calculado mas está fora do raio
+    if(window._cartCoords===undefined&&LOJA_LAT){
+      toast('Endereço fora do raio de entrega. Escolha Retirada.','err',4000);
       return;
     }
   }
@@ -2581,13 +2912,6 @@ async function showAdmin(){
   document.getElementById('screen-admin').classList.add('active');
   document.getElementById('adm-ava').textContent=ini(perfil.nome);
   document.getElementById('adm-label').textContent=perfil.role==='admin'?'Admin':'Pedidos';
-  const tabs=document.getElementById('adm-tabs');
-  tabs.innerHTML='<button class="atab active" onclick="showAPage(\'pedido\',this)">Novo Pedido</button>'
-    +'<button class="atab" onclick="showAPage(\'relatorio\',this)">Relatorio</button>'
-    +'<button class="atab" onclick="showAPage(\'entregas\',this)">Entregas</button>'
-    +'<button class="atab" onclick="showAPage(\'produtos\',this)">Produtos</button>'
-    +'<button class="atab" onclick="showAPage(\'dashboard\',this)">Painel</button>'
-    +'<button class="atab" onclick="voltarLoja()">Loja</button>';
   document.getElementById('a-data').value='';
   const adb=document.getElementById('a-data-btn');
   if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
@@ -2595,13 +2919,37 @@ async function showAdmin(){
   const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(TAXA);
   if(!fCatAdm&&cats.length)fCatAdm=cats[0].id;
   renderACpills();renderAGrid();renderCatSel();
-  showAEl('ap-pedido');
+  // Abrir Dashboard por padrão
+  showAEl('ap-dashboard');
+  document.querySelectorAll('.aside-item').forEach(b=>b.classList.remove('active'));
+  const dash=document.getElementById('aside-painel');
+  if(dash)dash.classList.add('active');
+  initDashboard();
   iniciarRealtime();
   iniciarNotificacoes();
+  carregarPendentes();
 }
+
+function toggleSidebar(){
+  const sb=document.getElementById('admin-sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+function fecharSidebar(){
+  const sb=document.getElementById('admin-sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  if(sb)sb.classList.remove('open');
+  if(ov)ov.classList.remove('open');
+}
+
 function voltarLoja(){document.getElementById('screen-admin').classList.remove('active');document.getElementById('screen-shop').classList.add('active')}
 function showAPage(p,tab){
-  document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));tab.classList.add('active');
+  // Atualizar sidebar ativo
+  document.querySelectorAll('.aside-item').forEach(b=>b.classList.remove('active'));
+  if(tab)tab.classList.add('active');
+  // Fechar sidebar em mobile após clicar
+  fecharSidebar();
   showAEl('ap-'+p);
   if(p==='relatorio')renderRel();
   if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills()}
@@ -3746,7 +4094,221 @@ function updMobileCartBar(){
 
 /* ── DASHBOARD ── */
 let cupons=[];
+
+// ══════════════════════════════════════
+// DASHBOARD — métricas, gráfico, top produtos
+// ══════════════════════════════════════
+let _dashChart=null, _dashPie=null;
+
+async function loadDashMetrics(){
+  const hoje=new Date();
+  const isoHoje=hoje.toISOString().split('T')[0];
+  const primeiroDiaMes=isoHoje.slice(0,7)+'-01';
+
+  // Buscar pedidos de hoje e do mês
+  const [{data:pedHoje},{data:pedMes},{data:pedOntem}]=await Promise.all([
+    sb.from('pedidos').select('id,total,status,created_at,data_pedido').eq('data_pedido',isoHoje),
+    sb.from('pedidos').select('id,total,status,data_pedido').gte('data_pedido',primeiroDiaMes),
+    sb.from('pedidos').select('id,total,status').eq('data_pedido',getISODate(-1)),
+  ]);
+
+  const ativos=p=>p.status!=='Cancelado';
+  const soma=arr=>arr.filter(ativos).reduce((s,p)=>s+p.total,0);
+
+  const totHoje=soma(pedHoje||[]);
+  const totOntem=soma(pedOntem||[]);
+  const totMes=soma(pedMes||[]);
+  const qtdHoje=(pedHoje||[]).filter(ativos).length;
+  const qtdMes=(pedMes||[]).filter(ativos).length;
+  const ticket=qtdMes>0?totMes/qtdMes:0;
+
+  // Variação vs ontem
+  const varFat=totOntem>0?((totHoje-totOntem)/totOntem*100):0;
+  const varSub=varFat>=0?`+${varFat.toFixed(0)}% vs ontem`:`${varFat.toFixed(0)}% vs ontem`;
+  const varCls=varFat>=0?'up':'down';
+
+  document.getElementById('dm-pedidos').textContent=qtdHoje;
+  document.getElementById('dm-pedidos-sub').textContent=`${qtdMes} no mês`;
+  document.getElementById('dm-fat').textContent='R$ '+fp(totHoje);
+  document.getElementById('dm-fat-sub').innerHTML=`<span class="${varCls}">${varSub}</span>`;
+  document.getElementById('dm-mes').textContent='R$ '+fp(totMes);
+  document.getElementById('dm-mes-sub').textContent=`${qtdMes} pedidos`;
+  document.getElementById('dm-ticket').textContent='R$ '+fp(ticket);
+  document.getElementById('dm-ticket-sub').textContent='média por pedido';
+}
+
+function getISODate(offset=0){
+  const d=new Date();
+  d.setDate(d.getDate()+offset);
+  return d.toISOString().split('T')[0];
+}
+
+async function loadDashChart(){
+  // Últimos 7 dias
+  const dias=[];
+  for(let i=6;i>=0;i--)dias.push(getISODate(-i));
+  const de=dias[0],ate=dias[dias.length-1];
+
+  const {data:peds}=await sb.from('pedidos')
+    .select('total,status,data_pedido')
+    .gte('data_pedido',de).lte('data_pedido',ate);
+
+  const por_dia={};
+  dias.forEach(d=>por_dia[d]=0);
+  (peds||[]).filter(p=>p.status!=='Cancelado').forEach(p=>{
+    if(por_dia[p.data_pedido]!==undefined)por_dia[p.data_pedido]+=p.total;
+  });
+
+  const labels=dias.map(d=>{
+    const[,m,dy]=d.split('-');
+    return dy+'/'+m;
+  });
+  const valores=dias.map(d=>por_dia[d]);
+  const total=valores.reduce((a,b)=>a+b,0);
+  document.getElementById('dm-chart-total').textContent='R$ '+fp(total);
+
+  const ctx=document.getElementById('dash-chart').getContext('2d');
+  if(_dashChart)_dashChart.destroy();
+  _dashChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Faturamento',
+        data:valores,
+        borderColor:'#2d8c4e',
+        backgroundColor:'rgba(45,140,78,0.08)',
+        borderWidth:2.5,
+        pointBackgroundColor:'#2d8c4e',
+        pointRadius:4,
+        pointHoverRadius:6,
+        tension:0.4,
+        fill:true
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'R$ '+fp(c.raw)}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#8aab8e'}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#8aab8e',callback:v=>'R$'+fp(v)},beginAtZero:true}
+      }
+    }
+  });
+}
+
+async function loadDashRecentes(){
+  const {data:peds}=await sb.from('pedidos')
+    .select('id,codigo,cliente_nome,total,status,data_pedido')
+    .order('created_at',{ascending:false}).limit(6);
+
+  const statusColor={
+    'Pendente':'var(--orange)',
+    'Em preparo':'#3b82f6',
+    'Saiu para entrega':'#8b5cf6',
+    'Entregue':'var(--green-bright)',
+    'Cancelado':'var(--red)'
+  };
+
+  const el=document.getElementById('dm-recentes');
+  if(!peds?.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum pedido ainda.</div>';return}
+  el.innerHTML=peds.map(p=>`
+    <div class="dash-recent-item">
+      <span class="dash-recent-code">${p.codigo||'#'+p.id}</span>
+      <span class="dash-recent-name">${p.cliente_nome}</span>
+      <span style="font-size:10px;font-weight:700;color:${statusColor[p.status]||'var(--text3)'};white-space:nowrap;margin-right:8px">${p.status||'Pendente'}</span>
+      <span class="dash-recent-val">R$ ${fp(p.total)}</span>
+    </div>`).join('');
+}
+
+async function loadDashTopProds(){
+  const {data:itens}=await sb.from('itens_pedido')
+    .select('produto_id,nome_produto,quantidade,subtotal');
+
+  const mapa={};
+  (itens||[]).forEach(it=>{
+    const k=it.produto_id||it.nome_produto;
+    if(!mapa[k])mapa[k]={nome:it.nome_produto,qty:0,total:0};
+    mapa[k].qty+=it.quantidade;
+    mapa[k].total+=it.subtotal;
+  });
+  const top=Object.values(mapa).sort((a,b)=>b.qty-a.qty).slice(0,5);
+  const rankCls=['gold','silver','bronze','',''];
+
+  const el=document.getElementById('dm-top-prods');
+  if(!top.length){el.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return}
+  el.innerHTML=top.map((p,i)=>`
+    <div class="top-prod-row">
+      <div class="top-prod-rank ${rankCls[i]}">${i+1}</div>
+      <div class="top-prod-name">${p.nome}</div>
+      <div class="top-prod-qty">${p.qty} un</div>
+      <div class="top-prod-val">R$ ${fp(p.total)}</div>
+    </div>`).join('');
+}
+
+async function loadDashPie(){
+  const {data:itens}=await sb.from('itens_pedido')
+    .select('produto_id,quantidade,subtotal');
+  const {data:ps}=await sb.from('produtos').select('id,cat_id');
+  const catMap={};
+  (ps||[]).forEach(p=>catMap[p.id]=p.cat_id);
+
+  const mapa={};
+  (itens||[]).forEach(it=>{
+    const cid=catMap[it.produto_id]||0;
+    const cat=cats.find(c=>c.id===cid);
+    const nome=cat?cat.nome:'Outros';
+    if(!mapa[nome])mapa[nome]=0;
+    mapa[nome]+=it.subtotal;
+  });
+  const sorted=Object.entries(mapa).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const total=sorted.reduce((s,[,v])=>s+v,0);
+  if(!total)return;
+
+  const COLORS=['#2d8c4e','#4ade80','#86efac','#bbf7d0','#d1fae5'];
+  const ctx=document.getElementById('dash-pie').getContext('2d');
+  if(_dashPie)_dashPie.destroy();
+  _dashPie=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:sorted.map(([k])=>k),
+      datasets:[{data:sorted.map(([,v])=>v),backgroundColor:COLORS,borderWidth:0,hoverOffset:4}]
+    },
+    options:{
+      responsive:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>{
+          const pct=(c.raw/total*100).toFixed(0);
+          return c.label+': '+pct+'% (R$ '+fp(c.raw)+')';
+        }}}
+      },
+      cutout:'65%'
+    }
+  });
+
+  const leg=document.getElementById('dm-pie-legend');
+  leg.innerHTML=sorted.map(([k,v],i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:11px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></div>
+        <span style="color:var(--text)">${k}</span>
+      </div>
+      <span style="font-weight:700;color:var(--text2)">${(v/total*100).toFixed(0)}%</span>
+    </div>`).join('');
+}
+
 async function initDashboard(){
+  // Carregar métricas e gráficos em paralelo (sem bloquear configs)
+  Promise.all([
+    loadDashMetrics(),
+    loadDashChart(),
+    loadDashRecentes(),
+    loadDashTopProds(),
+    loadDashPie()
+  ]).catch(e=>console.warn('Dashboard metrics:',e));
+
+  // Configs
   document.getElementById('dash-taxa').value=TAXA.toFixed(2);
   document.getElementById('dash-pedmin').value=PEDIDO_MIN>0?PEDIDO_MIN.toFixed(2):'';
   if(LOJA_ENDERECO)document.getElementById('dash-loja-end').value=LOJA_ENDERECO;
