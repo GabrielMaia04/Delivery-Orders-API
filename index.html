@@ -300,7 +300,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 /* ── PAGAMENTO CHECKOUT ── */
 .pag-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .pag-opt{padding:12px 8px;border-radius:12px;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font);width:100%}
-.pag-opt .pag-ico{font-size:22px;display:block;margin-bottom:4px}
+.pag-opt .pag-ico{font-size:22px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;height:28px}
+.pag-opt .pag-ico i,.pag-opt .pag-ico svg{width:24px;height:24px}
 .pag-opt .pag-lbl{font-size:12px;font-weight:700;color:var(--text)}
 .pag-opt .pag-sub{font-size:10px;color:var(--text3);margin-top:2px}
 .pag-opt.active{border-color:var(--green);background:var(--green-light)}
@@ -340,7 +341,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .success-ov.open{opacity:1;pointer-events:all}
 .success-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:36px 28px 28px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,.4);transform:scale(.9) translateY(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .success-ov.open .success-box{transform:none}
-.success-emoji{font-size:56px;display:block;margin-bottom:12px;animation:bounce .5s .15s both}
+.success-emoji{display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:bounce .5s .15s both}
+.success-emoji i,.success-emoji svg{width:56px;height:56px;color:var(--green-bright)}
 .success-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
 .success-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px}
 .success-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity .15s}
