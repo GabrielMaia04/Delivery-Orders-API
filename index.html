@@ -740,7 +740,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="admin-content" id="admin-content">
 
   <!-- PEDIDO 3COL -->
-  <div id="ap-pedido" class="apage-3col">
+<div id="ap-pedido" class="apage-3col">
     <div class="col3">
       <div class="acard">
         <div class="acard-h"><span class="acard-title">Dados do cliente</span></div>
@@ -809,113 +809,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
-  <!-- RELATORIO -->
-  <div id="ap-relatorio" class="apage">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <span style="font-size:17px;font-weight:800">Relatorio e Historico</span>
-      <button class="btn btn-o btn-sm" onclick="exportRel()">Exportar texto</button>
-    </div>
-    <div class="acard-sm" style="margin-bottom:12px">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div><label>Cliente ou ID do pedido</label><input id="r-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderRel()"></div>
-        <div><label>Filtro</label><select id="r-tipo" style="width:150px" onchange="toggleRFiltro()"><option value="dia">Data unica</option><option value="periodo">Periodo</option></select></div>
-        <div id="r-fdia"><label>Data</label><input id="r-data" type="date" style="width:155px" onchange="renderRel()"></div>
-        <div id="r-fper" class="date-range hidden"><div><label>De</label><input id="r-de" type="date" style="width:145px" onchange="renderRel()"></div><div><label>Ate</label><input id="r-ate" type="date" style="width:145px" onchange="renderRel()"></div></div>
-      </div>
-    </div>
-    <div id="r-stats" class="stats"></div>
-    <div style="margin-bottom:12px">
-      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div class="r-scroll-box"><div id="r-peds"></div></div></div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Historico</div>
-      <div id="r-loading" class="loading"><div class="spin"></div> Carregando...</div>
-      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
-      <div class="pag" id="r-pag"></div>
-    </div>
-  </div>
-
-  <!-- PRODUTOS -->
-  <div id="ap-produtos" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:12px">Produtos e Categorias</div>
-    <div class="pg-grid">
-      <div>
-        <div class="acard-sm" style="margin-bottom:10px">
-          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Nova categoria</div>
-          <div class="field"><label>Nome</label><input id="cat-nome" type="text" placeholder="Ex: Legumes"></div>
-          <div class="field"><label>Imagem (400x200px)</label>
-            <input id="cat-img-file" type="file" accept="image/*" style="display:none" onchange="previewCatImg(this)">
-            <div style="display:flex;gap:10px;align-items:center">
-              <div id="cat-img-preview" style="width:56px;height:28px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden"><i data-lucide="leaf"></i></div>
-              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('cat-img-file').click()">Escolher foto</button>
-            </div>
-          </div>
-          <button class="btn btn-g" style="width:100%" onclick="addCat()">+ Adicionar</button>
-          <div id="cat-list" style="margin-top:10px"></div>
-        </div>
-        <div class="acard-sm">
-          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Novo produto</div>
-          <div class="field"><label>Categoria *</label><select id="p-cat"></select></div>
-          <div class="field"><label>Nome *</label><input id="p-nome" type="text" placeholder="Ex: Cenoura" autocomplete="off"></div>
-          <div class="field"><label>Descricao</label><input id="p-desc" type="text" placeholder="Opcional" autocomplete="off"></div>
-          <div class="row2">
-            <div class="field"><label>Peso</label><input id="p-peso" type="text" placeholder="350g"></div>
-            <div class="field"><label>Preco (R$) *</label><input id="p-preco" type="number" step="0.01" placeholder="0,00"></div>
-          </div>
-          <div class="field"><label>Imagem do produto (800x800px)</label>
-            <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="previewProdImg(this)">
-            <div style="display:flex;gap:10px;align-items:center">
-              <div id="p-img-preview" style="width:56px;height:56px;border-radius:10px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden"><i data-lucide="sprout"></i></div>
-              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('p-img-file').click()">Escolher foto</button>
-            </div>
-          </div>
-          <div class="field"><label>Estoque (deixe vazio = ilimitado)</label><input id="p-estoque" type="number" min="0" placeholder="Ex: 50"></div>
-          <button class="btn btn-g" style="width:100%;margin-top:4px" onclick="addProd()">Salvar produto</button>
-        </div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700">Produtos cadastrados</span>
-          <div class="cpills" id="p-pills" style="margin:0 0 0 7px"></div>
-        </div>
-        <div id="p-list" style="padding:0 14px"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- USUARIOS -->
-  <!-- FINANCEIRO -->
-  <div id="ap-financeiro" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Financeiro</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — relatórios financeiros detalhados.</div>
-  </div>
-
-  <!-- PEDIDOS -->
-  <div id="ap-pedidos" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Pedidos</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão completa de pedidos.</div>
-  </div>
-
-  <!-- CATEGORIAS -->
-  <div id="ap-categorias" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Categorias</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão de categorias.</div>
-  </div>
-
-  <!-- CONFIG -->
-  <div id="ap-config" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Configurações</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — configurações do sistema.</div>
-  </div>
-
-  <!-- CLIENTES -->
-  <div id="ap-clientes" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:4px">Clientes</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Em breve — gestão de clientes.</div>
-  </div>
-
-  <!-- PAINEL (Dashboard + Usuários) -->
+    <!-- PAINEL (Dashboard) -->
   <div id="ap-dashboard" class="apage">
+
 
     <!-- MÉTRICAS TOPO -->
     <div class="dash-metrics" id="dash-metrics">
@@ -970,29 +866,258 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <canvas id="dash-pie" width="180" height="180" style="display:block;margin:0 auto 12px"></canvas>
         <div id="dm-pie-legend"></div>
       </div>
+  </div>
+
+
+    <!-- RELATÓRIO -->
+  <div id="ap-relatorio" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Relatório</span>
+      <button class="btn btn-o btn-sm" onclick="exportRel()">Exportar</button>
     </div>
+<div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label>Cliente ou ID do pedido</label><input id="r-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderRel()"></div>
+        <div><label>Filtro</label><select id="r-tipo" style="width:150px" onchange="toggleRFiltro()"><option value="dia">Data unica</option><option value="periodo">Periodo</option></select></div>
+        <div id="r-fdia"><label>Data</label><input id="r-data" type="date" style="width:155px" onchange="renderRel()"></div>
+        <div id="r-fper" class="date-range hidden"><div><label>De</label><input id="r-de" type="date" style="width:145px" onchange="renderRel()"></div><div><label>Ate</label><input id="r-ate" type="date" style="width:145px" onchange="renderRel()"></div></div>
+      </div>
+    </div>
+    <div id="r-stats" class="stats"></div>
+    <div style="margin-bottom:12px">
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div class="r-scroll-box"><div id="r-peds"></div></div></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Historico</div>
+      <div id="r-loading" class="loading"><div class="spin"></div> Carregando...</div>
+      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
+      <div class="pag" id="r-pag"></div>
+    </div>
+  </div>
 
-    <div style="height:1px;background:var(--border);margin:24px 0"></div>
-    <div style="font-size:15px;font-weight:800;margin-bottom:16px;color:var(--text)">Configurações</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
 
-<!-- Taxa de entrega -->
-      <div class="acard-sm">
-          <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="truck"></i> Taxa de Entrega</div>
-        <div class="field"><label>Valor atual (R$)</label>
-          <input id="dash-taxa" type="number" step="0.01" min="0" placeholder="2.50">
-        </div>
-        <button class="btn btn-g" style="width:100%" onclick="salvarTaxa()">Aplicar taxa</button>
-        <div id="dash-taxa-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div class="ico-gap" style="font-size:12px;font-weight:800;margin-bottom:8px"><i data-lucide="circle-slash"></i> Pedido Mínimo (Entrega)</div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Valor mínimo para pedidos com entrega. Retirada não tem mínimo.</div>
-          <div class="field"><label>Valor mínimo (R$)</label>
-            <input id="dash-pedmin" type="number" step="0.01" min="0" placeholder="0.00 = sem mínimo">
+    <!-- FINANCEIRO -->
+  <div id="ap-financeiro" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Financeiro</div>
+    <!-- Filtro de data -->
+    <div class="acard-sm" style="margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div><label>Período</label>
+          <div style="display:flex;gap:8px">
+            <input id="fin-de" type="date" style="width:145px" onchange="renderFinanceiro()">
+            <input id="fin-ate" type="date" style="width:145px" onchange="renderFinanceiro()">
           </div>
-          <button class="btn btn-g" style="width:100%" onclick="salvarPedidoMin()">Aplicar mínimo</button>
-          <div id="dash-pedmin-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
         </div>
+        <button class="btn btn-g btn-sm" onclick="renderFinanceiro()">Filtrar</button>
+      </div>
+    </div>
+    <!-- Métricas -->
+    <div class="dash-metrics" style="margin-bottom:14px">
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total do período</div>
+        <div class="dash-metric-val green" id="fin-total">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Ticket médio</div>
+        <div class="dash-metric-val" id="fin-ticket">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total de gastos</div>
+        <div class="dash-metric-val" style="color:var(--red)" id="fin-gastos-total">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Resultado</div>
+        <div class="dash-metric-val" id="fin-resultado">—</div>
+      </div>
+    </div>
+    <!-- Gráfico vendas período -->
+    <div class="acard-sm" style="margin-bottom:14px">
+      <div class="dash-section-header">
+        <span class="dash-section-title">Vendas no período</span>
+        <span id="fin-chart-label" style="font-size:11px;color:var(--text3)"></span>
+      </div>
+      <canvas id="fin-chart" height="160"></canvas>
+    </div>
+    <!-- Gastos + Pizza -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Registrar gasto</div>
+        <div class="field"><label>Categoria</label>
+          <div style="display:flex;gap:8px">
+            <input id="fin-cat-nome" type="text" placeholder="Ex: Embalagens" style="flex:1">
+            <button class="btn btn-o btn-sm" onclick="addCategGasto()">+ Cat</button>
+          </div>
+        </div>
+        <div class="field"><label>Categoria do gasto</label>
+          <select id="fin-gasto-cat"></select>
+        </div>
+        <div class="field"><label>Descrição</label>
+          <input id="fin-gasto-desc" type="text" placeholder="Ex: Compra de sacolas">
+        </div>
+        <div class="row2">
+          <div class="field"><label>Valor (R$)</label>
+            <input id="fin-gasto-val" type="number" step="0.01" min="0" placeholder="0,00">
+          </div>
+          <div class="field"><label>Data</label>
+            <input id="fin-gasto-data" type="date">
+          </div>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="addGasto()">Registrar gasto</button>
+        <div style="margin-top:12px;max-height:200px;overflow-y:auto" id="fin-gastos-list"></div>
+      </div>
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Gastos por categoria</div>
+        <canvas id="fin-pie" width="160" height="160" style="display:block;margin:0 auto 12px"></canvas>
+        <div id="fin-pie-legend"></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- PEDIDOS -->
+  <div id="ap-pedidos" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Pedidos</span>
+    </div>
+    <div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label>Cliente ou ID</label><input id="rp-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderPedidos()"></div>
+        <div><label>Filtro</label><select id="rp-tipo" style="width:150px" onchange="toggleRPFiltro()"><option value="dia">Data única</option><option value="periodo">Período</option></select></div>
+        <div id="rp-fdia"><label>Data</label><input id="rp-data" type="date" style="width:155px" onchange="renderPedidos()"></div>
+        <div id="rp-fper" class="date-range hidden"><div><label>De</label><input id="rp-de" type="date" style="width:145px" onchange="renderPedidos()"></div><div><label>Até</label><input id="rp-ate" type="date" style="width:145px" onchange="renderPedidos()"></div></div>
+      </div>
+    </div>
+    <div id="rp-stats" class="stats"></div>
+    <div style="margin-bottom:12px">
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do período</div><div class="r-scroll-box"><div id="rp-peds"></div></div></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Histórico de pedidos</div>
+      <div id="rp-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+      <div class="twrap"><table class="tbl hidden" id="rp-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="rp-tbody"></tbody></table></div>
+      <div class="pag" id="rp-pag"></div>
+    </div>
+  </div>
+
+
+  <!-- ENTREGAS PAGE -->
+  <!-- ENTREGAS PAGE -->
+  <div id="ap-entregas" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <span style="font-size:17px;font-weight:800">Entregas</span>
+      <button class="btn btn-o btn-sm" onclick="renderEntregas()">↻ Atualizar</button>
+    </div>
+    <!-- Filtro de data de entrega -->
+    <div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <label>Data de entrega</label>
+          <button type="button" class="cal-trigger" id="e-data-btn" onclick="abrirCal('entr')">Selecionar data de entrega</button>
+          <input type="hidden" id="e-data">
+        </div>
+      </div>
+    </div>
+    <!-- Resumo -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px">
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green-bright)" id="e-tot-ped">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Pedidos</div></div>
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--orange)" id="e-tot-entr">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Entregas</div></div>
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:#3b82f6" id="e-tot-ret">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Retiradas</div></div>
+    </div>
+    <!-- Pedidos + Consolidado -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="acard-sm">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
+        </div>
+        <div class="r-scroll-box"><div id="e-pedidos"></div></div>
+      </div>
+      <div class="acard-sm">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700">Consolidado</span>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirEntregas()"><i data-lucide="printer"></i> Imprimir</button>
+        </div>
+        <div class="r-scroll-box"><div id="e-cons"></div></div>
+      </div>
+    </div>
+  </div>
+
+    <!-- CATEGORIAS -->
+  <div id="ap-categorias" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Categorias</div>
+    <div class="pg-grid">
+      <div>
+        <div class="acard-sm" style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Nova categoria</div>
+          <div class="field"><label>Nome</label><input id="cat-nome" type="text" placeholder="Ex: Legumes"></div>
+          <div class="field"><label>Imagem (400x200px)</label>
+            <input id="cat-img-file" type="file" accept="image/*" style="display:none" onchange="previewCatImg(this)">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div id="cat-img-preview" style="width:56px;height:28px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden"><i data-lucide="leaf"></i></div>
+              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('cat-img-file').click()">Escolher foto</button>
+            </div>
+          </div>
+          <button class="btn btn-g" style="width:100%" onclick="addCat()">+ Adicionar</button>
+          <div id="cat-list" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- PRODUTOS -->
+  <div id="ap-produtos" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Produtos</div>
+    <div class="pg-grid">
+      <div>
+        <div class="acard-sm">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Novo produto</div>
+          <div class="field"><label>Categoria *</label><select id="p-cat"></select></div>
+          <div class="field"><label>Nome *</label><input id="p-nome" type="text" placeholder="Ex: Cenoura" autocomplete="off"></div>
+          <div class="field"><label>Descricao</label><input id="p-desc" type="text" placeholder="Opcional" autocomplete="off"></div>
+          <div class="row2">
+            <div class="field"><label>Peso</label><input id="p-peso" type="text" placeholder="350g"></div>
+            <div class="field"><label>Preco (R$) *</label><input id="p-preco" type="number" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="field"><label>Imagem do produto (800x800px)</label>
+            <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="previewProdImg(this)">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div id="p-img-preview" style="width:56px;height:56px;border-radius:10px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden"><i data-lucide="sprout"></i></div>
+              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('p-img-file').click()">Escolher foto</button>
+            </div>
+          </div>
+          <div class="field"><label>Estoque (deixe vazio = ilimitado)</label><input id="p-estoque" type="number" min="0" placeholder="Ex: 50"></div>
+          <button class="btn btn-g" style="width:100%;margin-top:4px" onclick="addProd()">Salvar produto</button>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700">
+      </div>
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700">Produtos cadastrados</span>
+          <div class="cpills" id="p-pills" style="margin:0 0 0 7px"></div>
+        </div>
+        <div id="p-list" style="padding:0 14px"></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- CONFIGURAÇÃO -->
+  <div id="ap-config" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Configurações</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+      <!-- Pedido Mínimo -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="circle-slash"></i> Pedido Mínimo (Entrega)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Valor mínimo para pedidos com entrega. Retirada não tem mínimo.</div>
+        <div class="field"><label>Valor mínimo (R$)</label>
+          <input id="dash-pedmin" type="number" step="0.01" min="0" placeholder="0.00 = sem mínimo">
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarPedidoMin()">Aplicar mínimo</button>
+        <div id="dash-pedmin-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
       <!-- Redes Sociais -->
       <div class="acard-sm">
@@ -1060,7 +1185,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="btn btn-g" style="width:100%;margin-bottom:10px" onclick="criarCupom()">+ Criar cupom</button>
         <div id="dash-cup-list"></div>
       </div>
-      <!-- Usuários -->
+    </div>
+  </div>
+
+
+    <!-- CLIENTES -->
+  <div id="ap-clientes" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Clientes</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
       <div class="acard-sm" style="grid-column:1/-1">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="user"></i> Usuários</div>
         <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -1074,49 +1206,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
-  <!-- ENTREGAS PAGE -->
-  <div id="ap-entregas" class="apage">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-      <span style="font-size:17px;font-weight:800">Entregas</span>
-      <button class="btn btn-o btn-sm" onclick="renderEntregas()">↻ Atualizar</button>
-    </div>
-    <!-- Filtro de data de entrega -->
-    <div class="acard-sm" style="margin-bottom:12px">
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-        <div>
-          <label>Data de entrega</label>
-          <button type="button" class="cal-trigger" id="e-data-btn" onclick="abrirCal('entr')">Selecionar data de entrega</button>
-          <input type="hidden" id="e-data">
-        </div>
-      </div>
-    </div>
-    <!-- Resumo -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px">
-      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green-bright)" id="e-tot-ped">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Pedidos</div></div>
-      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--orange)" id="e-tot-entr">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Entregas</div></div>
-      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:#3b82f6" id="e-tot-ret">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Retiradas</div></div>
-    </div>
-    <!-- Pedidos + Consolidado -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="acard-sm">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
-          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
-        </div>
-        <div class="r-scroll-box"><div id="e-pedidos"></div></div>
-      </div>
-      <div class="acard-sm">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:700">Consolidado</span>
-          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirEntregas()"><i data-lucide="printer"></i> Imprimir</button>
-        </div>
-        <div class="r-scroll-box"><div id="e-cons"></div></div>
-      </div>
     </div>
   </div>
-</div>
 
-    </div><!-- /admin-content -->
+
+        </div><!-- /admin-content -->
   </div><!-- /admin-body -->
 
 <!-- PERFIL CLIENTE SHEET -->
@@ -2946,21 +3040,25 @@ function fecharSidebar(){
 
 function voltarLoja(){document.getElementById('screen-admin').classList.remove('active');document.getElementById('screen-shop').classList.add('active')}
 function showAPage(p,tab){
-  // Atualizar sidebar ativo
   document.querySelectorAll('.aside-item').forEach(b=>b.classList.remove('active'));
   if(tab)tab.classList.add('active');
-  // Fechar sidebar em mobile após clicar
   fecharSidebar();
   showAEl('ap-'+p);
-  if(p==='relatorio')renderRel();
-  if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills()}
+  // Carregar dados ao entrar na page
+  if(p==='dashboard')initDashboard();
+  if(p==='relatorio'){rPage=1;renderRel();}
+  if(p==='financeiro')initFinanceiro();
+  if(p==='pedidos'){rpPage=1;renderPedidos();}
   if(p==='entregas'){
     document.getElementById('e-data').value='';
     const eb=document.getElementById('e-data-btn');
     if(eb){eb.textContent='Selecionar data de entrega';eb.classList.remove('selected');}
     renderEntregas();
   }
-  if(p==='dashboard')initDashboard();
+  if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills();}
+  if(p==='categorias'){renderCatList();renderCatSel();}
+  if(p==='config')initConfig();
+  if(p==='clientes')initClientes();
 }
 function showAEl(id){document.querySelectorAll('.apage,.apage-3col').forEach(el=>el.classList.remove('active'));document.getElementById(id).classList.add('active')}
 
@@ -4096,6 +4194,238 @@ function updMobileCartBar(){
 /* ── DASHBOARD ── */
 let cupons=[];
 
+
+// ── PAGE PEDIDOS ──
+let rpPage=1, rpTotal=0, rpCache=[];
+
+function toggleRPFiltro(){
+  const t=document.getElementById('rp-tipo').value;
+  document.getElementById('rp-fdia').classList.toggle('hidden',t!=='dia');
+  document.getElementById('rp-fper').classList.toggle('hidden',t!=='periodo');
+  renderPedidos();
+}
+
+async function renderPedidos(){
+  const busca=(document.getElementById('rp-busca')?.value||'').toLowerCase();
+  const tipo=document.getElementById('rp-tipo')?.value||'dia';
+  const dataFiltro=tipo==='dia'?document.getElementById('rp-data')?.value:null;
+  const deFiltro=document.getElementById('rp-de')?.value;
+  const ateFiltro=document.getElementById('rp-ate')?.value;
+
+  let q=sb.from('pedidos').select('*,itens_pedido(*)').order('created_at',{ascending:false});
+  if(tipo==='dia'){if(dataFiltro)q=q.eq('data_pedido',dataFiltro);}
+  else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
+  const {data:peds}=await q;
+  const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
+  rpCache=lista;rpTotal=lista.length;rpPage=1;
+
+  const statsAtivos=lista.filter(p=>p.status!=='Cancelado');
+  const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
+  const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
+  const statsEl=document.getElementById('rp-stats');
+  if(statsEl)statsEl.innerHTML=
+    '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
+
+  const pedEl=document.getElementById('rp-peds');
+  if(!pedEl)return;
+  if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>';renderRPPage();return}
+  pedEl.innerHTML=lista.map(p=>{
+    const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
+    const dtCompra=p.created_at?new Date(p.created_at):null;
+    const dataPedido=dtCompra?dtCompra.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+    const horaPedido=dtCompra?dtCompra.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+    return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:12px">${p.cliente_nome}</span>
+          ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${p.codigo}</span>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`📝 ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`🚚 ${fdLabel(p.data_pedido)}`:''}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
+      </div>
+      <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
+    </div>`;
+  }).join('');
+  if(totT>0)pedEl.innerHTML+=`<div style="padding:7px 0;display:flex;justify-content:space-between;font-size:11px;color:var(--orange)"><span>Total taxas</span><span style="font-weight:700">R$ ${fp(totT)}</span></div>`;
+  renderRPPage();
+  renderRPPag();
+}
+
+function renderRPPage(){
+  const start=(rpPage-1)*PER;
+  const pagina=rpCache.slice(start,start+PER);
+  const loading=document.getElementById('rp-loading');
+  if(loading)loading.classList.add('hidden');
+  const table=document.getElementById('rp-table');if(table)table.classList.remove('hidden');
+  const tbody=document.getElementById('rp-tbody');if(!tbody)return;
+  if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPPag();return}
+  const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'];
+  tbody.innerHTML=pagina.map(p=>{
+    const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
+    return'<tr>'
+      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
+      +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
+      +'<td><div style="font-size:11px">'+(p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div></td>'
+      +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
+      +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
+      +'<td>'+(p.taxa_entrega>0?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
+      +'<td>'+p.pagamento+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
+      +'<td><button class="btn btn-o btn-sm" onclick="verPedRP('+p.id+')">Ver</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function verPedRP(id){const p=rpCache.find(x=>x.id===id);if(!p)return;rCache=rpCache;verPed(id);}
+
+function renderRPPag(){
+  const total=Math.ceil(rpTotal/PER);
+  const el=document.getElementById('rp-pag');if(!el)return;
+  if(total<=1){el.innerHTML='';return}
+  let html='<button class="pag-btn"'+(rpPage===1?' disabled':'')+' onclick="goRPPage('+(rpPage-1)+')">← Ant</button>';
+  let start=Math.max(1,rpPage-3),end=Math.min(total,start+6);
+  if(start>1)html+='<button class="pag-btn" onclick="goRPPage(1)">1</button><span style="padding:4px;color:var(--text3)">...</span>';
+  for(let i=start;i<=end;i++)html+='<button class="pag-btn'+(i===rpPage?' active':'')+'" onclick="goRPPage('+i+')">'+i+'</button>';
+  if(end<total)html+='<span style="padding:4px;color:var(--text3)">...</span><button class="pag-btn" onclick="goRPPage('+total+')">'+total+'</button>';
+  html+='<button class="pag-btn"'+(rpPage===total?' disabled':'')+' onclick="goRPPage('+(rpPage+1)+')">Prox →</button>';
+  html+='<span style="padding:4px 8px;font-size:11px;color:var(--text3)">'+rpTotal+' pedido(s)</span>';
+  el.innerHTML=html;
+}
+function goRPPage(p){const t=Math.ceil(rpTotal/PER);rpPage=Math.max(1,Math.min(t,p));renderRPPage();renderRPPag();}
+
+
+// ── PAGE FINANCEIRO ──
+let _finChart=null, _finPie=null;
+
+async function initFinanceiro(){
+  // Datas padrão: mês atual
+  const hoje=new Date();
+  const de=hoje.toISOString().slice(0,7)+'-01';
+  const ate=hoje.toISOString().split('T')[0];
+  if(!document.getElementById('fin-de').value)document.getElementById('fin-de').value=de;
+  if(!document.getElementById('fin-ate').value)document.getElementById('fin-ate').value=ate;
+  await renderFinanceiro();
+  await carregarGastos();
+}
+
+async function renderFinanceiro(){
+  const de=document.getElementById('fin-de')?.value;
+  const ate=document.getElementById('fin-ate')?.value;
+  if(!de||!ate)return;
+
+  const {data:peds}=await sb.from('pedidos').select('total,status,data_pedido')
+    .gte('data_pedido',de).lte('data_pedido',ate);
+  const ativos=(peds||[]).filter(p=>p.status!=='Cancelado');
+  const total=ativos.reduce((s,p)=>s+p.total,0);
+  const ticket=ativos.length?total/ativos.length:0;
+
+  document.getElementById('fin-total').textContent='R$ '+fp(total);
+  document.getElementById('fin-ticket').textContent='R$ '+fp(ticket);
+  const label=de.split('-').reverse().slice(0,2).join('/')+'–'+ate.split('-').reverse().slice(0,2).join('/');
+  if(document.getElementById('fin-chart-label'))document.getElementById('fin-chart-label').textContent=label;
+
+  // Gráfico de linha por dia
+  const diasMap={};
+  ativos.forEach(p=>{if(!diasMap[p.data_pedido])diasMap[p.data_pedido]=0;diasMap[p.data_pedido]+=p.total;});
+  const dias=Object.keys(diasMap).sort();
+  const vals=dias.map(d=>diasMap[d]);
+  const ctx=document.getElementById('fin-chart')?.getContext('2d');
+  if(ctx){
+    if(_finChart)_finChart.destroy();
+    _finChart=new Chart(ctx,{
+      type:'bar',
+      data:{labels:dias.map(d=>d.slice(5).split('-').reverse().join('/')),datasets:[{label:'Faturamento',data:vals,backgroundColor:'rgba(45,140,78,0.7)',borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'R$ '+fp(c.raw)}}},scales:{x:{ticks:{font:{size:10},color:'var(--text3)'}},y:{ticks:{callback:v=>'R$'+fp(v),font:{size:10},color:'var(--text3)'},beginAtZero:true}}}
+    });
+  }
+  await atualizarResultado();
+}
+
+async function carregarGastos(){
+  const {data}=await sb.from('gastos').select('*').order('data',{ascending:false}).limit(50).catch(()=>({data:[]}));
+  renderGastos(data||[]);
+  renderPieGastos(data||[]);
+  atualizarResultado();
+  // Carregar categorias de gastos
+  const {data:cats}=await sb.from('categorias_gasto').select('*').order('nome').catch(()=>({data:[]}));
+  const sel=document.getElementById('fin-gasto-cat');
+  if(sel&&cats?.length){sel.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');}
+}
+
+async function addCategGasto(){
+  const nome=document.getElementById('fin-cat-nome').value.trim();
+  if(!nome)return;
+  await sb.from('categorias_gasto').insert({nome}).catch(()=>{});
+  document.getElementById('fin-cat-nome').value='';
+  await carregarGastos();
+  toast('Categoria adicionada!','ok');
+}
+
+async function addGasto(){
+  const cat=document.getElementById('fin-gasto-cat')?.value;
+  const desc=document.getElementById('fin-gasto-desc').value.trim();
+  const val=parseFloat(document.getElementById('fin-gasto-val').value);
+  const data=document.getElementById('fin-gasto-data').value;
+  if(!desc||isNaN(val)||!data){toast('Preencha todos os campos.','err');return}
+  await sb.from('gastos').insert({descricao:desc,valor:val,data,categoria_id:cat||null}).catch(()=>{});
+  document.getElementById('fin-gasto-desc').value='';
+  document.getElementById('fin-gasto-val').value='';
+  toast('Gasto registrado!','ok');
+  await carregarGastos();
+}
+
+function renderGastos(lista){
+  const el=document.getElementById('fin-gastos-list');if(!el)return;
+  const total=lista.reduce((s,g)=>s+g.valor,0);
+  if(document.getElementById('fin-gastos-total'))document.getElementById('fin-gastos-total').textContent='R$ '+fp(total);
+  if(!lista.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhum gasto registrado.</div>';return}
+  el.innerHTML=lista.map(g=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'
+    +'<div><div style="font-weight:600">'+g.descricao+'</div><div style="font-size:10px;color:var(--text3)">'+fd(g.data)+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<span style="font-weight:700;color:var(--red)">R$ '+fp(g.valor)+'</span>'
+    +'<button onclick="rmGasto('+g.id+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">×</button>'
+    +'</div></div>').join('');
+}
+
+async function rmGasto(id){
+  await sb.from('gastos').delete().eq('id',id).catch(()=>{});
+  await carregarGastos();
+}
+
+async function atualizarResultado(){
+  const de=document.getElementById('fin-de')?.value;
+  const ate=document.getElementById('fin-ate')?.value;
+  if(!de||!ate)return;
+  const {data:peds}=await sb.from('pedidos').select('total,status,data_pedido')
+    .gte('data_pedido',de).lte('data_pedido',ate).catch(()=>({data:[]}));
+  const totalVendas=(peds||[]).filter(p=>p.status!=='Cancelado').reduce((s,p)=>s+p.total,0);
+  const {data:gastos}=await sb.from('gastos').select('valor,data')
+    .gte('data',de).lte('data',ate).catch(()=>({data:[]}));
+  const totalGastos=(gastos||[]).reduce((s,g)=>s+g.valor,0);
+  const resultado=totalVendas-totalGastos;
+  const el=document.getElementById('fin-resultado');
+  if(el){el.textContent='R$ '+fp(resultado);el.style.color=resultado>=0?'var(--green-bright)':'var(--red)';}
+  if(document.getElementById('fin-gastos-total'))document.getElementById('fin-gastos-total').textContent='R$ '+fp(totalGastos);
+}
+
+function renderPieGastos(lista){
+  const ctx=document.getElementById('fin-pie')?.getContext('2d');if(!ctx)return;
+  const mapa={};
+  lista.forEach(g=>{const k=g.categoria_id||'Outros';if(!mapa[k])mapa[k]=0;mapa[k]+=g.valor;});
+  const sorted=Object.entries(mapa).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const total=sorted.reduce((s,[,v])=>s+v,0);
+  if(!total)return;
+  const COLORS=['#e53935','#f57c00','#2d8c4e','#3b82f6','#8b5cf6'];
+  if(_finPie)_finPie.destroy();
+  _finPie=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(([k])=>k==='Outros'?'Outros':'Cat '+k),datasets:[{data:sorted.map(([,v])=>v),backgroundColor:COLORS,borderWidth:0}]},options:{responsive:false,plugins:{legend:{display:false}},cutout:'60%'}});
+  const leg=document.getElementById('fin-pie-legend');
+  if(leg)leg.innerHTML=sorted.map(([k,v],i)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:11px">'
+    +'<div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:'+COLORS[i]+';flex-shrink:0"></div><span>'+(k==='Outros'?'Outros':'Cat '+k)+'</span></div>'
+    +'<span style="font-weight:700">R$ '+fp(v)+'</span></div>').join('');
+}
+
 // ══════════════════════════════════════
 // DASHBOARD — métricas, gráfico, top produtos
 // ══════════════════════════════════════
@@ -4300,7 +4630,6 @@ async function loadDashPie(){
 }
 
 async function initDashboard(){
-  // Carregar métricas e gráficos em paralelo (sem bloquear configs)
   Promise.all([
     loadDashMetrics(),
     loadDashChart(),
@@ -4308,9 +4637,9 @@ async function initDashboard(){
     loadDashTopProds(),
     loadDashPie()
   ]).catch(e=>console.warn('Dashboard metrics:',e));
+}
 
-  // Configs
-  document.getElementById('dash-taxa').value=TAXA.toFixed(2);
+async function initConfig(){
   document.getElementById('dash-pedmin').value=PEDIDO_MIN>0?PEDIDO_MIN.toFixed(2):'';
   if(LOJA_ENDERECO)document.getElementById('dash-loja-end').value=LOJA_ENDERECO;
   document.getElementById('dash-raio').value=RAIO_MAX;
@@ -4325,6 +4654,9 @@ async function initDashboard(){
     });
   }catch(e){}
   await carregarCupons();
+}
+
+async function initClientes(){
   await renderUsers();
 }
 async function salvarRedes(){
