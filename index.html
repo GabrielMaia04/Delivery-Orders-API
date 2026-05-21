@@ -668,7 +668,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="icon-btn" id="bell-btn" onclick="toggleBell()" title="Pedidos pendentes">
           <i data-lucide="bell"></i>
         </button>
-        <span id="bell-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2);pointer-events:none"></span>
+        <span id="bell-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2);pointer-events:none"></span>
         <!-- Dropdown de notificações -->
         <div id="bell-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:500;overflow:hidden">
           <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
@@ -1711,8 +1711,7 @@ function iniciarRealtime(){
       table: 'pedidos'
     }, payload => {
       const ped = payload.new;
-      // Ignorar se foi o proprio admin que criou
-      if(ped.user_id === perfil?.id && perfil?.role === 'admin') return;
+      // Ignorar apenas duplicatas, nao ignorar pedidos do admin (para testes)
       // Ignorar duplicatas
       if(ultimoPedidoId === ped.id) return;
       ultimoPedidoId = ped.id;
