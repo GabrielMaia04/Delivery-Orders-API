@@ -1171,6 +1171,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
         <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
+      <!-- Mensagens de Status WhatsApp -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="bell"></i> Mensagens Automáticas de Status</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Enviadas automaticamente ao cliente quando você altera o status do pedido. Use <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{codigo}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span> Em preparo</label>
+            <textarea id="wpp-msg-preparo" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Em preparo..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span> Saiu para entrega</label>
+            <textarea id="wpp-msg-saiu" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Saiu para entrega..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--green-bright);display:inline-block"></span> Entregue</label>
+            <textarea id="wpp-msg-entregue" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Entregue..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block"></span> Cancelado</label>
+            <textarea id="wpp-msg-cancelado" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Cancelado..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-g" style="width:100%;margin-top:10px" onclick="salvarMsgsStatus()">Salvar mensagens de status</button>
+        <div id="wpp-status-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
       <!-- Zonas de Entrega -->
       <div class="acard-sm" style="grid-column:1/-1">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="map-pin"></i> Zonas de Entrega (por distância)</div>
@@ -3947,6 +3973,33 @@ function imprimirPedido(id){
 // ══════════════════════════════════════
 // WHATSAPP AUTOMÁTICO POR STATUS
 // ══════════════════════════════════════
+// Mensagens padrão (usadas se não houver customização)
+const WPP_STATUS_MSGS_DEFAULT = {
+  'Em preparo': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 👋\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! 🌿\n`+
+    `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
+    `Qualquer dúvida estamos aqui! 😊`,
+  'Saiu para entrega': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 🚚\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
+    `Fique de olho, está a caminho! 🌱\n\n`+
+    `Qualquer dúvida estamos aqui! 😊`,
+  'Entregue': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! ✅\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
+    `Obrigado pela preferência e até a próxima! 💚\n\n`+
+    `*Cortadinhos com Carinho* 🌿`,
+  'Cancelado': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 😔\n\n`+
+    `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
+    `Em caso de dúvidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho* 🌿`
+};
+
+// Mensagens customizadas salvas no banco (sobrescrevem as padrão)
+let WPP_STATUS_CUSTOM = {};
+
 const WPP_STATUS_MSGS = {
   'Em preparo': (p) =>
     `Olá, ${p.cliente_nome.split(' ')[0]}! 👋\n\n`+
@@ -3974,9 +4027,20 @@ const WPP_STATUS_MSGS = {
 };
 
 function dispararWppStatus(pedido, status){
-  const fn = WPP_STATUS_MSGS[status];
-  if(!fn) return; // Pendente não dispara mensagem
-  const msg = fn(pedido);
+  // Prioridade: mensagem customizada → mensagem padrão
+  let msg;
+  if(WPP_STATUS_CUSTOM[status]){
+    // Substituir variáveis na mensagem customizada
+    msg = WPP_STATUS_CUSTOM[status]
+      .replace(/{nome}/g, pedido.cliente_nome.split(' ')[0])
+      .replace(/{nomeCompleto}/g, pedido.cliente_nome)
+      .replace(/{codigo}/g, pedido.codigo||'#'+pedido.id)
+      .replace(/{data}/g, fdLabel(pedido.data_pedido)||fd(pedido.data_pedido));
+  }else{
+    const fn = WPP_STATUS_MSGS[status];
+    if(!fn) return;
+    msg = fn(pedido);
+  }
   const tel = (pedido.cliente_contato||'').replace(/\D/g,'');
   if(!tel || tel.length < 10){
     toast('Sem telefone do cliente para enviar WhatsApp.','err',3000);
@@ -4988,6 +5052,23 @@ async function initConfig(){
       if(r.chave==='whatsapp_num')document.getElementById('dash-wpp').value=r.valor;
       if(r.chave==='instagram_url')document.getElementById('dash-ig').value=r.valor;
       if(r.chave==='wpp_msg_template')document.getElementById('dash-wpp-msg').value=r.valor;
+      // Mensagens de status
+      if(r.chave==='wpp_status_preparo'){
+        document.getElementById('wpp-msg-preparo').value=r.valor;
+        if(r.valor)WPP_STATUS_CUSTOM['Em preparo']=r.valor;
+      }
+      if(r.chave==='wpp_status_saiu'){
+        document.getElementById('wpp-msg-saiu').value=r.valor;
+        if(r.valor)WPP_STATUS_CUSTOM['Saiu para entrega']=r.valor;
+      }
+      if(r.chave==='wpp_status_entregue'){
+        document.getElementById('wpp-msg-entregue').value=r.valor;
+        if(r.valor)WPP_STATUS_CUSTOM['Entregue']=r.valor;
+      }
+      if(r.chave==='wpp_status_cancelado'){
+        document.getElementById('wpp-msg-cancelado').value=r.valor;
+        if(r.valor)WPP_STATUS_CUSTOM['Cancelado']=r.valor;
+      }
     });
   }catch(e){}
   await carregarCupons();
@@ -5025,6 +5106,30 @@ async function salvarMsgWpp(){
   msg.style.color='var(--green-bright)';msg.textContent='✓ Mensagem salva!';
   setTimeout(()=>msg.textContent='',3000);
 }
+async function salvarMsgsStatus(){
+  const campos = [
+    {id:'wpp-msg-preparo',   chave:'wpp_status_preparo'},
+    {id:'wpp-msg-saiu',      chave:'wpp_status_saiu'},
+    {id:'wpp-msg-entregue',  chave:'wpp_status_entregue'},
+    {id:'wpp-msg-cancelado', chave:'wpp_status_cancelado'},
+  ];
+  const upserts = campos.map(c=>({
+    chave: c.chave,
+    valor: document.getElementById(c.id)?.value||''
+  }));
+  const {error}=await sb.from('configuracoes').upsert(upserts,{onConflict:'chave'});
+  if(error){toast('Erro: '+error.message,'err');return;}
+  // Atualizar em memória
+  WPP_STATUS_CUSTOM['Em preparo']         = upserts[0].valor||'';
+  WPP_STATUS_CUSTOM['Saiu para entrega']  = upserts[1].valor||'';
+  WPP_STATUS_CUSTOM['Entregue']           = upserts[2].valor||'';
+  WPP_STATUS_CUSTOM['Cancelado']          = upserts[3].valor||'';
+  const msg=document.getElementById('wpp-status-msg');
+  msg.textContent='✓ Mensagens salvas!';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Mensagens de status salvas!','ok');
+}
+
 async function salvarTaxa(){
   const val=parseFloat(document.getElementById('dash-taxa').value);
   if(isNaN(val)||val<0){alert('Valor inválido.');return}
