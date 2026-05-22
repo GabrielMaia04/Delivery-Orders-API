@@ -484,7 +484,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <button class="dropdown-item ico-gap" id="dd-admin" style="display:none" onclick="fecharDropdown();showAdmin()"><i data-lucide="settings"></i> Admin</button>
           <div class="dd-divider"></div>
         </div>
-        <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();abrirRastrearPedido()"><i data-lucide="search"></i> Rastrear pedido</button>
+        <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();abrirRastrearPedido()"><i data-lucide="search"></i> Acompanhar pedido</button>
         <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><i data-lucide="message-circle"></i> Preciso de ajuda</button>
         <div id="dd-deslogado">
           <div class="dd-divider"></div>
@@ -4463,6 +4463,7 @@ function abrirProdModal(id){
   document.getElementById('prod-modal-desc').textContent=p.descricao||'';
   document.getElementById('prod-modal-preco').textContent='R$ '+fp(p.preco);
   renderProdModalCtrl(id);
+  modal.style.display='';
   modal.classList.add('open');
 }
 function renderProdModalCtrl(id){
@@ -5244,7 +5245,7 @@ async function togDestaque(id){
 
 // ── RASTREAR PEDIDO ──
 function abrirRastrearPedido(){
-  popInput('🔍','Rastrear Pedido','Digite o código ou número do seu pedido:','Ex: CCC-001','Rastrear',async(val)=>{
+  popInput('📦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
     const codigo=val.trim().toUpperCase();
     if(!codigo){toast('Digite o código do pedido.','err');return}
     const {data,error}=await sb.from('pedidos')
