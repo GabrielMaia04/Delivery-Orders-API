@@ -428,6 +428,22 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .fin-cat-opt-nome{flex:1}
 .fin-cat-opt-rm{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;font-weight:700;padding:0 4px;line-height:1;border-radius:4px;flex-shrink:0}
 .fin-cat-opt-rm:hover{color:var(--red);background:var(--red-soft)}
+/* ── TIMELINE ── */
+.timeline{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 0;position:relative}
+.timeline::before{content:'';position:absolute;top:18px;left:18px;right:18px;height:2px;background:var(--border);z-index:0}
+.tl-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;z-index:1}
+.tl-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.tl-dot svg,.tl-dot i{width:16px;height:16px;opacity:.4}
+.tl-label{font-size:10px;font-weight:600;color:var(--text3);text-align:center;line-height:1.3;max-width:64px}
+.tl-step.done .tl-dot{background:var(--green);border-color:var(--green)}
+.tl-step.done .tl-dot svg,.tl-step.done .tl-dot i{opacity:1;color:#fff}
+.tl-step.done .tl-label{color:var(--green-bright)}
+.tl-step.current .tl-dot{background:var(--green-light);border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(45,140,78,.15)}
+.tl-step.current .tl-dot svg,.tl-step.current .tl-dot i{opacity:1;color:var(--green-bright)}
+.tl-step.current .tl-label{color:var(--green-bright);font-weight:800}
+.tl-step.cancelled .tl-dot{background:var(--red-soft);border-color:var(--red)}
+.tl-step.cancelled .tl-dot svg,.tl-step.cancelled .tl-dot i{opacity:1;color:var(--red)}
+.tl-step.cancelled .tl-label{color:var(--red)}
 
 .dropdown-wrap{position:relative;display:inline-block}
 .dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.25);min-width:170px;z-index:500;overflow:hidden;padding:6px 0}
@@ -1605,6 +1621,55 @@ async function carregarHistoricoCliente(){
   window._histCache=lista;
 }
 
+// ── TIMELINE DE STATUS ──
+// Versão correta da timeline com linhas de progresso
+function buildTimelineHtml(status){
+  const STEPS=[
+    {key:'Pendente',         label:'Confirmado',        icon:'clock'},
+    {key:'Em preparo',       label:'Em preparo',         icon:'package'},
+    {key:'Saiu para entrega',label:'Saiu para entrega',  icon:'truck'},
+    {key:'Entregue',         label:'Entregue',           icon:'circle-check-big'}
+  ];
+  const ORDER=STEPS.map(s=>s.key);
+  const curIdx=ORDER.indexOf(status);
+  const cancelado=status==='Cancelado';
+
+  if(cancelado){
+    return'<div style="display:flex;align-items:center;justify-content:center;padding:14px 0;gap:8px;background:var(--red-soft);border-radius:10px;border:1px solid var(--red)">'
+      +'<i data-lucide="x-circle" style="width:18px;height:18px;color:var(--red)"></i>'
+      +'<span style="font-size:13px;font-weight:700;color:var(--red)">Pedido Cancelado</span>'
+      +'</div>';
+  }
+
+  let html='<div style="display:flex;align-items:flex-start;padding:16px 0;position:relative">'
+    +'<div style="position:absolute;top:18px;left:calc(12.5% + 18px);right:calc(12.5% + 18px);height:2px;background:var(--border);z-index:0"></div>';
+
+  // Linha de progresso verde
+  const pct=curIdx/(STEPS.length-1)*100;
+  html+='<div style="position:absolute;top:18px;left:calc(12.5% + 18px);right:calc(12.5% + 18px);height:2px;z-index:1;overflow:hidden;border-radius:2px">'
+    +'<div style="height:100%;width:'+pct+'%;background:var(--green);transition:width .4s"></div>'
+    +'</div>';
+
+  STEPS.forEach((s,i)=>{
+    const done=i<curIdx;
+    const cur=i===curIdx;
+    const dotBg=done?'var(--green)':cur?'var(--green-light)':'var(--bg2)';
+    const dotBorder=done||cur?'var(--green-bright)':'var(--border)';
+    const iconColor=done?'#fff':cur?'var(--green-bright)':'var(--text3)';
+    const lblColor=done||cur?'var(--green-bright)':'var(--text3)';
+    const lblWeight=cur?'800':'500';
+    const shadow=cur?';box-shadow:0 0 0 4px rgba(45,140,78,.15)':'';
+    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;z-index:2">'
+      +'<div style="width:36px;height:36px;border-radius:50%;border:2px solid '+dotBorder+';background:'+dotBg+';display:flex;align-items:center;justify-content:center'+shadow+'">'
+      +'<i data-lucide="'+s.icon+'" style="width:16px;height:16px;color:'+iconColor+'"></i>'
+      +'</div>'
+      +'<div style="font-size:10px;font-weight:'+lblWeight+';color:'+lblColor+';text-align:center;line-height:1.3;max-width:64px">'+s.label+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  return html;
+}
+
 function verPedCliente(id){
   const lista=window._histCache||[];
   const p=lista.find(x=>x.id===id);if(!p)return;
@@ -1620,7 +1685,9 @@ function verPedCliente(id){
   const taxa=p.taxa_entrega>0?`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(p.taxa_entrega)}</span></div>`:'';
   const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:2px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(p.total)}</span></div>`;
   document.getElementById('ped-det-codigo').textContent='Pedido '+(p.codigo||'#'+p.id);
-  document.getElementById('ped-det-status').innerHTML=`<span style="font-weight:700;color:${statusColor}">${status}</span> · Entrega: ${fdLabel(p.data_pedido)}`;
+  document.getElementById('ped-det-status').innerHTML=
+    buildTimelineHtml(status)
+    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">Entrega: ${fdLabel(p.data_pedido)}</div>`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
@@ -1638,6 +1705,7 @@ function verPedCliente(id){
     btns.innerHTML='';
   }
   document.getElementById('ped-det-modal').classList.add('open');
+  refreshIcons();
 }
 
 async function cancelarPedidoCliente(id){
@@ -3760,27 +3828,29 @@ function exportRel(){
 function verPed(id){
   const p=rCache.find(x=>x.id===id);if(!p)return;
   const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-  const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto+(it.peso_produto?' ('+it.peso_produto+')':'')+'  R$ '+fp(it.subtotal)).join('\n');
-  const txt=[
-    'Cliente: '+p.cliente_nome,
-    p.cliente_contato?'Contato: '+p.cliente_contato:'',
-    'Pedido em: '+(p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):''),
-    'Entrega: '+fdLabel(p.data_pedido),
-    end?'Endereço: '+end:'',
-    p.entrega==='Entrega'?'Modalidade: Entrega':'Modalidade: Retirada',
-    'Pagamento: '+p.pagamento,
-    p.status?'Status: '+p.status:'',
-    p.observacoes?'Obs: '+p.observacoes:'',
-    '---',
-    its,
-    '---',
-    p.taxa_entrega>0?'Taxa: R$ '+fp(p.taxa_entrega):'',
-    'TOTAL: R$ '+fp(p.total)
-  ].filter(Boolean).join('\n');
-  popup('📋','Pedido '+(p.codigo||'#'+p.id),txt,[
-    {label:'Imprimir',cls:'pbtn-cancel',cb:()=>imprimirPedido(id)},
-    {label:'OK',cls:'pbtn-ok'}
-  ]);
+  const its=(p.itens_pedido||[]).map(it=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span style="font-weight:700;color:var(--green-bright)">R$ ${fp(it.subtotal)}</span></div>`).join('');
+  const taxa=p.taxa_entrega>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(p.taxa_entrega)}</span></div>`:'';
+  const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(p.total)}</span></div>`;
+
+  // Usar modal rico do cliente (ped-det-modal) em vez do popup de texto
+  document.getElementById('ped-det-codigo').textContent='Pedido '+(p.codigo||'#'+p.id);
+  document.getElementById('ped-det-status').innerHTML=
+    buildTimelineHtml(p.status||'Pendente')
+    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">Entrega: ${fdLabel(p.data_pedido)}</div>`;
+  document.getElementById('ped-det-body').innerHTML=`
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;flex-direction:column;gap:3px">
+      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
+      <div class="ico-gap">${lucideIcon('credit-card')} ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${p.observacoes}</div>`:''}
+    </div>
+    <div>${its}${taxa}${total}</div>`;
+  document.getElementById('ped-det-btns').innerHTML=
+    `<div style="display:flex;gap:8px">
+      <button class="btn btn-o" style="flex:1" onclick="imprimirPedido(${id});document.getElementById('ped-det-modal').classList.remove('open')">Imprimir</button>
+      <button class="btn btn-g" style="flex:1" onclick="document.getElementById('ped-det-modal').classList.remove('open')">OK</button>
+    </div>`;
+  document.getElementById('ped-det-modal').classList.add('open');
+  refreshIcons();
 }
 function imprimirPedido(id){
   const p=rCache.find(x=>x.id===id);if(!p)return;
