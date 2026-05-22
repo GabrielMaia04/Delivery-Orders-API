@@ -2195,6 +2195,7 @@ function setOverlayState(id,open){
   const el=document.getElementById(id);
   if(!el)return;
   if(open){
+    document.body.appendChild(el); // move para fim do body — força repaint
     el.style.display='flex';
     el.setAttribute('aria-hidden','false');
     el.classList.add('open');
@@ -3113,6 +3114,7 @@ function abrirCal(ctx){
     ?'<span class="cal-dot"></span> Selecione qualquer data'
     :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
   const _calEl=document.getElementById('cal-ov');
+  document.body.appendChild(_calEl);
   _calEl.style.display='flex';
   _calEl.classList.add('open');
 }function fecharCal(){
@@ -3192,6 +3194,7 @@ function selecionarData(iso){
 
 function mostrarSucesso(){
   const _s=document.getElementById('success-ov');
+  document.body.appendChild(_s);
   _s.style.display='flex';
   _s.setAttribute('aria-hidden','false');
 }
@@ -3229,6 +3232,7 @@ function popup(icon,title,msg,btns){
   });
   refreshIcons();
   const _gp=document.getElementById('g-popup');
+  document.body.appendChild(_gp);
   _gp.style.display='flex';
   _gp.classList.add('open');
 }
