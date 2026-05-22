@@ -944,14 +944,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="acard-sm">
         <div class="dash-section-title" style="margin-bottom:12px">Registrar gasto</div>
-        <div class="field"><label>Categoria</label>
+        <div class="field">
+          <label>Criar nova categoria de gasto</label>
           <div style="display:flex;gap:8px">
-            <input id="fin-cat-nome" type="text" placeholder="Ex: Embalagens" style="flex:1">
-            <button class="btn btn-o btn-sm" onclick="addCategGasto()">+ Cat</button>
+            <input id="fin-cat-nome" type="text" placeholder="Ex: Embalagens, Transporte..." style="flex:1">
+            <button class="btn btn-g btn-sm" onclick="addCategGasto()">+ Criar</button>
           </div>
         </div>
-        <div class="field"><label>Categoria do gasto</label>
-          <select id="fin-gasto-cat"></select>
+        <div class="field"><label>Categoria (selecione uma criada acima)</label>
+          <select id="fin-gasto-cat"><option value="">— Nenhuma categoria criada —</option></select>
         </div>
         <div class="field"><label>Descrição</label>
           <input id="fin-gasto-desc" type="text" placeholder="Ex: Compra de sacolas">
@@ -4400,34 +4401,50 @@ async function renderFinanceiro(){
 }
 
 async function carregarGastos(){
-  const {data}=await sb.from('gastos').select('*').order('data',{ascending:false}).limit(50);
-  renderGastos(data||[]);
-  renderPieGastos(data||[]);
+  let gastosData=[],catsData=[];
+  try{const r=await sb.from('gastos').select('*').order('data',{ascending:false}).limit(50);gastosData=r.data||[];}catch(e){}
+  try{const r=await sb.from('categorias_gasto').select('*').order('nome');catsData=r.data||[];}catch(e){}
+  renderGastos(gastosData);
+  renderPieGastos(gastosData);
   atualizarResultado();
-  // Carregar categorias de gastos
-  const {data:cats}=await sb.from('categorias_gasto').select('*').order('nome');
   const sel=document.getElementById('fin-gasto-cat');
-  if(sel&&cats?.length){sel.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');}
+  if(sel){
+    sel.innerHTML=catsData.length
+      ?catsData.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')
+      :'<option value="">— Crie uma categoria acima primeiro —</option>';
+  }
 }
 
 async function addCategGasto(){
   const nome=document.getElementById('fin-cat-nome').value.trim();
-  if(!nome)return;
-  await sb.from('categorias_gasto').insert({nome}).catch(()=>{});
+  if(!nome){toast('Digite o nome da categoria.','err');return;}
+  const {error}=await sb.from('categorias_gasto').insert({nome});
+  if(error){
+    if(error.message.includes('duplicate')||error.message.includes('unique'))
+      toast('Categoria "'+nome+'" já existe.','err');
+    else
+      toast('Erro: '+error.message,'err');
+    return;
+  }
   document.getElementById('fin-cat-nome').value='';
   await carregarGastos();
-  toast('Categoria adicionada!','ok');
+  toast('Categoria "'+nome+'" adicionada!','ok');
 }
 
 async function addGasto(){
-  const cat=document.getElementById('fin-gasto-cat')?.value;
+  const catEl=document.getElementById('fin-gasto-cat');
+  const cat=catEl?.value||null;
   const desc=document.getElementById('fin-gasto-desc').value.trim();
   const val=parseFloat(document.getElementById('fin-gasto-val').value);
   const data=document.getElementById('fin-gasto-data').value;
-  if(!desc||isNaN(val)||!data){toast('Preencha todos os campos.','err');return}
-  await sb.from('gastos').insert({descricao:desc,valor:val,data,categoria_id:cat||null}).catch(()=>{});
+  if(!desc){toast('Informe a descrição do gasto.','err');return}
+  if(isNaN(val)||val<=0){toast('Informe um valor válido.','err');return}
+  if(!data){toast('Informe a data do gasto.','err');return}
+  const {error}=await sb.from('gastos').insert({descricao:desc,valor:val,data,categoria_id:cat||null});
+  if(error){toast('Erro ao registrar: '+error.message,'err');return}
   document.getElementById('fin-gasto-desc').value='';
   document.getElementById('fin-gasto-val').value='';
+  document.getElementById('fin-gasto-data').value='';
   toast('Gasto registrado!','ok');
   await carregarGastos();
 }
