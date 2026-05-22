@@ -261,7 +261,7 @@ h1 .ac{color:var(--orange)}
 .testimonials{padding:80px 24px;background:var(--cream)}
 .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
 .testi-card{
-  background:#fff;border-radius:var(--r);padding:24px;
+  background:#fff;border-radius:var(--r);padding:22px;
   box-shadow:var(--shadow);border:1px solid var(--border);
   display:flex;flex-direction:column;gap:14px;
 }
@@ -369,6 +369,15 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
   .footer-top{grid-template-columns:1fr 1fr;gap:32px}
 }
 @media(max-width:768px){
+  .section{padding:52px 18px}
+  .products-section{padding:52px 18px}
+  .testimonials{padding:52px 18px}
+  .benefits-bar{padding:36px 18px}
+  .cta-section{padding:52px 18px}
+  .section h2{margin-bottom:10px}
+  .steps-grid{margin-top:32px}
+  .testi-grid{margin-top:28px}
+  .products-header{margin-bottom:24px}
   nav{height:60px;padding:0 16px}
   .nav-links{display:none}
   .hero{padding:80px 16px 100px;min-height:auto}
@@ -412,13 +421,8 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
     font-size:13px;color:var(--text2);line-height:1.55;
     margin-top:4px;
   }
-  .products-grid{
-    display:flex;overflow-x:auto;gap:14px;
-    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-    padding-bottom:8px;margin:0 -16px;padding-left:16px;padding-right:16px;
-  }
-  .products-grid::-webkit-scrollbar{display:none}
-  .product-card{min-width:72vw;flex-shrink:0;scroll-snap-align:start}
+  .products-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  .product-card{min-width:unset;flex-shrink:unset;scroll-snap-align:unset}
   .benefits-bar-inner{grid-template-columns:repeat(2,1fr);gap:16px}
   .testi-grid{
     display:flex;overflow-x:auto;gap:14px;
@@ -426,7 +430,7 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
     padding-bottom:8px;margin:0 -16px;padding-left:16px;padding-right:16px;
   }
   .testi-grid::-webkit-scrollbar{display:none}
-  .testi-card{min-width:80vw;flex-shrink:0;scroll-snap-align:start}
+  .testi-card{min-width:85vw;flex-shrink:0;scroll-snap-align:start;font-size:14px}
   .cta-inner{grid-template-columns:1fr}
   .cta-visual{display:none}
   .cta-actions{flex-direction:column}
@@ -930,7 +934,7 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
       el.scrollTo({left:next>=maxLeft-4?0:next,behavior:'smooth'});
     },ms);
   }
-  autoScroll(document.querySelector('.products-grid'),2800);
+  // produtos: sem auto-scroll (estático)
   autoScroll(document.querySelector('.testi-grid'),3200);
 })();
 </script>
