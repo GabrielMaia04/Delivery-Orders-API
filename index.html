@@ -954,6 +954,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="field"><label>Categoria (selecione uma criada acima)</label>
           <select id="fin-gasto-cat"><option value="">— Nenhuma categoria criada —</option></select>
         </div>
+        <div id="fin-cat-lista" style="margin-bottom:8px"></div>
         <div class="field"><label>Descrição</label>
           <input id="fin-gasto-desc" type="text" placeholder="Ex: Compra de sacolas">
         </div>
@@ -4424,6 +4425,34 @@ async function carregarGastos(){
       ?catsData.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')
       :'<option value="">— Crie uma categoria acima primeiro —</option>';
   }
+  const catLista=document.getElementById('fin-cat-lista');
+  if(catLista){
+    if(catsData.length){
+      catLista.innerHTML='<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Categorias criadas</div>'
+        +catsData.map(c=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;margin-bottom:3px;background:var(--bg3);border-radius:7px;border:1px solid var(--border)">'
+          +'<span style="font-size:12px;font-weight:600">'+c.nome+'</span>'
+          +'<button data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'" class="rm-cat-btn" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;font-weight:700;padding:0 6px;line-height:1" title="Remover categoria">×</button>'
+          +'</div>').join('');
+      // Adicionar eventos via JS (evita problema com aspas/apóstrofos no nome)
+      catLista.querySelectorAll('.rm-cat-btn').forEach(btn=>{
+        btn.onclick=()=>rmCategGasto(btn.dataset.catid, decodeURIComponent(btn.dataset.catnome));
+      });
+    }else{
+      catLista.innerHTML='';
+    }
+  }
+}
+
+async function rmCategGasto(id,nome){
+  popConfirm('🗑️','Remover categoria?',
+    '"'+nome+'" será removida. Os gastos vinculados ficam sem categoria.',
+    'Remover','pbtn-danger',async()=>{
+      const {error}=await sb.from('categorias_gasto').delete().eq('id',id);
+      if(error){toast('Erro: '+error.message,'err');return;}
+      toast('Categoria removida.','ok');
+      await carregarGastos();
+    }
+  );
 }
 
 async function addCategGasto(){
