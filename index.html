@@ -2195,14 +2195,17 @@ function setOverlayState(id,open){
   const el=document.getElementById(id);
   if(!el)return;
   if(open){
-    document.body.appendChild(el); // move para fim do body — força repaint
+    document.body.appendChild(el);
+    el.removeAttribute('aria-hidden');
+    el.removeAttribute('inert');
     el.style.display='flex';
-    el.setAttribute('aria-hidden','false');
     el.classList.add('open');
   }else{
+    const f=el.querySelector(':focus');if(f)f.blur();
     el.classList.remove('open');
-    el.setAttribute('aria-hidden','true');
     el.style.display='none';
+    el.setAttribute('inert',''); // inert impede foco sem aviso de aria-hidden
+    el.removeAttribute('aria-hidden');
   }
 }
 function abrirAuth(){setOverlayState('auth-ov',true)}
@@ -2709,7 +2712,25 @@ function setCoE(v){
   document.getElementById('co-dr').classList.toggle('active',v==='Retirada');
   document.getElementById('co-endereco-bloco').classList.toggle('hidden',v==='Retirada');
   document.getElementById('co-retirada-bloco').classList.toggle('hidden',v!=='Retirada');
-  if(v==='Retirada') renderRetOpts();
+  if(v==='Retirada'){
+    // Retirada: zera taxa e zona
+    _zonaAtiva=null;_clienteLat=null;_clienteLng=null;
+    TAXA=0;
+    renderRetOpts();
+  }else{
+    // Voltou para Entrega: resetar para forçar novo cálculo de frete
+    _zonaAtiva=null;
+    TAXA=0;
+    // Se já tem CEP preenchido, recalcular zona
+    const cepEl=document.getElementById('co-cep');
+    if(cepEl&&cepEl.value.replace(/\D/g,'').length===8){
+      setTimeout(verificarZonaEntrega,300);
+    }else{
+      // Avisar que precisa calcular CEP
+      const zi=document.getElementById('co-zona-info');
+      if(zi){zi.style.display='block';zi.innerHTML='<div style="font-size:12px;color:var(--text2);padding:8px">Informe o CEP para calcular o frete.</div>';}
+    }
+  }
   updSums();updCoResumo();
 }
 function renderRetOpts(){
@@ -2769,7 +2790,8 @@ async function aplicarCupom(){
 }
 function updCoResumo(){
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const taxa=cart.entrega==='Entrega'?TAXA:0;
+  const taxaBase=_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0);
+  const taxa=cart.entrega==='Entrega'?taxaBase:0;
   const desc=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
   document.getElementById('co-resumo').textContent=cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:''}).filter(Boolean).join(', ');
   document.getElementById('co-total').textContent='R$ '+fp(sub+taxa-desc);
@@ -2952,7 +2974,9 @@ async function enviarPedido(){
     const sub=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     const _promo=calcPromoAuto(sub);
     const _freteGratis=_promo?.freteGratis||false;
-    const taxa=cart.entrega==='Entrega'&&!_freteGratis?TAXA:0;
+    // Taxa só aplica se zona foi calculada ou se loja não está configurada
+    const taxaBase=(_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0));
+    const taxa=cart.entrega==='Entrega'&&!_freteGratis?taxaBase:0;
     const descCupomEnv=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
     const descPromoEnv=_promo?.desconto||0;
     const desc=descCupomEnv+descPromoEnv;
@@ -3115,12 +3139,16 @@ function abrirCal(ctx){
     :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
   const _calEl=document.getElementById('cal-ov');
   document.body.appendChild(_calEl);
+  _calEl.removeAttribute('aria-hidden');
   _calEl.style.display='flex';
   _calEl.classList.add('open');
 }function fecharCal(){
   const _c=document.getElementById('cal-ov');
+  const f=_c.querySelector(':focus');if(f)f.blur();
   _c.classList.remove('open');
   _c.style.display='none';
+  _c.setAttribute('inert','');
+  _c.removeAttribute('aria-hidden');
 }
 function navCal(d){
   calMes+=d;
@@ -3195,13 +3223,16 @@ function selecionarData(iso){
 function mostrarSucesso(){
   const _s=document.getElementById('success-ov');
   document.body.appendChild(_s);
+  _s.removeAttribute('aria-hidden');
+  _s.removeAttribute('inert');
   _s.style.display='flex';
-  _s.setAttribute('aria-hidden','false');
 }
 function fecharSucesso(){
   const _s=document.getElementById('success-ov');
+  const f=_s.querySelector(':focus');if(f)f.blur();
   _s.style.display='none';
-  _s.setAttribute('aria-hidden','true');
+  _s.removeAttribute('aria-hidden');
+  _s.setAttribute('inert','');
 }
 
 /* ── POPUP & TOAST ── */
@@ -3238,8 +3269,11 @@ function popup(icon,title,msg,btns){
 }
 function closePopup(){
   const _gp=document.getElementById('g-popup');
+  const f=_gp.querySelector(':focus');if(f)f.blur();
   _gp.classList.remove('open');
   _gp.style.display='none';
+  _gp.setAttribute('inert','');
+  _gp.removeAttribute('aria-hidden');
 }
 function popAlert(icon,title,msg,cb){popup(icon,title,msg,[{label:'OK',cls:'pbtn-ok',cb}])}
 function popConfirm(icon,title,msg,labelOk,clsOk,cbOk){
@@ -3591,8 +3625,8 @@ async function renderRel(){
 
   // Query para a listagem (filtrada)
   let q=sb.from('pedidos').select('*,itens_pedido(*)').order('created_at',{ascending:false});
-  if(tipo==='dia'){if(dataFiltro)q=q.gte('created_at',dataFiltro+'T00:00:00').lte('created_at',dataFiltro+'T23:59:59');}
-  else{if(deFiltro)q=q.gte('created_at',deFiltro+'T00:00:00');if(ateFiltro)q=q.lte('created_at',ateFiltro+'T23:59:59');}
+  if(tipo==='dia'){if(dataFiltro)q=q.eq('data_pedido',dataFiltro);}
+  else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
   rCache=lista;rTotal=lista.length;rPage=1;
