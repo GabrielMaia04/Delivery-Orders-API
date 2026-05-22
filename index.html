@@ -3655,9 +3655,10 @@ async function renderRel(){
     +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
     +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
   const pedEl=document.getElementById('r-peds');
-  if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>'}
+  const listaSemCanc=lista.filter(p=>p.status!=='Cancelado');
+  if(!listaSemCanc.length){pedEl.innerHTML='<div class="empty">Sem pedidos ativos no período.</div>'}
   else{
-    pedEl.innerHTML=lista.map(p=>{
+    pedEl.innerHTML=listaSemCanc.map(p=>{
       const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
       const dataEntrega=fdLabel(p.data_pedido)||fd(p.data_pedido);
       const dtCompra=p.created_at?new Date(p.created_at):null;
@@ -4294,8 +4295,9 @@ async function renderPedidos(){
 
   const pedEl=document.getElementById('rp-peds');
   if(!pedEl)return;
-  if(!lista.length){pedEl.innerHTML='<div class="empty">Sem pedidos.</div>';renderRPPage();return}
-  pedEl.innerHTML=lista.map(p=>{
+  const listaSemCanc=lista.filter(p=>p.status!=='Cancelado');
+  if(!listaSemCanc.length){pedEl.innerHTML='<div class="empty">Sem pedidos ativos no período.</div>';renderRPPage();return}
+  pedEl.innerHTML=listaSemCanc.map(p=>{
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
     const dtCompra=p.created_at?new Date(p.created_at):null;
     const dataPedido=dtCompra?dtCompra.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
@@ -4627,6 +4629,7 @@ async function loadDashChart(){
 async function loadDashRecentes(){
   const {data:peds}=await sb.from('pedidos')
     .select('id,codigo,cliente_nome,total,status,data_pedido')
+    .neq('status','Cancelado')
     .order('created_at',{ascending:false}).limit(6);
 
   const statusColor={
@@ -4649,8 +4652,13 @@ async function loadDashRecentes(){
 }
 
 async function loadDashTopProds(){
+  // Buscar pedidos não cancelados
+  const {data:pedidos}=await sb.from('pedidos').select('id').neq('status','Cancelado');
+  const pedIds=(pedidos||[]).map(p=>p.id);
+  if(!pedIds.length){document.getElementById('dm-top-prods').innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
   const {data:itens}=await sb.from('itens_pedido')
-    .select('produto_id,nome_produto,quantidade,subtotal');
+    .select('produto_id,nome_produto,quantidade,subtotal')
+    .in('pedido_id',pedIds);
 
   const mapa={};
   (itens||[]).forEach(it=>{
@@ -4674,8 +4682,12 @@ async function loadDashTopProds(){
 }
 
 async function loadDashPie(){
+  const {data:pedidos}=await sb.from('pedidos').select('id').neq('status','Cancelado');
+  const pedIds=(pedidos||[]).map(p=>p.id);
+  if(!pedIds.length)return;
   const {data:itens}=await sb.from('itens_pedido')
-    .select('produto_id,quantidade,subtotal');
+    .select('produto_id,quantidade,subtotal')
+    .in('pedido_id',pedIds);
   const {data:ps}=await sb.from('produtos').select('id,cat_id');
   const catMap={};
   (ps||[]).forEach(p=>catMap[p.id]=p.cat_id);
