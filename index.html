@@ -569,7 +569,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div id="t-login">
         <div id="login-msg" class="auth-msg"></div>
         <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="seu@email.com"></div>
-        <div class="field"><label>Senha</label><input id="login-pass" type="password" placeholder="Minimo 6 caracteres"></div>
+        <div class="field">
+          <label style="display:flex;justify-content:space-between;align-items:center">
+            Senha
+            <span onclick="abrirEsqueceuSenha()" style="font-size:11px;color:var(--green-bright);cursor:pointer;font-weight:600">Esqueceu a senha?</span>
+          </label>
+          <input id="login-pass" type="password" placeholder="Minimo 6 caracteres">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px">
+          <input type="checkbox" id="salvar-login" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
+          <label for="salvar-login" style="font-size:12px;color:var(--text2);cursor:pointer;font-weight:500">Salvar login neste dispositivo</label>
+        </div>
         <button class="big-btn" id="login-btn" onclick="fazerLogin()" style="margin-top:6px">Entrar</button>
       </div>
       <div id="t-reg" class="hidden">
@@ -2362,10 +2372,12 @@ async function fazerLogin(){
   if(!email||!pass){showMsg(msg,'Preencha email e senha.','error');return}
   btn.disabled=true;btn.textContent='Entrando...';
   const to=setTimeout(()=>{btn.disabled=false;btn.textContent='Entrar';showMsg(msg,'Conexao demorou. Tente novamente.','error')},10000);
+  const salvar=document.getElementById('salvar-login')?.checked!==false;
   const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
   clearTimeout(to);
   if(error){btn.disabled=false;btn.textContent='Entrar';showMsg(msg,tErr(error.message),'error');return}
   if(data?.user){
+    if(!salvar)sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
     await loadProfile(data.user.id,data.user);
     btn.disabled=false;btn.textContent='Entrar';
     fecharAuth();
@@ -5243,6 +5255,59 @@ async function togDestaque(id){
 }
 
 
+// ── HANDLER RESET DE SENHA ──
+async function verificarResetSenha(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('reset')!=='1')return;
+  // Supabase já setou a sessão via hash na URL
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return;
+  // Limpar param da URL
+  window.history.replaceState({},'',window.location.pathname);
+  // Abrir modal de nova senha
+  abrirNovaSenha();
+}
+function abrirNovaSenha(){
+  const ov=document.createElement('div');
+  ov.id='reset-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px 22px 20px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div style="font-size:28px;text-align:center;margin-bottom:10px">🔑</div>
+    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)">Nova senha</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:18px">Digite e confirme sua nova senha.</div>
+    <div id="reset-msg" style="margin-bottom:8px"></div>
+    <input id="reset-pass1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
+    <input id="reset-pass2" type="password" placeholder="Confirmar nova senha" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:14px;box-sizing:border-box">
+    <button onclick="salvarNovaSenha()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">Salvar nova senha</button>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('reset-pass1').focus();
+}
+async function salvarNovaSenha(){
+  const p1=document.getElementById('reset-pass1').value;
+  const p2=document.getElementById('reset-pass2').value;
+  const msg=document.getElementById('reset-msg');
+  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px;margin-bottom:6px">Mínimo 6 caracteres.</div>';return}
+  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px;margin-bottom:6px">As senhas não coincidem.</div>';return}
+  const {error}=await sb.auth.updateUser({password:p1});
+  if(error){msg.innerHTML='<div style="color:var(--red);font-size:12px;margin-bottom:6px">Erro: '+error.message+'</div>';return}
+  document.getElementById('reset-ov').remove();
+  toast('Senha atualizada com sucesso! 🎉','ok');
+}
+
+// ── ESQUECEU A SENHA ──
+function abrirEsqueceuSenha(){
+  popInput('🔑','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
+    const email=val.trim().toLowerCase();
+    if(!email||!email.includes('@')){toast('Digite um e-mail válido.','err');return}
+    const {error}=await sb.auth.resetPasswordForEmail(email,{
+      redirectTo: window.location.origin+'?reset=1'
+    });
+    if(error){toast('Erro ao enviar. Verifique o e-mail.','err');return}
+    toast('Link enviado! Verifique sua caixa de entrada 📧','ok');
+  });
+}
+
 // ── RASTREAR PEDIDO ──
 function abrirRastrearPedido(){
   popInput('📦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
@@ -5297,6 +5362,7 @@ function popAlert(title,msg){
 }
 
 init();
+verificarResetSenha();
 
 // Inject mobile cart bar HTML
 document.body.insertAdjacentHTML('beforeend',`<div id="mobile-cart-bar" class="mobile-cart-bar">
