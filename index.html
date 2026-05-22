@@ -421,6 +421,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pag-btn:hover:not(:disabled){background:var(--bg4);border-color:var(--green);color:var(--green-bright)}
 .pag-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 8px rgba(45,140,78,.3)}
 .pag-btn:disabled{opacity:.35;cursor:not-allowed}
+.fin-cat-opt{display:flex;align-items:center;padding:9px 12px;cursor:pointer;font-size:13px;gap:8px;border-bottom:1px solid var(--border);transition:background .12s}
+.fin-cat-opt:last-child{border-bottom:none}
+.fin-cat-opt:hover{background:var(--bg3)}
+.fin-cat-opt.selected{background:var(--green-light);color:var(--green-bright);font-weight:700}
+.fin-cat-opt-nome{flex:1}
+.fin-cat-opt-rm{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;font-weight:700;padding:0 4px;line-height:1;border-radius:4px;flex-shrink:0}
+.fin-cat-opt-rm:hover{color:var(--red);background:var(--red-soft)}
 
 .dropdown-wrap{position:relative;display:inline-block}
 .dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.25);min-width:170px;z-index:500;overflow:hidden;padding:6px 0}
@@ -952,9 +959,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           </div>
         </div>
         <div class="field"><label>Categoria (selecione uma criada acima)</label>
-          <select id="fin-gasto-cat"><option value="">— Nenhuma categoria criada —</option></select>
+          <input type="hidden" id="fin-gasto-cat" value="">
+          <div id="fin-cat-custom" style="position:relative">
+            <button type="button" id="fin-cat-trigger" onclick="toggleCatDropdown()"
+              style="width:100%;text-align:left;padding:10px 36px 10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:var(--font);cursor:pointer;position:relative">
+              <span id="fin-cat-label" style="color:var(--text3)">— Selecione ou crie acima —</span>
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);opacity:.5">▾</span>
+            </button>
+            <div id="fin-cat-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;overflow:hidden;max-height:200px;overflow-y:auto">
+              <div id="fin-cat-opts"></div>
+            </div>
+          </div>
         </div>
-        <div id="fin-cat-lista" style="margin-bottom:8px"></div>
         <div class="field"><label>Descrição</label>
           <input id="fin-gasto-desc" type="text" placeholder="Ex: Compra de sacolas">
         </div>
@@ -4425,23 +4441,61 @@ async function carregarGastos(){
       ?catsData.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')
       :'<option value="">— Crie uma categoria acima primeiro —</option>';
   }
-  const catLista=document.getElementById('fin-cat-lista');
-  if(catLista){
-    if(catsData.length){
-      catLista.innerHTML='<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Categorias criadas</div>'
-        +catsData.map(c=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;margin-bottom:3px;background:var(--bg3);border-radius:7px;border:1px solid var(--border)">'
-          +'<span style="font-size:12px;font-weight:600">'+c.nome+'</span>'
-          +'<button data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'" class="rm-cat-btn" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;font-weight:700;padding:0 6px;line-height:1" title="Remover categoria">×</button>'
-          +'</div>').join('');
-      // Adicionar eventos via JS (evita problema com aspas/apóstrofos no nome)
-      catLista.querySelectorAll('.rm-cat-btn').forEach(btn=>{
-        btn.onclick=()=>rmCategGasto(btn.dataset.catid, decodeURIComponent(btn.dataset.catnome));
-      });
-    }else{
-      catLista.innerHTML='';
-    }
-  }
+  // Renderizar select customizado de categorias
+  _renderCatDropdown(catsData);
 }
+
+// ── SELECT CUSTOMIZADO DE CATEGORIAS DE GASTO ──
+let _catDropdownOpen=false;
+
+function _renderCatDropdown(cats){
+  const opts=document.getElementById('fin-cat-opts');
+  const hiddenInput=document.getElementById('fin-gasto-cat');
+  if(!opts)return;
+  if(!cats.length){
+    opts.innerHTML='<div style="padding:12px;text-align:center;font-size:12px;color:var(--text3)">Nenhuma categoria. Crie uma acima.</div>';
+    return;
+  }
+  opts.innerHTML='';
+  const curVal=hiddenInput?.value||'';
+  cats.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='fin-cat-opt'+(curVal===String(c.id)?' selected':'');
+    div.innerHTML='<span class="fin-cat-opt-nome">'+c.nome+'</span>'
+      +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">×</button>';
+    div.querySelector('.fin-cat-opt-nome').onclick=()=>{
+      if(hiddenInput)hiddenInput.value=c.id;
+      const lbl=document.getElementById('fin-cat-label');
+      if(lbl){lbl.textContent=c.nome;lbl.style.color='var(--text)';}
+      fecharCatDropdown();
+    };
+    div.querySelector('.fin-cat-opt-rm').onclick=(e)=>{
+      e.stopPropagation();
+      rmCategGasto(c.id, decodeURIComponent(encodeURIComponent(c.nome)));
+    };
+    opts.appendChild(div);
+  });
+}
+
+function toggleCatDropdown(){
+  const dd=document.getElementById('fin-cat-dropdown');
+  if(!dd)return;
+  _catDropdownOpen=!_catDropdownOpen;
+  dd.style.display=_catDropdownOpen?'block':'none';
+  if(_catDropdownOpen)dd.scrollTop=0;
+}
+
+function fecharCatDropdown(){
+  _catDropdownOpen=false;
+  const dd=document.getElementById('fin-cat-dropdown');
+  if(dd)dd.style.display='none';
+}
+
+// Fechar ao clicar fora
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('fin-cat-custom');
+  if(wrap&&!wrap.contains(e.target))fecharCatDropdown();
+});
 
 async function rmCategGasto(id,nome){
   popConfirm('🗑️','Remover categoria?',
