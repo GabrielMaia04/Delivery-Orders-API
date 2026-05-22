@@ -316,8 +316,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .cal-trigger:hover{border-color:var(--green)}
 .cal-trigger.selected{color:var(--green-bright);border-color:var(--green);background:var(--green-light)}
 .cal-trigger::after{content:'';width:16px;height:16px;flex-shrink:0;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'/%3E%3C/svg%3E") center/contain no-repeat;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'/%3E%3C/svg%3E") center/contain no-repeat}
-.cal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9995;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
-.cal-ov.open{opacity:1;pointer-events:all}
+.cal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9995;display:none;align-items:center;justify-content:center;padding:20px}
+.cal-ov.open{display:flex}
 .cal-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;width:320px;max-width:100%;box-shadow:0 12px 48px rgba(0,0,0,.4);transform:translateY(14px) scale(.97);transition:transform .2s}
 .cal-ov.open .cal-box{transform:none}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
@@ -337,8 +337,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .cal-dot{width:8px;height:8px;border-radius:50%;background:var(--green-bright);display:inline-block;flex-shrink:0}
 
 /* ── ORDER SUCCESS ── */
-.success-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9990;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
-.success-ov.open{opacity:1;pointer-events:all}
+.success-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9990;display:none;align-items:center;justify-content:center;padding:24px}
+.success-ov.open{display:flex}
 .success-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:36px 28px 28px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,.4);transform:scale(.9) translateY(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .success-ov.open .success-box{transform:none}
 .success-emoji{display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:bounce .5s .15s both}
@@ -350,8 +350,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @keyframes bounce{0%{transform:scale(.5)}60%{transform:scale(1.15)}80%{transform:scale(.95)}100%{transform:scale(1)}}
 
 
-.popup-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
-.popup-ov.open{opacity:1;pointer-events:all}
+.popup-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.popup-ov.open{display:flex}
 .popup-box{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35);transform:translateY(12px) scale(.97);transition:transform .18s}
 .popup-ov.open .popup-box{transform:none}
 .popup-icon{font-size:32px;text-align:center;margin-bottom:10px}
@@ -447,8 +447,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="brand"><div class="logo"><i data-lucide="leaf"></i></div><div class="brand-name">Cortadinhos<span>com carinho</span></div></div>
     <div class="topbar-right">
       <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()">Entrar</button><div class="dropdown-menu hidden" id="user-dropdown">
-        <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('dados')">Conta</button>
-        <button class="dropdown-item" onclick="fecharDropdown();abrirPerfilTab('historico')">Pedidos</button>
+        <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirPerfilTab('dados')">Conta</button>
+        <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirPerfilTab('historico')">Pedidos</button>
         <button class="dropdown-item" id="dd-admin" style="display:none" onclick="fecharDropdown();showAdmin()">Admin</button>
         <div class="dd-icon-row">
           <button class="dd-icon-btn wpp" title="WhatsApp" onclick="fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><svg width="20" height="20" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg></button>
@@ -563,7 +563,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <!-- Data (depois da modalidade) -->
       <div class="field"><label>Data</label>
-        <button type="button" class="cal-trigger" id="co-data-btn" onclick="abrirCal('co')">Selecionar data</button>
+        <button type="button" class="cal-trigger" id="co-data-btn" onclick="event.stopPropagation();abrirCal('co')">Selecionar data</button>
         <input type="hidden" id="co-data">
       </div>
       <!-- ENDEREÇO (só Entrega) -->
@@ -749,7 +749,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="field"><label>Nome *</label><input id="a-nome" type="text" placeholder="Nome do cliente"></div>
           <div class="field"><label>Contato</label><input id="a-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
           <div class="field"><label>Data de entrega</label>
-            <button type="button" class="cal-trigger" id="a-data-btn" onclick="abrirCal('adm')">Selecionar data de entrega</button>
+            <button type="button" class="cal-trigger" id="a-data-btn" onclick="event.stopPropagation();abrirCal('adm')">Selecionar data de entrega</button>
             <input type="hidden" id="a-data">
           </div>
           <div class="field"><label>CEP</label>
@@ -1014,7 +1014,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
         <div>
           <label>Data de entrega</label>
-          <button type="button" class="cal-trigger" id="e-data-btn" onclick="abrirCal('entr')">Selecionar data de entrega</button>
+          <button type="button" class="cal-trigger" id="e-data-btn" onclick="event.stopPropagation();abrirCal('entr')">Selecionar data de entrega</button>
           <input type="hidden" id="e-data">
         </div>
       </div>
