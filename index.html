@@ -2194,8 +2194,18 @@ document.addEventListener('click',function(e){
 function setOverlayState(id,open){
   const el=document.getElementById(id);
   if(!el)return;
-  el.classList.toggle('open',open);
-  el.setAttribute('aria-hidden',open?'false':'true');
+  if(open){
+    el.style.display='flex';          // força display imediato
+    requestAnimationFrame(()=>{
+      el.classList.add('open');
+      el.setAttribute('aria-hidden','false');
+    });
+  }else{
+    el.classList.remove('open');
+    el.setAttribute('aria-hidden','true');
+    // aguarda transição antes de esconder (se houver)
+    setTimeout(()=>{ if(!el.classList.contains('open')) el.style.display=''; },50);
+  }
 }
 function abrirAuth(){setOverlayState('auth-ov',true)}
 function fecharAuth(){setOverlayState('auth-ov',false)}
@@ -3105,8 +3115,14 @@ function abrirCal(ctx){
     :calCtx==='adm'
     ?'<span class="cal-dot"></span> Selecione qualquer data'
     :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
-  document.getElementById('cal-ov').classList.add('open');
-}function fecharCal(){document.getElementById('cal-ov').classList.remove('open')}
+  const _calEl=document.getElementById('cal-ov');
+  _calEl.style.display='flex';
+  requestAnimationFrame(()=>{ _calEl.classList.add('open'); });
+}function fecharCal(){
+  const _c=document.getElementById('cal-ov');
+  _c.classList.remove('open');
+  setTimeout(()=>{ if(!_c.classList.contains('open'))_c.style.display=''; },50);
+}
 function navCal(d){
   calMes+=d;
   if(calMes>11){calMes=0;calAno++}
@@ -3211,9 +3227,15 @@ function popup(icon,title,msg,btns){
     bd.appendChild(btn);
   });
   refreshIcons();
-  document.getElementById('g-popup').classList.add('open');
+  const _gp=document.getElementById('g-popup');
+  _gp.style.display='flex';
+  requestAnimationFrame(()=>{ _gp.classList.add('open'); });
 }
-function closePopup(){document.getElementById('g-popup').classList.remove('open')}
+function closePopup(){
+  const _gp=document.getElementById('g-popup');
+  _gp.classList.remove('open');
+  setTimeout(()=>{ if(!_gp.classList.contains('open'))_gp.style.display=''; },50);
+}
 function popAlert(icon,title,msg,cb){popup(icon,title,msg,[{label:'OK',cls:'pbtn-ok',cb}])}
 function popConfirm(icon,title,msg,labelOk,clsOk,cbOk){
   popup(icon,title,msg,[
