@@ -424,10 +424,13 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
   .products-grid{display:grid;grid-template-columns:1fr;gap:16px}
   .product-card{min-width:unset;flex-shrink:unset;scroll-snap-align:unset}
   .benefits-bar-inner{grid-template-columns:repeat(2,1fr);gap:16px}
-  .testi-ticker-wrap{overflow:hidden;margin:0 -18px}
-  .testi-ticker-track{display:flex;gap:0;width:max-content;animation:testi-ticker 18s linear infinite}
+  .testi-ticker-wrap{overflow:hidden;margin:0 -18px;padding:4px 0}
+  .testi-ticker-track{display:flex;gap:0;width:max-content;animation:testi-ticker 22s linear infinite;align-items:flex-start}
   .testi-ticker-track:hover{animation-play-state:paused}
-  .testi-card{min-width:82vw;flex-shrink:0;margin:0 8px}
+  .testi-card{min-width:78vw;max-width:78vw;flex-shrink:0;margin:0 10px;padding:18px;height:auto;align-self:flex-start}
+  .testi-text{font-size:13px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .testi-stars{margin-bottom:8px}
+  .testi-author{margin-top:12px;padding-top:12px}
   .cta-inner{grid-template-columns:1fr}
   .cta-visual{display:none}
   .cta-actions{flex-direction:column}
@@ -927,6 +930,8 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
     if(!cards.trim())return;
     // Duplicar os cards para loop infinito
     grid.innerHTML = cards + cards;
+    // Adicionar espaço no início para não cortar o primeiro card
+    grid.style.paddingLeft = '18px';
     // Aplicar classe de ticker
     grid.classList.add('testi-ticker-track');
     var wrap = document.createElement('div');
