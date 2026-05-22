@@ -11,10 +11,6 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Cortadinhos com Carinho</title>
-<meta name="description" content="Legumes frescos, higienizados e prontos para uso no Rio de Janeiro. Entrega rápida ou retirada agendada.">
-<meta name="keywords" content="legumes frescos, hortifrutti, delivery, Rio de Janeiro, Grajaú, legumes higienizados">
-<meta property="og:title" content="Cortadinhos com Carinho">
-<meta property="og:description" content="Legumes frescos, higienizados e prontos para uso no Rio de Janeiro. Entrega rápida ou retirada agendada.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -41,7 +37,7 @@ button,input,select,textarea{touch-action:manipulation}
 .icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .cart-fab{width:40px;height:40px;border-radius:9px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;position:relative}
 .cart-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)}
-.login-top{padding:8px 14px;border-radius:9px;background:var(--green-light);color:var(--green-bright);border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)}
+.login-top{width:36px;height:36px;border-radius:9px;background:var(--green-light);color:var(--green-bright);border:1px solid var(--border);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s}.login-top.logged{background:var(--green);color:#fff;border-color:var(--green)}.login-top [data-lucide]{width:18px;height:18px}
 @media(max-width:420px){.topbar{padding:10px 16px}.brand-name{font-size:15px;max-width:180px}.brand-name span{font-size:10px}.topbar-right{gap:6px}.login-top{padding:8px 12px}.cart-fab{width:38px;height:38px}}
 
 /* HERO */
@@ -473,17 +469,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="topbar">
     <div class="brand"><div class="logo"><i data-lucide="leaf"></i></div><div class="brand-name">Cortadinhos<span>com carinho</span></div></div>
     <div class="topbar-right">
-      <div class="dropdown-wrap">
-        <button class="icon-btn" id="topbar-login" onclick="toggleDropdown()" title="Conta" style="position:relative">
-          <i data-lucide="user"></i>
-        </button>
-        <div class="dropdown-menu hidden" id="user-dropdown">
+      <div class="dropdown-wrap"><button class="login-top" id="topbar-login" onclick="toggleDropdown()" title="Conta / Login"><i data-lucide="user"></i></button><div class="dropdown-menu hidden" id="user-dropdown">
         <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirPerfilTab('dados')">Conta</button>
         <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirPerfilTab('historico')">Pedidos</button>
         <button class="dropdown-item" id="dd-admin" style="display:none" onclick="fecharDropdown();showAdmin()">Admin</button>
-        <div class="dd-divider"></div>
-        <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirRastrear()">Acompanhar pedido</button>
-        <button class="dropdown-item" onclick="event.stopPropagation();fecharDropdown();abrirAjuda()">Preciso de ajuda</button>
         <div class="dd-icon-row">
           <button class="dd-icon-btn wpp" title="WhatsApp" onclick="fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><svg width="20" height="20" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg></button>
           <button class="dd-icon-btn ig" title="Instagram" onclick="fecharDropdown();window.open('https://instagram.com','_blank')"><svg width="20" height="20" viewBox="0 0 24 24"><defs><radialGradient id="ig-g" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><path fill="url(#ig-g)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></button>
@@ -1133,7 +1122,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
               <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('p-img-file').click()">Escolher foto</button>
             </div>
           </div>
-          <div class="field"><label>Tags de busca</label><input id="p-tags" type="text" placeholder="Ex: refogado, sopa, legume, cozido" autocomplete="off"><div style="font-size:10px;color:var(--text3);margin-top:3px">Separe por vírgula. Aparecem na busca da loja.</div></div>
           <div class="field"><label>Estoque (deixe vazio = ilimitado)</label><input id="p-estoque" type="number" min="0" placeholder="Ex: 50"></div>
           <button class="btn btn-g" style="width:100%;margin-top:4px" onclick="addProd()">Salvar produto</button>
         </div>
@@ -1279,24 +1267,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
         </div><!-- /admin-content -->
   </div><!-- /admin-body -->
-
-<!-- MODAL RASTREAR PEDIDO -->
-<div class="modal-ov" id="rastrear-ov" onclick="if(!event.target.closest('.modal-box')){this.classList.remove('open');this.style.display='none';}">
-  <div class="modal-box" style="width:400px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div>
-        <div class="modal-title ico-gap"><i data-lucide="search"></i> Acompanhar pedido</div>
-        <div class="modal-sub">Digite o código ou ID do seu pedido</div>
-      </div>
-      <button onclick="document.getElementById('rastrear-ov').classList.remove('open');document.getElementById('rastrear-ov').style.display='none';" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <input id="rastrear-input" type="text" placeholder="Ex: 260152205 ou #123" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')buscarPedidoRastrear()">
-      <button class="btn btn-g" onclick="buscarPedidoRastrear()">Buscar</button>
-    </div>
-    <div id="rastrear-result"></div>
-  </div>
-</div>
 
 <!-- PERFIL CLIENTE SHEET -->
 <div class="sheet-overlay" id="perfil-ov" onclick="fecharPerfilOv(event)">
@@ -2259,53 +2229,6 @@ async function rmZona(id){
   zonas=zonas.filter(z=>z.id!==id);renderZonas();
 }
 
-// ── RASTREAR PEDIDO ──
-function abrirRastrear(){
-  if(!document.getElementById('rastrear-ov')){return;}
-  document.getElementById('rastrear-input').value='';
-  document.getElementById('rastrear-result').innerHTML='';
-  const el=document.getElementById('rastrear-ov');
-  document.body.appendChild(el);
-  el.removeAttribute('inert');
-  el.style.display='flex';
-  el.classList.add('open');
-  refreshIcons();
-  setTimeout(()=>document.getElementById('rastrear-input')?.focus(),100);
-}
-
-async function buscarPedidoRastrear(){
-  const val=document.getElementById('rastrear-input').value.trim().replace('#','');
-  if(!val){toast('Digite o código do pedido.','err');return;}
-  const el=document.getElementById('rastrear-result');
-  el.innerHTML='<div class="loading"><div class="spin"></div> Buscando...</div>';
-  // Buscar por código ou por ID numérico
-  let {data}=await sb.from('pedidos')
-    .select('id,codigo,cliente_nome,status,data_pedido,entrega,total')
-    .or('codigo.eq.'+val+',id.eq.'+(parseInt(val)||0))
-    .single().catch(()=>({data:null}));
-  if(!data){
-    el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">Pedido não encontrado.<br><span style="font-size:11px">Verifique o código e tente novamente.</span></div>';
-    return;
-  }
-  el.innerHTML=
-    '<div style="border:1px solid var(--border);border-radius:12px;padding:16px">'+
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
-    '<div><div style="font-size:13px;font-weight:800">'+data.cliente_nome+'</div>'+
-    '<div style="font-size:11px;color:var(--text3);font-family:monospace">'+(data.codigo||'#'+data.id)+'</div></div>'+
-    '<div style="text-align:right"><div style="font-size:13px;font-weight:800;color:var(--green-bright)">R$ '+fp(data.total)+'</div>'+
-    '<div style="font-size:11px;color:var(--text3)">'+fdLabel(data.data_pedido)+'</div></div>'+
-    '</div>'+
-    buildTimelineHtml(data.status||'Pendente')+
-    '</div>';
-  refreshIcons();
-}
-
-function abrirAjuda(){
-  const num=window._WHATSAPP_NUM_DB||WHATSAPP_NUM;
-  const msg='Olá! Preciso de ajuda com meu pedido. 😊';
-  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
-}
-
 async function init(){
   carregarTaxaRemota();
   carregarZonas();
@@ -2357,7 +2280,7 @@ async function loadProfile(uid,user){
     }
     perfil=data;
     const pn=perfil.nome.split(' ')[0];
-    document.getElementById('topbar-login').textContent=pn;
+    document.getElementById('topbar-login').classList.add('logged');
     document.getElementById('hero-msg').textContent='Ola, '+pn+'!';
     const ddAdmin=document.getElementById('dd-admin');
     if(ddAdmin) ddAdmin.style.display=perfil.role==='admin'?'flex':'none';
@@ -2462,7 +2385,7 @@ async function fazerLogout(){
   await sb.auth.signOut();perfil=null;
   document.getElementById('screen-admin').classList.remove('active');
   document.getElementById('screen-shop').classList.add('active');
-  document.getElementById('topbar-login').textContent='Entrar';
+  document.getElementById('topbar-login').classList.remove('logged');
   document.getElementById('hero-msg').textContent='Bem-vindo!';
   const ddAdmin=document.getElementById('dd-admin');
   if(ddAdmin)ddAdmin.style.display='none';
@@ -2508,7 +2431,7 @@ function renderShop(){
   const q=(document.getElementById('shop-search').value||'').toLowerCase();
   let ps=prods.filter(p=>p.ativo);
   if(fCatShop&&!q)ps=ps.filter(p=>p.cat_id===fCatShop);
-  if(q)ps=ps.filter(p=>p.nome.toLowerCase().includes(q)||p.descricao?.toLowerCase().includes(q)||(p.tags||'').toLowerCase().includes(q));
+  if(q)ps=ps.filter(p=>p.nome.toLowerCase().includes(q)||p.descricao?.toLowerCase().includes(q));
   const cat=cats.find(c=>c.id===fCatShop);
   document.getElementById('shop-sec').textContent=q?'Resultados para "'+q+'"':(cat?cat.nome:'Todos os produtos');
   const el=document.getElementById('shop-grid');
@@ -4307,19 +4230,17 @@ async function addProd(){
     const {error:upErr}=await sb.storage.from('imagens').upload(path,imgFile,{upsert:true});
     if(!upErr)imagem_url=IMG_BASE+'/'+path;
   }
-  const tags=document.getElementById('p-tags')?.value.trim()||'';
   const {data,error}=await sb.from('produtos').insert({
     cat_id:parseInt(document.getElementById('p-cat').value),
     nome,
     descricao:document.getElementById('p-desc').value.trim(),
     peso:document.getElementById('p-peso').value.trim(),
     imagem_url,
-    preco,estoque,ativo:true,
-    tags:tags||null
+    preco,estoque,ativo:true
   }).select().single();
   if(error){toast('Erro: '+error.message,'err');return}
   prods.push(data);
-  ['p-nome','p-desc','p-peso','p-preco','p-estoque','p-tags'].forEach(id=>{
+  ['p-nome','p-desc','p-peso','p-preco','p-estoque'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const pf=document.getElementById('p-img-file');if(pf)pf.value='';
