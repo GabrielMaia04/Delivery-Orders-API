@@ -3582,7 +3582,15 @@ async function renderEntregas(){
   }).join('') || '<div class="empty">Sem produtos.</div>';
 }
 async function alterarStatusE(id,status){
-  await sb.from('pedidos').update({status}).eq('id',id);
+  const {error}=await sb.from('pedidos').update({status}).eq('id',id);
+  if(error){toast('Erro: '+error.message,'err');return;}
+  // WhatsApp automático
+  const p=(window._entCache||[]).find(x=>x.id===id);
+  if(p&&WPP_STATUS_MSGS[status]){
+    p.status=status;
+    dispararWppStatus(p,status);
+  }
+  toast('Status atualizado: '+status,'ok');
   renderEntregas();
 }
 function imprimirTodosPedidos(){
@@ -3935,11 +3943,64 @@ function imprimirPedido(id){
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
 }
 
+
+// ══════════════════════════════════════
+// WHATSAPP AUTOMÁTICO POR STATUS
+// ══════════════════════════════════════
+const WPP_STATUS_MSGS = {
+  'Em preparo': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 👋\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! 🌿\n`+
+    `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
+    `Qualquer dúvida estamos aqui! 😊`,
+
+  'Saiu para entrega': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 🚚\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
+    `Fique de olho, está a caminho! 🌱\n\n`+
+    `Qualquer dúvida estamos aqui! 😊`,
+
+  'Entregue': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! ✅\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
+    `Obrigado pela preferência e até a próxima! 💚\n\n`+
+    `*Cortadinhos com Carinho* 🌿`,
+
+  'Cancelado': (p) =>
+    `Olá, ${p.cliente_nome.split(' ')[0]}! 😔\n\n`+
+    `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
+    `Em caso de dúvidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho* 🌿`
+};
+
+function dispararWppStatus(pedido, status){
+  const fn = WPP_STATUS_MSGS[status];
+  if(!fn) return; // Pendente não dispara mensagem
+  const msg = fn(pedido);
+  const tel = (pedido.cliente_contato||'').replace(/\D/g,'');
+  if(!tel || tel.length < 10){
+    toast('Sem telefone do cliente para enviar WhatsApp.','err',3000);
+    return;
+  }
+  // Adicionar DDI 55 se não tiver
+  const telFull = tel.startsWith('55') ? tel : '55'+tel;
+  const url = 'https://wa.me/'+telFull+'?text='+encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
 async function alterarStatus(id,status){
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro ao salvar status: '+error.message,'err');return;}
-  const p=rCache.find(x=>x.id===id);
-  if(p)p.status=status;
+  // Buscar pedido do cache (rCache ou rpCache)
+  const p=rCache.find(x=>x.id===id)||rpCache.find(x=>x.id===id);
+  if(p){
+    p.status=status;
+    // Disparar WhatsApp se status envia mensagem
+    if(WPP_STATUS_MSGS[status]){
+      dispararWppStatus(p, status);
+    }
+  }
+  toast('Status atualizado: '+status,'ok');
 }
 function renderRPage(){
   const start=(rPage-1)*PER;
