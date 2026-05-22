@@ -424,13 +424,10 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
   .products-grid{display:grid;grid-template-columns:1fr;gap:16px}
   .product-card{min-width:unset;flex-shrink:unset;scroll-snap-align:unset}
   .benefits-bar-inner{grid-template-columns:repeat(2,1fr);gap:16px}
-  .testi-grid{
-    display:flex;overflow-x:auto;gap:14px;
-    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-    padding-bottom:8px;margin:0 -16px;padding-left:16px;padding-right:16px;
-  }
-  .testi-grid::-webkit-scrollbar{display:none}
-  .testi-card{min-width:85vw;flex-shrink:0;scroll-snap-align:start;font-size:14px}
+  .testi-ticker-wrap{overflow:hidden;margin:0 -18px}
+  .testi-ticker-track{display:flex;gap:0;width:max-content;animation:testi-ticker 18s linear infinite}
+  .testi-ticker-track:hover{animation-play-state:paused}
+  .testi-card{min-width:82vw;flex-shrink:0;margin:0 8px}
   .cta-inner{grid-template-columns:1fr}
   .cta-visual{display:none}
   .cta-actions{flex-direction:column}
@@ -446,6 +443,7 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
 
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes testi-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .hero-inner{animation:fadeUp .7s ease both}
 </style>
 </head>
@@ -920,22 +918,22 @@ footer{background:var(--text);padding:56px 24px 32px;color:rgba(255,255,255,0.55
 <script>
 (function(){
   if(window.innerWidth>=768)return;
-  function autoScroll(el,ms){
-    if(!el)return;
-    var paused=false;
-    el.addEventListener('touchstart',function(){paused=true},{passive:true});
-    el.addEventListener('touchend',function(){setTimeout(function(){paused=false},3000)},{passive:true});
-    setInterval(function(){
-      if(paused)return;
-      var cards=el.querySelectorAll(':scope > *');
-      var cw=cards[0]?cards[0].offsetWidth+parseInt(getComputedStyle(el).gap||14):0;
-      var maxLeft=el.scrollWidth-el.clientWidth;
-      var next=el.scrollLeft+cw;
-      el.scrollTo({left:next>=maxLeft-4?0:next,behavior:'smooth'});
-    },ms);
-  }
-  // produtos: sem auto-scroll (estático)
-  autoScroll(document.querySelector('.testi-grid'),3200);
+  // Ticker infinito para depoimentos (igual ao de stats)
+  var grid = document.getElementById('lp-testi-grid');
+  if(!grid)return;
+  // Aguardar DOM pronto com pequeno delay para pegar cards dinâmicos também
+  setTimeout(function(){
+    var cards = grid.innerHTML;
+    if(!cards.trim())return;
+    // Duplicar os cards para loop infinito
+    grid.innerHTML = cards + cards;
+    // Aplicar classe de ticker
+    grid.classList.add('testi-ticker-track');
+    var wrap = document.createElement('div');
+    wrap.className = 'testi-ticker-wrap';
+    grid.parentNode.insertBefore(wrap, grid);
+    wrap.appendChild(grid);
+  }, 400);
 })();
 </script>
 
