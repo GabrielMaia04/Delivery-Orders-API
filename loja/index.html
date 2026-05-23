@@ -792,6 +792,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="aside-item" id="aside-clientes" onclick="showAPage('clientes',this)">
           <i data-lucide="users"></i> Clientes
         </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Landing Page</div>
+        <button class="aside-item" id="aside-landing" onclick="showAPage('landing',this)">
+          <i data-lucide="layout"></i> Editor
+        </button>
       </nav>
       <div class="aside-footer">
         <button class="aside-item" onclick="voltarLoja()" style="width:100%">
@@ -1304,6 +1309,83 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
+
+
+  <!-- LANDING PAGE EDITOR -->
+  <div id="ap-landing" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Editor da Landing Page</span>
+      <a href="/" target="_blank" class="btn btn-o btn-sm ico-gap"><i data-lucide="external-link"></i> Ver landing</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+
+      <!-- HERO -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="star"></i> Seção Hero</div>
+        <div class="row2">
+          <div class="field"><label>Linha 1 do título</label><input id="lp-titulo1" type="text" placeholder="Mais tempo"></div>
+          <div class="field"><label>Linha 2 (verde)</label><input id="lp-titulo2" type="text" placeholder="pra você,"></div>
+        </div>
+        <div class="field"><label>Linha 3 (laranja/destaque)</label><input id="lp-titulo3" type="text" placeholder="a gente cuida do resto."></div>
+        <div class="field"><label>Subtítulo</label><textarea id="lp-subtitulo" style="height:60px" placeholder="Legumes frescos, higienizados e cortados..."></textarea></div>
+        <div class="field"><label>Texto do badge (topo)</label><input id="lp-badge" type="text" placeholder="Entregas às terças e sextas"></div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingHero()">Salvar Hero</button>
+        <div id="lp-hero-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="bar-chart-2"></i> Estatísticas (faixa verde)</div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 1</label><input id="lp-s1v" type="text" placeholder="+500"></div>
+          <div class="field"><label>Label 1</label><input id="lp-s1l" type="text" placeholder="Clientes satisfeitos"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 2</label><input id="lp-s2v" type="text" placeholder="+10 mil"></div>
+          <div class="field"><label>Label 2</label><input id="lp-s2l" type="text" placeholder="Pedidos entregues"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 3</label><input id="lp-s3v" type="text" placeholder="98%"></div>
+          <div class="field"><label>Label 3</label><input id="lp-s3l" type="text" placeholder="Avaliações positivas"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 4</label><input id="lp-s4v" type="text" placeholder="2×"></div>
+          <div class="field"><label>Label 4</label><input id="lp-s4l" type="text" placeholder="Entregas por semana"></div>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingStats()">Salvar Stats</button>
+        <div id="lp-stats-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- PRODUTOS EM DESTAQUE -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="package"></i> Produtos em Destaque</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Selecione até 3 produtos que aparecem na landing page.</div>
+        <div class="field"><label>Produto 1</label><select id="lp-prod1"></select></div>
+        <div class="field"><label>Produto 2</label><select id="lp-prod2"></select></div>
+        <div class="field"><label>Produto 3</label><select id="lp-prod3"></select></div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingDestaques()">Salvar Destaques</button>
+        <div id="lp-prods-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- DEPOIMENTOS -->
+      <div class="acard-sm" style="grid-column:1/-1">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="message-square"></i> Depoimentos</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px" id="lp-depoi-list"></div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px">+ Adicionar depoimento</div>
+          <div class="row2">
+            <div class="field"><label>Nome</label><input id="lp-dep-nome" type="text" placeholder="Ana Paula"></div>
+            <div class="field"><label>Bairro / Info</label><input id="lp-dep-local" type="text" placeholder="Barra da Tijuca"></div>
+          </div>
+          <div class="field"><label>Depoimento</label><textarea id="lp-dep-texto" style="height:70px" placeholder="Os legumes são super frescos..."></textarea></div>
+          <button class="btn btn-g" style="width:100%" onclick="adicionarDepoimento()">+ Adicionar</button>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingDepoimentos()">Salvar Todos os Depoimentos</button>
+        <div id="lp-dep-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+    </div>
+  </div>
 
         </div><!-- /admin-content -->
   </div><!-- /admin-body -->
@@ -3255,6 +3337,7 @@ function showAPage(p,tab){
   if(p==='categorias'){renderCatList();renderCatSel();}
   if(p==='config')initConfig();
   if(p==='clientes')initClientes();
+  if(p==='landing')initLanding();
 }
 function showAEl(id){document.querySelectorAll('.apage,.apage-3col').forEach(el=>el.classList.remove('active'));document.getElementById(id).classList.add('active')}
 
@@ -5363,6 +5446,135 @@ async function salvarNovaSenha(){
   if(error){msg.innerHTML='<div style="color:var(--red);font-size:12px">Erro: '+error.message+'</div>';return}
   document.getElementById('reset-ov').remove();
   toast('Senha atualizada!','ok');
+}
+
+// ══════════════════════════════════════
+// LANDING PAGE EDITOR
+// ══════════════════════════════════════
+let _lpDepoimentos = [];
+
+async function initLanding(){
+  const opt = '<option value="">— Nenhum —</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  ['lp-prod1','lp-prod2','lp-prod3'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = opt;
+  });
+  try{
+    const {data} = await sb.from('configuracoes').select('chave,valor')
+      .in('chave',['landing_hero','landing_stats','landing_destaques','landing_depoimentos']);
+    (data||[]).forEach(r=>{
+      try{
+        if(r.chave==='landing_hero'){
+          const h = JSON.parse(r.valor);
+          document.getElementById('lp-titulo1').value = h.titulo1||'';
+          document.getElementById('lp-titulo2').value = h.titulo2||'';
+          document.getElementById('lp-titulo3').value = h.titulo3||'';
+          document.getElementById('lp-subtitulo').value = h.subtitulo||'';
+          document.getElementById('lp-badge').value = h.badge||'';
+        }
+        if(r.chave==='landing_stats'){
+          const s = JSON.parse(r.valor);
+          s.forEach((st,i)=>{
+            const n = i+1;
+            const v = document.getElementById('lp-s'+n+'v');
+            const l = document.getElementById('lp-s'+n+'l');
+            if(v) v.value = st.valor||'';
+            if(l) l.value = st.label||'';
+          });
+        }
+        if(r.chave==='landing_destaques'){
+          const ids = JSON.parse(r.valor);
+          ids.forEach((id,i)=>{
+            const el = document.getElementById('lp-prod'+(i+1));
+            if(el) el.value = id||'';
+          });
+        }
+        if(r.chave==='landing_depoimentos'){
+          _lpDepoimentos = JSON.parse(r.valor)||[];
+          renderLpDepoimentos();
+        }
+      }catch(e){}
+    });
+  }catch(e){}
+}
+
+async function salvarLandingHero(){
+  const hero = {
+    titulo1: document.getElementById('lp-titulo1').value.trim(),
+    titulo2: document.getElementById('lp-titulo2').value.trim(),
+    titulo3: document.getElementById('lp-titulo3').value.trim(),
+    subtitulo: document.getElementById('lp-subtitulo').value.trim(),
+    badge: document.getElementById('lp-badge').value.trim(),
+  };
+  const {error} = await sb.from('configuracoes').upsert({chave:'landing_hero',valor:JSON.stringify(hero)},{onConflict:'chave'});
+  const msg = document.getElementById('lp-hero-msg');
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Hero salvo!';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Hero da landing page salvo!','ok');
+}
+
+async function salvarLandingStats(){
+  const stats = [1,2,3,4].map(n=>({
+    valor: document.getElementById('lp-s'+n+'v')?.value.trim()||'',
+    label: document.getElementById('lp-s'+n+'l')?.value.trim()||''
+  }));
+  const {error} = await sb.from('configuracoes').upsert({chave:'landing_stats',valor:JSON.stringify(stats)},{onConflict:'chave'});
+  const msg = document.getElementById('lp-stats-msg');
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Stats salvos!';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Estatísticas salvas!','ok');
+}
+
+async function salvarLandingDestaques(){
+  const ids = ['lp-prod1','lp-prod2','lp-prod3'].map(id=>{
+    const v = document.getElementById(id)?.value;
+    return v ? parseInt(v) : null;
+  }).filter(Boolean);
+  const {error} = await sb.from('configuracoes').upsert({chave:'landing_destaques',valor:JSON.stringify(ids)},{onConflict:'chave'});
+  const msg = document.getElementById('lp-prods-msg');
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Destaques salvos!';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Produtos em destaque salvos!','ok');
+}
+
+function adicionarDepoimento(){
+  const nome = document.getElementById('lp-dep-nome').value.trim();
+  const local = document.getElementById('lp-dep-local').value.trim();
+  const texto = document.getElementById('lp-dep-texto').value.trim();
+  if(!nome||!texto){toast('Preencha nome e depoimento.','err');return;}
+  _lpDepoimentos.push({nome, local, texto});
+  renderLpDepoimentos();
+  document.getElementById('lp-dep-nome').value='';
+  document.getElementById('lp-dep-local').value='';
+  document.getElementById('lp-dep-texto').value='';
+}
+
+function renderLpDepoimentos(){
+  const el = document.getElementById('lp-depoi-list');
+  if(!el) return;
+  if(!_lpDepoimentos.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0;grid-column:1/-1">Nenhum depoimento. Adicione abaixo.</div>';
+    return;
+  }
+  el.innerHTML = _lpDepoimentos.map((d,i)=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
+      <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">×</button>
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px">${d.nome}</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:6px">${d.local||'—'}</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5">"${d.texto.slice(0,80)}${d.texto.length>80?'...':''}"</div>
+    </div>`).join('');
+}
+
+async function salvarLandingDepoimentos(){
+  const {error} = await sb.from('configuracoes').upsert({chave:'landing_depoimentos',valor:JSON.stringify(_lpDepoimentos)},{onConflict:'chave'});
+  const msg = document.getElementById('lp-dep-msg');
+  if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
+  msg.style.color='var(--green-bright)';msg.textContent='✓ Depoimentos salvos!';
+  setTimeout(()=>msg.textContent='',3000);
+  toast('Depoimentos salvos!','ok');
 }
 
 init();
