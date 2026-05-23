@@ -195,18 +195,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .admin-sidebar.open{transform:translateX(0)}
   .admin-sidebar-overlay.open{display:block}
   .admin-content{padding-bottom:60px}
+  .full-grid{height:auto}
+  .clientes-grid{height:auto}
+  .clientes-left,.clientes-right{min-height:300px;max-height:400px}
   .admin-menu-btn{display:flex!important}
 }
 .admin-menu-btn{display:none;width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:18px}
 /* LEGACY (não quebrar apage) */
-.apage{display:none;padding:20px;max-width:1200px}
+.apage{display:none;padding:20px}
 .apage.active{display:block}
 .apage-3col{display:none;padding:12px;height:calc(100vh - 52px);overflow:hidden}
 .apage-3col.active{display:flex;flex-direction:column}
 .atab{display:none} /* esconder tabs antigas */
 
 /* ADMIN PAGES */
-.apage{display:none;padding:14px;max-width:1100px;margin:0 auto}
+.apage{display:none;padding:16px 20px}
 .apage.active{display:block}
 .apage-3col{display:none;padding:12px;height:calc(100vh - 50px);overflow:hidden}
 .apage-3col.active{display:flex;flex-direction:column}
@@ -470,6 +473,41 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 [data-theme="dark"] .dd-icon-btn.ig:hover{background:#2e0d1a;border-color:#e1306c}
 
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── ADMIN PAGES FULL WIDTH ── */
+.apage{display:none;padding:16px 20px}
+.apage.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.page-title{font-size:17px;font-weight:800;color:var(--text)}
+/* Full grid para categorias e produtos */
+.full-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;height:calc(100vh - 120px)}
+.full-grid-form{display:flex;flex-direction:column;gap:0;overflow:hidden}
+.full-grid-list{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.full-grid-list-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.full-grid-list-body{overflow-y:auto;flex:1;padding:0 14px}
+/* Config grid */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.config-grid .full-col{grid-column:1/-1}
+/* Clientes grid */
+.clientes-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 120px)}
+.clientes-left,.clientes-right{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.clientes-header{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.clientes-body{overflow-y:auto;flex:1;padding:0 14px}
+/* Landing grid */
+.landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.landing-grid .full-col{grid-column:1/-1}
+/* Mobile admin */
+@media(max-width:768px){
+  .apage{padding:12px 14px}
+  .full-grid{grid-template-columns:1fr;height:auto}
+  .full-grid-form .acard-sm{margin-bottom:12px}
+  .full-grid-list{max-height:60vh}
+  .config-grid{grid-template-columns:1fr}
+  .clientes-grid{grid-template-columns:1fr;height:auto}
+  .clientes-left,.clientes-right{max-height:50vh}
+  .landing-grid{grid-template-columns:1fr}
+  .page-header{margin-bottom:12px}
+}
 </style>
 </head>
 <body>
@@ -1124,11 +1162,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
     <!-- CATEGORIAS -->
   <div id="ap-categorias" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Categorias</div>
-    <div class="pg-grid">
-      <div>
-        <div class="acard-sm" style="margin-bottom:10px">
-          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Nova categoria</div>
+    <div class="page-header"><span class="page-title">Categorias</span><span id="cat-count" style="font-size:12px;color:var(--text3)"></span></div>
+    <div class="full-grid">
+      <div class="full-grid-form">
+        <div class="acard-sm">
+          <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Nova categoria</div>
           <div class="field"><label>Nome</label><input id="cat-nome" type="text" placeholder="Ex: Legumes"></div>
           <div class="field"><label>Imagem (400x200px)</label>
             <input id="cat-img-file" type="file" accept="image/*" style="display:none" onchange="previewCatImg(this)">
@@ -1137,9 +1175,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
               <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('cat-img-file').click()">Escolher foto</button>
             </div>
           </div>
-          <button class="btn btn-g" style="width:100%" onclick="addCat()">+ Adicionar</button>
-          <div id="cat-list" style="margin-top:10px"></div>
+          <button class="btn btn-g" style="width:100%" onclick="addCat()"><i data-lucide="plus"></i> Adicionar categoria</button>
         </div>
+      </div>
+      <div class="full-grid-list">
+        <div class="full-grid-list-header">
+          <span style="font-size:13px;font-weight:700">Categorias cadastradas</span>
+          <input type="text" placeholder="Buscar categoria..." id="cat-busca" oninput="filtrarCatList()" style="flex:1;max-width:240px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+        </div>
+        <div class="full-grid-list-body"><div id="cat-list"></div></div>
       </div>
     </div>
   </div>
@@ -1147,11 +1191,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
     <!-- PRODUTOS -->
   <div id="ap-produtos" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Produtos</div>
-    <div class="pg-grid">
-      <div>
+    <div class="page-header"><span class="page-title">Produtos</span><span id="prod-count" style="font-size:12px;color:var(--text3)"></span></div>
+    <div class="full-grid">
+      <div class="full-grid-form">
         <div class="acard-sm">
-          <div style="font-size:12px;font-weight:700;margin-bottom:10px">Novo produto</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Novo produto</div>
           <div class="field"><label>Categoria *</label><select id="p-cat"></select></div>
           <div class="field"><label>Nome *</label><input id="p-nome" type="text" placeholder="Ex: Cenoura" autocomplete="off"></div>
           <div class="field"><label>Descricao</label><input id="p-desc" type="text" placeholder="Opcional" autocomplete="off"></div>
@@ -1171,12 +1215,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <button class="btn btn-g" style="width:100%;margin-top:4px" onclick="addProd()">Salvar produto</button>
         </div>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700">Produtos cadastrados</span>
-          <div class="cpills" id="p-pills" style="margin:0 0 0 7px"></div>
+      <div class="full-grid-list">
+        <div class="full-grid-list-header">
+          <span style="font-size:13px;font-weight:700">Produtos cadastrados</span>
+          <input type="text" placeholder="Buscar produto..." id="p-busca-inline" oninput="filtrarProdListInline()" style="flex:1;max-width:200px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+          <div class="cpills" id="p-pills" style="margin:0"></div>
         </div>
-        <div id="p-list" style="padding:0 14px"></div>
+        <div class="full-grid-list-body"><div id="p-list"></div></div>
       </div>
     </div>
   </div>
@@ -1185,7 +1230,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <!-- CONFIGURAÇÃO -->
   <div id="ap-config" class="apage">
     <div style="font-size:17px;font-weight:800;margin-bottom:16px">Configurações</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+    <div class="config-grid">
       <!-- Pedido Mínimo -->
       <div class="acard-sm">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="circle-slash"></i> Pedido Mínimo (Entrega)</div>
@@ -1209,7 +1254,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div id="dash-redes-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
       <!-- Mensagem WhatsApp -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="message-circle"></i> Mensagem de Pedido (WhatsApp)</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
         <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
@@ -1217,7 +1262,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
       </div>
       <!-- Mensagens de Status WhatsApp -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="bell"></i> Mensagens Automáticas de Status</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Enviadas automaticamente ao cliente quando você altera o status do pedido. Use <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{codigo}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -1243,7 +1288,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
 
       <!-- Zonas de Entrega -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="map-pin"></i> Zonas de Entrega (por distância)</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Configure o endereço da loja e as taxas por distância. O cliente será bloqueado se estiver fora do raio máximo.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -1278,7 +1323,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
       </div>
       <!-- Cupons de Desconto -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="ticket-percent"></i> Cupons de Desconto</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
@@ -1294,18 +1339,34 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
     <!-- CLIENTES -->
   <div id="ap-clientes" class="apage">
-    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Clientes</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
-      <div class="acard-sm" style="grid-column:1/-1">
-        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="user"></i> Usuários</div>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <input id="u-busca" type="text" placeholder="Buscar por nome, e-mail ou telefone..." style="flex:1" oninput="filtrarUsers()">
+    <div class="page-header"><span class="page-title">Clientes</span></div>
+    <div class="clientes-grid">
+      <!-- Lista de clientes -->
+      <div class="clientes-left">
+        <div class="clientes-header">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Usuários</div>
+          <input id="u-busca" type="text" placeholder="Buscar por nome, e-mail ou telefone..." style="width:100%" oninput="filtrarUsers()">
         </div>
-        <div id="u-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
-        <div id="u-lista"></div>
-        <div class="pag" id="u-pag" style="margin-top:8px"></div>
+        <div class="clientes-body">
+          <div id="u-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+          <div id="u-lista"></div>
+          <div class="pag" id="u-pag" style="margin-top:8px"></div>
+        </div>
       </div>
-    
+      <!-- Histórico de pedidos -->
+      <div class="clientes-right">
+        <div class="clientes-header">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Histórico de pedidos</div>
+          <div style="display:flex;gap:8px">
+            <input id="ped-busca-cliente" type="text" placeholder="Nome do cliente ou código do pedido..." style="flex:1" oninput="buscarPedidosCliente()">
+            <button class="btn btn-g btn-sm" onclick="buscarPedidosCliente()">Buscar</button>
+          </div>
+        </div>
+        <div class="clientes-body">
+          <div id="ped-cliente-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+          <div id="ped-cliente-lista" style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1317,10 +1378,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <span style="font-size:17px;font-weight:800">Editor da Landing Page</span>
       <a href="/" target="_blank" class="btn btn-o btn-sm ico-gap"><i data-lucide="external-link"></i> Ver landing</a>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+    <div class="landing-grid">
 
       <!-- HERO -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="star"></i> Seção Hero</div>
         <div class="row2">
           <div class="field"><label>Linha 1 do título</label><input id="lp-titulo1" type="text" placeholder="Mais tempo"></div>
@@ -1368,7 +1429,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
 
       <!-- DEPOIMENTOS -->
-      <div class="acard-sm" style="grid-column:1/-1">
+      <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="message-square"></i> Depoimentos</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px" id="lp-depoi-list"></div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
@@ -4303,10 +4364,18 @@ async function rmProd(id){
 async function renderCatList(){
   const el=document.getElementById('cat-list');
   if(!cats.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhuma categoria.</div>';return}
-  el.innerHTML=cats.map(c=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'
-    +'<span style="font-size:12px;font-weight:700">'+c.nome+'</span>'
+  const total = cats.length;
+  const countEl = document.getElementById('cat-count');
+  if(countEl) countEl.textContent = total + ' categoria' + (total!==1?'s':'');
+  el.innerHTML=cats.map(c=>'<div class="cat-list-item" data-nome="'+c.nome+'" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +(c.imagem_url?'<img src="'+c.imagem_url+'" style="width:32px;height:18px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">':
+      '<div style="width:32px;height:18px;border-radius:4px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center"><i data-lucide="leaf" style="width:10px;height:10px"></i></div>')
+    +'<span style="font-size:13px;font-weight:700">'+c.nome+'</span>'
+    +'</div>'
     +'<button class="btn btn-r btn-sm" onclick="rmCat('+c.id+')">Remover</button>'
     +'</div>').join('');
+  refreshIcons();
 }
 
 async function addCat(){
@@ -4429,13 +4498,15 @@ function renderProdList(){
   const el=document.getElementById('p-list');
   if(!el)return;
   const ps=fCatP?prods.filter(p=>p.cat_id===fCatP):prods;
+  const prodCountEl = document.getElementById('prod-count');
+  if(prodCountEl) prodCountEl.textContent = prods.filter(p=>p.ativo).length + ' ativos de ' + prods.length + ' produtos';
   if(!ps.length){el.innerHTML='<div class="empty">Nenhum produto.</div>';return}
   el.innerHTML=ps.map(p=>{
     const cat=cats.find(c=>c.id===p.cat_id);
     const estoq=p.estoque!=null
       ?'<span style="color:'+(p.estoque<=5?'var(--red)':'var(--text2)')+'">Est: '+p.estoque+'</span>'
       :'<span style="color:var(--text3)">Ilimitado</span>';
-    return '<div class="prod-row">'
+    return '<div class="prod-row" data-nome="'+p.nome.toLowerCase()+'" data-cat="'+p.cat_id+'">'  
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:12px;font-weight:700">'+emoji(p)+' '+p.nome+' <span style="font-weight:400;color:var(--text2)">'+(p.peso?'('+p.peso+')':'')+'</span></div>'
       +'<div style="font-size:10px;color:var(--text2)">'+(cat?cat.nome:'')+' &middot; R$ '+fp(p.preco)+' &middot; '+estoq+'</div>'
@@ -5227,6 +5298,11 @@ async function initConfig(){
 
 async function initClientes(){
   await renderUsers();
+  // Limpar histórico ao entrar
+  const el = document.getElementById('ped-cliente-lista');
+  if(el) el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>';
+  const inp = document.getElementById('ped-busca-cliente');
+  if(inp) inp.value='';
 }
 async function salvarRedes(){
   const wpp=document.getElementById('dash-wpp').value.trim().replace(/\D/g,'');
