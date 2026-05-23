@@ -525,6 +525,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="dd-divider"></div>
         </div>
         <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();abrirRastrearPedido()"><i data-lucide="search"></i> Acompanhar pedido</button>
+        <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();window.open('https://cortadinhos.com/privacidade','_blank')"><i data-lucide="shield"></i> Termos e Privacidade</button>
         <button class="dropdown-item ico-gap" onclick="event.stopPropagation();fecharDropdown();window.open('https://wa.me/'+WHATSAPP_NUM,'_blank')"><i data-lucide="message-circle"></i> Preciso de ajuda</button>
         <div id="dd-deslogado">
           <div class="dd-divider"></div>
@@ -634,6 +635,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="field"><label>Email <span style="color:var(--red)">*</span></label><input id="reg-email" type="email" placeholder="seu@email.com"></div>
         <div class="field"><label>Senha <span style="color:var(--red)">*</span></label><input id="reg-pass" type="password" placeholder="Minimo 6 caracteres"></div>
         <div class="field"><label>Confirmar senha <span style="color:var(--red)">*</span></label><input id="reg-pass2" type="password" placeholder="Repita a senha"></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;margin:8px 0 2px">
+          <input type="checkbox" id="aceito-termos" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;margin-top:2px;flex-shrink:0">
+          <label for="aceito-termos" style="font-size:12px;color:var(--text2);cursor:pointer;line-height:1.5">Li e aceito os <a href="https://cortadinhos.com/privacidade" target="_blank" style="color:var(--green-bright);font-weight:600;text-decoration:underline">Termos de Uso e Política de Privacidade</a></label>
+        </div>
         <button class="big-btn" id="reg-btn" onclick="fazerCadastro()" style="margin-top:6px">Criar conta</button>
         <div class="auth-divider"><span>ou</span></div>
         <button class="google-btn" onclick="loginGoogle()">
@@ -746,7 +751,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="resumo-total"><span style="font-size:13px;font-weight:600">Total</span><span class="resumo-total-val" id="co-total">R$ 0,00</span></div>
       </div>
     </div>
-    <div class="co-footer"><button class="big-btn" id="co-btn" onclick="enviarPedido()">FINALIZAR PEDIDO</button></div>
+    <div class="co-footer">
+      <button class="big-btn" id="co-btn" onclick="enviarPedido()">FINALIZAR PEDIDO</button>
+      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.5">Ao finalizar, você concorda com nossos <a href="https://cortadinhos.com/privacidade" target="_blank" style="color:var(--text3);text-decoration:underline">Termos e Política de Privacidade</a></p>
+    </div>
   </div>
 </div>
 
@@ -2548,6 +2556,8 @@ async function fazerCadastro(){
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
+  const aceitou=document.getElementById('aceito-termos')?.checked;
+  if(!aceitou){showMsg(msg,'Você precisa aceitar os Termos de Uso para criar uma conta.','error');return}
   if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
   if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
