@@ -8,7 +8,7 @@
   document.documentElement.setAttribute("data-theme",_sv||_sys);
   window.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('dd-theme-btn');if(b)b.innerHTML=((_sv||_sys)==='dark'?'<i data-lucide="moon"></i>':'<i data-lucide="sun"></i>');if(window.lucide)window.lucide.createIcons()});
 </script>
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/loja/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Cortadinhos com Carinho — Legumes frescos e prontos para uso</title>
 <meta name="description" content="Legumes frescos, higienizados e prontos para uso no Rio de Janeiro. Entrega rápida ou retirada agendada. Praticidade na sua rotina!">
@@ -1924,7 +1924,7 @@ async function iniciarNotificacoes(){
 
   try{
     // Registrar SW
-    swRegistration = await navigator.serviceWorker.register('/sw.js');
+    swRegistration = await navigator.serviceWorker.register('/loja/sw.js');
 
     // Pedir permissao
     const perm = await Notification.requestPermission();
@@ -4331,11 +4331,29 @@ async function addCat(){
 }
 
 async function rmCat(id){
-  popConfirm('🗑️','Remover categoria?','Os produtos vinculados perderão a categoria.','Remover','pbtn-danger',async()=>{
+  // Verificar se tem produtos vinculados
+  const {data:pVinc} = await sb.from('produtos').select('id').eq('cat_id',id).limit(1);
+  const cat = cats.find(c=>c.id===id);
+  if(pVinc && pVinc.length > 0){
+    popConfirm('⚠️','Categoria com produtos',
+      '"'+(cat?.nome||'Categoria')+'" tem produtos vinculados.\n\nRemovê-la irá desvincular todos os produtos desta categoria. Deseja continuar?',
+      'Sim, remover','pbtn-danger',async()=>{
+        // Desvincular produtos primeiro (setar cat_id = null)
+        await sb.from('produtos').update({cat_id:null}).eq('cat_id',id);
+        const {error}=await sb.from('categorias').delete().eq('id',id);
+        if(error){toast('Erro: '+error.message,'err');return}
+        cats=cats.filter(c=>c.id!==id);
+        prods.forEach(p=>{if(p.cat_id===id)p.cat_id=null});
+        renderCatList();renderAGrid();renderShop();renderPPills();renderACpills();
+        toast('Categoria removida!','ok');
+      });
+    return;
+  }
+  popConfirm('🗑️','Remover categoria?','"'+(cat?.nome||'Categoria')+'" será removida permanentemente.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('categorias').delete().eq('id',id);
     if(error){toast('Erro: '+error.message,'err');return}
     cats=cats.filter(c=>c.id!==id);
-    renderCatList();renderCatTabs();renderAGrid();renderShop();
+    renderCatList();renderAGrid();renderShop();renderPPills();renderACpills();
     toast('Categoria removida.','ok');
   });
 }
