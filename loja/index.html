@@ -508,6 +508,25 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .landing-grid{grid-template-columns:1fr}
   .page-header{margin-bottom:12px}
 }
+
+/* ── PIX MODAL ── */
+.pix-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9995;display:none;align-items:center;justify-content:center;padding:20px}
+.pix-modal-ov.open{display:flex}
+.pix-modal{background:var(--bg2);border-radius:20px;padding:28px 24px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.pix-qr-wrap{background:#fff;border-radius:14px;padding:16px;margin:16px auto;width:200px;height:200px;display:flex;align-items:center;justify-content:center}
+.pix-qr-wrap canvas{border-radius:8px}
+.pix-codigo-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:12px 0;display:flex;align-items:center;gap:8px}
+.pix-codigo-txt{font-size:10px;color:var(--text2);word-break:break-all;text-align:left;flex:1;line-height:1.4;font-family:monospace}
+.pix-copy-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
+.pix-copy-btn:active{opacity:.8}
+.pix-valor{font-size:28px;font-weight:900;color:var(--green-bright);margin:8px 0 4px}
+.pix-instrucao{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.pix-steps{display:flex;flex-direction:column;gap:6px;margin:12px 0;text-align:left}
+.pix-step{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2)}
+.pix-step-num{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pix-confirmado-btn{width:100%;padding:13px;border-radius:12px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:var(--font);margin-top:8px}
+.pix-confirmado-btn:active{opacity:.88}
+.pix-cancelar-btn{width:100%;padding:10px;border-radius:12px;background:transparent;color:var(--text3);border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);margin-top:6px}
 </style>
 </head>
 <body>
@@ -3328,6 +3347,20 @@ async function enviarPedido(){
     troco:document.getElementById('co-troco').value,
     obs:document.getElementById('co-obs').value
   },itensCopy);
+  // Se for Pix: abre modal Pix primeiro, WhatsApp depois da confirmação
+  if(pag === 'Pix'){
+    const sub2=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+    const _pr2=calcPromoAuto(sub2);
+    const _fg2=_pr2?.freteGratis||false;
+    const taxa2=cart.entrega==='Entrega'&&!_fg2?(_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0)):0;
+    const dc2=cupomAtivo?Math.round(sub2*cupomAtivo.desconto/100*100)/100:0;
+    const dp2=_pr2?.desconto||0;
+    const totalPix=Math.max(0,sub2+taxa2-dc2-dp2);
+    btn.disabled=false;btn.textContent='FINALIZAR PEDIDO';
+    abrirPixModal(totalPix, {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed:document.getElementById('co-data').value, pagLabel, pag});
+    return;
+  }
+  // Outros métodos: WhatsApp direto
   abrirWhatsApp(txtWpp);
   try{
     const dataPed=document.getElementById('co-data').value;
@@ -5720,6 +5753,97 @@ async function salvarLandingDepoimentos(){
   toast('Depoimentos salvos!','ok');
 }
 
+// ══════════════════════════════════════
+// PIX COPIA E COLA + QR CODE
+// ══════════════════════════════════════
+const PIX_CHAVE = '21976081746';
+const PIX_NOME  = 'Gabriel Rodrigues Maia';
+const PIX_CIDADE = 'Rio de Janeiro';
+let _pixPedidoData = null; // guarda dados do pedido para confirmar depois
+
+function _pixCampo(id, val){
+  return id + String(val.length).padStart(2,'0') + val;
+}
+
+function gerarPixPayload(valor, txid){
+  const chave = PIX_CHAVE;
+  const merchantAccount = _pixCampo('00','BR.GOV.BCB.PIX') + _pixCampo('01', chave);
+  const nome = PIX_NOME.slice(0,25);
+  const cidade = PIX_CIDADE.slice(0,15);
+  const valStr = valor.toFixed(2);
+  const tx = (txid||'***').slice(0,25);
+
+  let payload =
+    _pixCampo('00','01') +
+    _pixCampo('26', merchantAccount) +
+    _pixCampo('52','0000') +
+    _pixCampo('53','986') +
+    _pixCampo('54', valStr) +
+    _pixCampo('58','BR') +
+    _pixCampo('59', nome) +
+    _pixCampo('60', cidade) +
+    _pixCampo('62', _pixCampo('05', tx)) +
+    '6304';
+
+  // CRC16-CCITT
+  let crc = 0xFFFF;
+  for(let i=0;i<payload.length;i++){
+    crc ^= payload.charCodeAt(i) << 8;
+    for(let j=0;j<8;j++) crc = (crc & 0x8000) ? (crc<<1)^0x1021 : crc<<1;
+    crc &= 0xFFFF;
+  }
+  return payload + crc.toString(16).toUpperCase().padStart(4,'0');
+}
+
+function _pixQR(canvas, texto){
+  // QR Code simples via Google Charts API
+  const size = canvas.width;
+  const url = 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(texto)+'&format=png&ecc=M';
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,size,size);
+    ctx.drawImage(img,0,0,size,size);
+  };
+  img.src = url;
+}
+
+function abrirPixModal(total, pedidoData){
+  _pixPedidoData = pedidoData;
+  const payload = gerarPixPayload(total, 'CORT'+Date.now().toString().slice(-8));
+  document.getElementById('pix-valor-txt').textContent = 'R$ ' + fp(total);
+  document.getElementById('pix-codigo-txt').textContent = payload;
+  _pixQR(document.getElementById('pix-qr-canvas'), payload);
+  const ov = document.getElementById('pix-modal-ov');
+  ov.style.display = 'flex';
+  ov.classList.add('open');
+}
+
+function fecharPixModal(){
+  const ov = document.getElementById('pix-modal-ov');
+  ov.classList.remove('open');
+  ov.style.display = 'none';
+}
+
+function copiarPixCodigo(){
+  const txt = document.getElementById('pix-codigo-txt').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Codigo Pix copiado!','ok')).catch(()=>{
+    // fallback
+    const el = document.createElement('textarea');
+    el.value = txt; document.body.appendChild(el);
+    el.select(); document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('Codigo Pix copiado!','ok');
+  });
+}
+
+async function confirmarPagamentoPix(){
+  if(!_pixPedidoData){ fecharPixModal(); return; }
+  fecharPixModal();
+  await _finalizarPedido(_pixPedidoData);
+}
+
 init();
 verificarResetSenha();
 
@@ -5731,5 +5855,25 @@ document.body.insertAdjacentHTML('beforeend',`<div id="mobile-cart-bar" class="m
 </div>`);
 refreshIcons();
 </script>
+
+<!-- PIX MODAL -->
+<div class="pix-modal-ov" id="pix-modal-ov">
+  <div class="pix-modal">
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">Pagar com Pix</div>
+    <div class="pix-valor" id="pix-valor-txt">R$ 0,00</div>
+    <div class="pix-qr-wrap"><canvas id="pix-qr-canvas" width="168" height="168"></canvas></div>
+    <div class="pix-codigo-wrap">
+      <span class="pix-codigo-txt" id="pix-codigo-txt"></span>
+      <button class="pix-copy-btn" onclick="copiarPixCodigo()">Copiar</button>
+    </div>
+    <div class="pix-steps">
+      <div class="pix-step"><span class="pix-step-num">1</span><span>Abra o app do seu banco e acesse a opção Pix</span></div>
+      <div class="pix-step"><span class="pix-step-num">2</span><span>Escaneie o QR Code ou cole o codigo copia e cola</span></div>
+      <div class="pix-step"><span class="pix-step-num">3</span><span>Confirme o pagamento e clique no botao abaixo</span></div>
+    </div>
+    <button class="pix-confirmado-btn" onclick="confirmarPagamentoPix()">Ja paguei — Confirmar pedido</button>
+    <button class="pix-cancelar-btn" onclick="fecharPixModal()">Voltar</button>
+  </div>
+</div>
 </body>
 </html>
