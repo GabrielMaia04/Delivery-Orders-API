@@ -527,6 +527,115 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pix-confirmado-btn{width:100%;padding:13px;border-radius:12px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:var(--font);margin-top:8px}
 .pix-confirmado-btn:active{opacity:.88}
 .pix-cancelar-btn{width:100%;padding:10px;border-radius:12px;background:transparent;color:var(--text3);border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);margin-top:6px}
+
+/* ── CHECKOUT 3 PASSOS ── */
+.co3-ov{position:fixed;inset:0;background:var(--bg);z-index:600;display:none;flex-direction:column;overflow-y:auto}
+.co3-ov.open{display:flex}
+.co3-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.co3-logo{display:flex;align-items:center;gap:8px}
+.co3-logo-ico{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.co3-logo-ico svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.co3-logo-txt{font-size:15px;font-weight:800;color:var(--text)}
+.co3-secure{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)}
+.co3-secure svg{width:14px;height:14px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* PROGRESS BAR */
+.co3-progress{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;justify-content:center;flex-shrink:0}
+.co3-steps{display:flex;align-items:center;gap:0;max-width:400px;width:100%}
+.co3-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative}
+.co3-step::after{content:'';position:absolute;top:18px;left:50%;width:100%;height:2px;background:var(--border);z-index:0}
+.co3-step:last-child::after{display:none}
+.co3-step-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--text3);z-index:1;position:relative;transition:all .25s}
+.co3-step.active .co3-step-dot{background:var(--green);border-color:var(--green);color:#fff}
+.co3-step.done .co3-step-dot{background:var(--green);border-color:var(--green);color:#fff}
+.co3-step.done::after{background:var(--green)}
+.co3-step-lbl{font-size:11px;font-weight:600;color:var(--text3);white-space:nowrap}
+.co3-step.active .co3-step-lbl{color:var(--green);font-weight:700}
+.co3-step.done .co3-step-lbl{color:var(--green)}
+
+/* BODY */
+.co3-body{flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+@media(max-width:860px){.co3-body{grid-template-columns:1fr;padding:16px}}
+
+/* CARD */
+.co3-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+.co3-card-title{font-size:15px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.co3-card-title svg{width:18px;height:18px;stroke:var(--green);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* CART ITEMS */
+.co3-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.co3-item:last-child{border-bottom:none}
+.co3-item-img{width:64px;height:64px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+.co3-item-img img{width:100%;height:100%;object-fit:cover}
+.co3-item-info{flex:1;min-width:0}
+.co3-item-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.co3-item-peso{font-size:12px;color:var(--text3)}
+.co3-item-qty{display:flex;align-items:center;gap:6px;margin-top:6px}
+.co3-qty-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font);transition:all .15s}
+.co3-qty-btn:hover{background:var(--green);border-color:var(--green);color:#fff}
+.co3-qty-num{font-size:13px;font-weight:700;min-width:20px;text-align:center}
+.co3-item-price{font-size:15px;font-weight:800;color:var(--green-bright);white-space:nowrap}
+.co3-add-more{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--green-bright);font-weight:600;cursor:pointer;margin-top:12px;background:none;border:none;font-family:var(--font);padding:0}
+.co3-add-more svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* RESUMO LATERAL */
+.co3-resumo{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);position:sticky;top:90px}
+.co3-resumo-title{font-size:14px;font-weight:800;margin-bottom:16px;color:var(--text)}
+.co3-resumo-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.co3-resumo-item:last-of-type{border-bottom:none}
+.co3-resumo-img{width:44px;height:44px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+.co3-resumo-img img{width:100%;height:100%;object-fit:cover}
+.co3-resumo-nome{flex:1;font-size:12px;font-weight:600;color:var(--text);min-width:0}
+.co3-resumo-qty{font-size:11px;color:var(--text3)}
+.co3-resumo-preco{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap}
+.co3-divider{height:1px;background:var(--border);margin:12px 0}
+.co3-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:6px}
+.co3-row span:last-child{font-weight:600;color:var(--text)}
+.co3-row.taxa span:last-child{color:var(--orange)}
+.co3-row.desc span:last-child{color:var(--green-bright)}
+.co3-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;border-top:2px solid var(--border);margin-top:6px}
+.co3-total-lbl{font-size:14px;font-weight:700;color:var(--text)}
+.co3-total-val{font-size:24px;font-weight:900;color:var(--green-bright)}
+
+/* NAVEGAÇÃO */
+.co3-nav{display:flex;align-items:center;justify-content:space-between;margin-top:24px;flex-wrap:wrap;gap:10px}
+.co3-btn-back{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text3);background:none;border:none;cursor:pointer;font-family:var(--font);padding:8px 0}
+.co3-btn-back svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.co3-btn-back:hover{color:var(--text)}
+.co3-btn-next{padding:14px 32px;border-radius:12px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:800;font-family:var(--font);display:flex;align-items:center;gap:8px;transition:all .2s;flex:1;max-width:280px;justify-content:center}
+.co3-btn-next svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.co3-btn-next:hover{background:var(--green-h);transform:translateY(-1px)}
+.co3-btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
+@media(max-width:480px){.co3-btn-next{max-width:100%;flex:none;width:100%}}
+
+/* PAGAMENTO */
+.co3-pag-opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+@media(max-width:400px){.co3-pag-opts{grid-template-columns:1fr}}
+.co3-pag-opt{padding:14px 10px;border-radius:12px;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font);width:100%}
+.co3-pag-opt .pag-ico{font-size:22px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;height:28px}
+.co3-pag-opt .pag-ico svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.co3-pag-opt .pag-lbl{font-size:12px;font-weight:700;color:var(--text)}
+.co3-pag-opt.active{border-color:var(--green);background:var(--green-light)}
+.co3-pag-opt.active .pag-lbl{color:var(--green-bright)}
+
+/* PIX INLINE */
+.co3-pix-box{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;margin-top:4px}
+.co3-pix-qr{background:#fff;border-radius:12px;padding:12px;display:inline-block;margin:12px auto}
+.co3-pix-codigo{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-top:12px;text-align:left}
+.co3-pix-codigo-txt{font-size:10px;color:var(--text2);word-break:break-all;flex:1;font-family:monospace;line-height:1.4}
+.co3-pix-copy{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
+.co3-pix-steps{display:flex;flex-direction:column;gap:8px;margin:16px 0;text-align:left}
+.co3-pix-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text2)}
+.co3-pix-step-n{width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* DINHEIRO TROCO */
+.co3-troco-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px}
+
+/* MODALIDADE TOGGLE */
+.co3-modal-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.co3-modal-btn{padding:12px;border-radius:10px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
+.co3-modal-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.co3-modal-btn.active{background:var(--green);border-color:var(--green);color:#fff}
 </style>
 </head>
 <body>
@@ -2955,6 +3064,11 @@ function atualizarBtnContinuar(){
 
 function irCheckout(){
   if(!cart.itens.length){toast('Carrinho vazio!','err');return}
+  fecharCart();
+  abrirCo3();
+  return;
+  // legado abaixo (nao usado)
+  if(!cart.itens.length){toast('Carrinho vazio!','err');return}
   if(cart.entrega==='Entrega'){
     const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     // Bloquear se nao atingiu pedido minimo
@@ -3608,8 +3722,8 @@ function renderCal(){
 }
 
 function selecionarData(iso){
-  const idInput=calCtx==='co'?'co-data':calCtx==='adm'?'a-data':'e-data';
-  const idBtn=calCtx==='co'?'co-data-btn':calCtx==='adm'?'a-data-btn':'e-data-btn';
+  const idInput=calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data';
+  const idBtn=calCtx==='co'?'co-data-btn':calCtx==='adm'?'a-data-btn':calCtx==='co3'?'co3-data-btn':'e-data-btn';
   document.getElementById(idInput).value=iso;
   const [y,m,d]=iso.split('-').map(Number);
   const dt=new Date(y,m-1,d);
@@ -3619,6 +3733,7 @@ function selecionarData(iso){
   btn.classList.add('selected');
   fecharCal();
   if(calCtx==='co'&&cart.entrega==='Retirada') renderRetOpts();
+  if(calCtx==='co3'&&co3Modalidade==='Retirada') co3RenderRetOpts();
   if(calCtx==='entr')renderEntregas();
 }
 
@@ -5905,6 +6020,234 @@ async function _finalizarPedido(dados){
   }
 }
 
+// ══════════════════════════════════════
+// CHECKOUT 3 PASSOS
+// ══════════════════════════════════════
+let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='';
+
+function abrirCo3(){
+  if(!perfil){window._coPend=true;abrirAuth();return}
+  co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
+  const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
+  if(n&&!n.value)n.value=perfil.nome||'';
+  if(t&&!t.value)t.value=perfil.telefone||'';
+  const cartCep=document.getElementById('cart-cep')?.value;
+  if(cartCep){const c1=document.getElementById('co3-cep'),c2=document.getElementById('co3-cep2');if(c1)c1.value=cartCep;if(c2)c2.value=cartCep;}
+  co3SetModalidade(co3Modalidade);
+  co3GoStep(1);co3RenderItems();co3UpdateResumo();
+  const ov=document.getElementById('co3-ov');
+  document.body.appendChild(ov);ov.style.display='flex';ov.classList.add('open');ov.scrollTop=0;
+}
+
+function fecharCo3(){
+  const ov=document.getElementById('co3-ov');
+  ov.classList.remove('open');ov.style.display='none';updMobileCartBar();
+}
+
+function co3GoStep(n){
+  co3Step=n;
+  [1,2,3].forEach(i=>{
+    const s=document.getElementById('co3-s'+i),d=document.getElementById('co3-d'+i);
+    if(!s||!d)return;
+    s.classList.remove('active','done');
+    if(i<n){s.classList.add('done');d.innerHTML='<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>';}
+    else if(i===n){s.classList.add('active');d.textContent=i;}
+    else{d.textContent=i;}
+  });
+  ['co3-p1','co3-p2','co3-p3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=(i+1===n)?'block':'none';});
+  const ov=document.getElementById('co3-ov');if(ov)ov.scrollTop=0;
+  const lbl=document.getElementById('co3-data-lbl');if(lbl)lbl.textContent=co3Modalidade==='Entrega'?'entrega':'retirada';
+  if(n===3&&co3PagMetodo==='Pix')co3GerarQR();
+}
+
+function co3RenderItems(){
+  const el=document.getElementById('co3-items-list'),el2=document.getElementById('co3-resumo-items');
+  if(!el)return;
+  if(!cart.itens.length){el.innerHTML='<div class="empty">Carrinho vazio</div>';return;}
+  el.innerHTML=cart.itens.map((it,i)=>{
+    const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
+    const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="${p.nome}">`:'<span style="font-size:24px">🥦</span>';
+    return`<div class="co3-item"><div class="co3-item-img">${imgEl}</div><div class="co3-item-info"><div class="co3-item-name">${p.nome}</div><div class="co3-item-peso">${p.peso||''}</div><div class="co3-item-qty"><button class="co3-qty-btn" onclick="co3ChgQty(${i},-1)">−</button><span class="co3-qty-num">${it.qty}</span><button class="co3-qty-btn" onclick="co3ChgQty(${i},1)">+</button></div></div><div class="co3-item-price">R$ ${fp(p.preco*it.qty)}</div></div>`;
+  }).join('');
+  if(el2){el2.innerHTML=cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);if(!p)return'';const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="">`:'<span style="font-size:18px">🥦</span>';return`<div class="co3-resumo-item"><div class="co3-resumo-img">${imgEl}</div><div class="co3-resumo-nome">${p.nome}<br><span class="co3-resumo-qty">${it.qty}x</span></div><div class="co3-resumo-preco">R$ ${fp(p.preco*it.qty)}</div></div>`;}).join('');}
+}
+
+function co3ChgQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();co3RenderItems();co3UpdateResumo();}
+
+function co3UpdateResumo(){
+  const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+  const promo=calcPromoAuto(sub);const freteGratis=promo?.freteGratis||false;
+  const taxa=co3Modalidade==='Entrega'&&!freteGratis&&co3FreteCalculado?TAXA:0;
+  const descCupom=co3CupomAtivo?Math.round(sub*co3CupomAtivo.desconto/100*100)/100:0;
+  const total=Math.max(0,sub+taxa-descCupom);
+  const rSub=document.getElementById('co3-r-sub'),rFrete=document.getElementById('co3-r-frete'),rFreteRow=document.getElementById('co3-r-frete-row');
+  const rDesc=document.getElementById('co3-r-desc'),rDescRow=document.getElementById('co3-r-desc-row'),rDescLbl=document.getElementById('co3-r-desc-lbl'),rTotal=document.getElementById('co3-r-total');
+  if(rSub)rSub.textContent='R$ '+fp(sub);
+  if(rFreteRow)rFreteRow.style.display=taxa>0?'':'none';
+  if(rFrete)rFrete.textContent='R$ '+fp(taxa);
+  if(rDescRow)rDescRow.style.display=descCupom>0?'':'none';
+  if(rDescLbl&&co3CupomAtivo)rDescLbl.textContent='Cupom '+co3CupomAtivo.nome;
+  if(rDesc)rDesc.textContent='- R$ '+fp(descCupom);
+  if(rTotal)rTotal.textContent='R$ '+fp(total);
+  return{sub,taxa,descCupom,total};
+}
+
+function co3SetModalidade(v){
+  co3Modalidade=v;cart.entrega=v;
+  const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
+  const cepBloco=document.getElementById('co3-cep-bloco'),endBloco=document.getElementById('co3-end-bloco'),retBloco=document.getElementById('co3-ret-bloco');
+  if(be)be.classList.toggle('active',v==='Entrega');
+  if(br)br.classList.toggle('active',v==='Retirada');
+  if(cepBloco)cepBloco.style.display=v==='Entrega'?'block':'none';
+  if(endBloco)endBloco.classList.toggle('hidden',v==='Retirada');
+  if(retBloco)retBloco.classList.toggle('hidden',v==='Entrega');
+  if(v==='Retirada'){co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
+  co3UpdateResumo();co3RenderRetOpts();
+}
+
+function co3RenderRetOpts(){
+  const dataVal=document.getElementById('co3-data')?.value;
+  const info=document.getElementById('co3-ret-info'),localInput=document.getElementById('co3-ret-local');
+  if(!info)return;
+  if(!dataVal){info.innerHTML='<div style="font-size:12px;color:var(--text3)">Selecione a data acima para ver o local de retirada.</div>';if(localInput)localInput.value='';return;}
+  const[y,m,d]=dataVal.split('-').map(Number);const dow=new Date(y,m-1,d).getDay();const local=LOCAIS_RETIRADA[dow];
+  if(!local){info.innerHTML='<div style="font-size:12px;color:var(--red)">Sem retirada disponivel nesta data.</div>';if(localInput)localInput.value='';return;}
+  if(localInput)localInput.value=local.end;
+  info.innerHTML=`<div style="font-size:12px;font-weight:800;color:var(--green-bright);margin-bottom:4px">${local.nome}</div><div style="font-size:12px;color:var(--text)">${local.end}</div><div style="font-size:11px;color:var(--text2);margin-top:3px">${local.ref}</div>`;
+}
+
+async function co3CalcFrete(){
+  const cepEl=document.getElementById('co3-cep'),info=document.getElementById('co3-frete-info');
+  if(!cepEl||!info)return;
+  const cep=cepEl.value.replace(/\D/g,'');
+  if(cep.length!==8){info.style.display='block';info.style.color='var(--orange)';info.textContent='Digite um CEP valido.';return;}
+  info.style.display='block';info.textContent='Calculando...';info.style.color='var(--text2)';
+  const result=await geocodificarCEP(cep);
+  if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
+  window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
+  const c2=document.getElementById('co3-cep2');if(c2)c2.value=cepEl.value;
+  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
+  const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
+  if(dist>RAIO_MAX){info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
+  const zona=calcularZona(dist);
+  if(zona){TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
+  else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
+}
+
+async function co3AplicarCupom(){
+  const nome=document.getElementById('co3-cupom')?.value.trim().toUpperCase(),msg=document.getElementById('co3-cupom-msg');
+  if(!nome||!msg)return;
+  if(!perfil){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Faca login para usar cupons.';return;}
+  const{data:c,error}=await sb.from('cupons').select('*').eq('nome',nome).eq('ativo',true).single();
+  if(error||!c){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Cupom invalido.';return;}
+  if(c.usos_restantes<=0){msg.style.display='block';msg.style.color='var(--orange)';msg.textContent='Cupom esgotado.';return;}
+  co3CupomAtivo=c;cupomAtivo=c;msg.style.display='block';msg.style.color='var(--green-bright)';msg.textContent='Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';co3UpdateResumo();
+}
+
+function co3Passo2(){
+  if(!cart.itens.length){toast('Carrinho vazio.','err');return;}
+  if(co3Modalidade==='Entrega'&&!co3FreteCalculado){
+    const cepVal=document.getElementById('co3-cep')?.value.replace(/\D/g,'');
+    if(!cepVal||cepVal.length!==8){toast('Calcule o frete pelo CEP antes de continuar.','err');return;}
+    co3CalcFrete().then(()=>co3GoStep(2));return;
+  }
+  co3GoStep(2);
+}
+
+async function co3BuscarCep(){
+  const cepEl=document.getElementById('co3-cep2'),spin=document.getElementById('co3-cep-spin');
+  if(!cepEl)return;const cep=cepEl.value.replace(/\D/g,'');if(cep.length!==8)return;
+  if(spin)spin.classList.remove('hidden');
+  try{const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');const d=await r.json();
+    if(!d.erro){document.getElementById('co3-rua').value=d.logradouro||'';document.getElementById('co3-bairro').value=d.bairro||'';document.getElementById('co3-cidade').value=(d.localidade||'')+' / '+(d.uf||'');document.getElementById('co3-end-full').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;document.getElementById('co3-end-fields').classList.remove('hidden');document.getElementById('co3-num').focus();}
+  }catch(e){}if(spin)spin.classList.add('hidden');
+}
+
+function co3Passo3(){
+  const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim(),data=document.getElementById('co3-data')?.value;
+  const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');if(!data)erros.push('Data');
+  if(co3Modalidade==='Entrega'){const end=document.getElementById('co3-end-full')?.value,num=document.getElementById('co3-num')?.value;if(!end)erros.push('CEP e endereco');if(!num)erros.push('Numero');}
+  if(co3Modalidade==='Retirada'){const local=document.getElementById('co3-ret-local')?.value;if(!local)erros.push('Local de retirada');}
+  if(erros.length){popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
+  co3GoStep(3);co3SetPag('Pix');
+}
+
+function co3SetPag(v){
+  co3PagMetodo=v;
+  ['Pix','Cartao','Dinheiro'].forEach(m=>{const el=document.getElementById('co3-opt-'+m.toLowerCase());if(el)el.classList.toggle('active',m===v);});
+  document.getElementById('co3-pix-box').style.display=v==='Pix'?'block':'none';
+  document.getElementById('co3-cartao-box').style.display=v==='Cartao'?'block':'none';
+  document.getElementById('co3-dinheiro-box').style.display=v==='Dinheiro'?'block':'none';
+  const btn=document.getElementById('co3-btn-finalizar');
+  if(btn)btn.innerHTML=v==='Pix'?'<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei — Confirmar':'<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
+  if(v==='Pix')co3GerarQR();
+}
+
+function co3GerarQR(){
+  const{total}=co3UpdateResumo();
+  const payload=gerarPixPayload(total,'CORT'+Date.now().toString().slice(-8));
+  const valEl=document.getElementById('co3-pix-valor'),codEl=document.getElementById('co3-pix-codigo');
+  if(valEl)valEl.textContent='R$ '+fp(total);if(codEl)codEl.textContent=payload;
+  const canvas=document.getElementById('co3-pix-canvas');if(canvas)_pixQR(canvas,payload);
+}
+
+function co3CopiarPix(){
+  const txt=document.getElementById('co3-pix-codigo')?.textContent;if(!txt)return;
+  navigator.clipboard.writeText(txt).then(()=>toast('Codigo Pix copiado!','ok')).catch(()=>{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Codigo Pix copiado!','ok');});
+}
+
+function co3ValidarTroco(){
+  const val=parseFloat(document.getElementById('co3-troco-val')?.value)||0;const{total}=co3UpdateResumo();
+  const err=document.getElementById('co3-troco-err');if(err){if(val>0&&val<=total){err.textContent='O valor deve ser maior que R$ '+fp(total);err.style.display='block';}else{err.style.display='none';}}
+}
+function co3ConfirmarTroco(){const val=parseFloat(document.getElementById('co3-troco-val')?.value)||0;const{total}=co3UpdateResumo();if(val<=total){co3ValidarTroco();return;}co3Troco=val.toFixed(2);toast('Troco para R$ '+fp(val)+' confirmado!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
+function co3SemTroco(){co3Troco='sem troco';toast('Sem troco!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
+
+async function co3Finalizar(){
+  const pag=co3PagMetodo;
+  if(pag==='Dinheiro'&&!co3Troco){popAlert('💵','Troco obrigatorio','Informe o troco ou clique em Sem troco.');return;}
+  const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim(),data=document.getElementById('co3-data')?.value,obs=document.getElementById('co3-obs')?.value||'';
+  const isRetirada=co3Modalidade==='Retirada';
+  const endFull=isRetirada?(document.getElementById('co3-ret-local')?.value||''):((document.getElementById('co3-end-full')?.value||'')+', '+(document.getElementById('co3-num')?.value||''));
+  const comp=isRetirada?'':(document.getElementById('co3-comp')?.value||'');
+  const{sub,taxa,descCupom,total}=co3UpdateResumo();
+  const trocoTxt=co3Troco&&co3Troco!=='sem troco'?'R$ '+fp(parseFloat(co3Troco)):'Nao';
+  const chavePix=window._WHATSAPP_NUM_DB||WHATSAPP_NUM;
+  let pagLabel=pag;
+  if(pag==='Dinheiro'&&co3Troco&&co3Troco!=='sem troco')pagLabel='Dinheiro (troco p/ R$ '+fp(parseFloat(co3Troco))+')';
+  if(pag==='Dinheiro'&&co3Troco==='sem troco')pagLabel='Dinheiro (sem troco)';
+  const itensTxt=cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:'';}).filter(Boolean).join('\n');
+  const partes=[];
+  partes.push('Tipo de servico: '+co3Modalidade);partes.push('');
+  partes.push('Nome: '+nome);partes.push('Telefone: '+tel);
+  partes.push((isRetirada?'Local de retirada: ':'Endereco: ')+endFull);
+  partes.push('Data de '+(isRetirada?'retirada':'entrega')+': '+fd(data));partes.push('');
+  partes.push('-- Produtos --');partes.push(itensTxt);partes.push('');
+  partes.push('Subtotal: R$ '+fp(sub));
+  if(!isRetirada&&taxa>0)partes.push('Delivery: R$ '+fp(taxa));
+  if(descCupom>0)partes.push('Desconto ('+co3CupomAtivo?.nome+'): - R$ '+fp(descCupom));
+  partes.push('Total: R$ '+fp(total));partes.push('');
+  partes.push('-- Pagamento --');partes.push('Total a pagar: R$ '+fp(total));partes.push('Forma de pagamento: '+pag);
+  if(pag==='Pix')partes.push('Chave Pix: '+chavePix);
+  if(pag==='Dinheiro')partes.push('Troco: '+trocoTxt);
+  if(obs){partes.push('');partes.push('-- Observacoes --');partes.push(obs);}
+  partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
+  const txtWpp=partes.join('\n');
+  const btn=document.getElementById('co3-btn-finalizar');if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
+  abrirWhatsApp(txtWpp);
+  try{
+    const codigo=await gerarCodigo(data);
+    const insertData={user_id:perfil.id,cliente_nome:nome,cliente_contato:tel,cliente_endereco:endFull,cliente_numero:'',cliente_complemento:comp||null,entrega:co3Modalidade,taxa_entrega:taxa,pagamento:pagLabel,status:'Pendente',observacoes:obs,subtotal:sub,total:Math.max(0,sub+taxa-descCupom),data_pedido:data};
+    if(codigo)insertData.codigo=codigo;if(co3CupomAtivo)insertData.cupom=co3CupomAtivo.nome;
+    const{data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();if(error)throw error;
+    const itensCopy=[...cart.itens];
+    await sb.from('itens_pedido').insert(itensCopy.map(it=>{const p=prods.find(x=>x.id===it.prodId);return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};}));
+    if(co3CupomAtivo){const{data:cupNow}=await sb.from('cupons').select('usos_restantes').eq('id',co3CupomAtivo.id).single();if(cupNow&&cupNow.usos_restantes>0)await sb.from('cupons').update({usos_restantes:cupNow.usos_restantes-1}).eq('id',co3CupomAtivo.id);}
+    await Promise.all(itensCopy.map(it=>{const p=prods.find(x=>x.id===it.prodId);if(!p||p.estoque==null)return Promise.resolve();const novo=Math.max(0,p.estoque-it.qty);p.estoque=novo;return sb.from('produtos').update({estoque:novo}).eq('id',p.id);}));
+    cupomAtivo=null;co3CupomAtivo=null;cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo3();mostrarSucesso();
+  }catch(e){toast('Erro ao salvar pedido: '+e.message,'err');if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}}
+}
+
 init();
 verificarResetSenha();
 
@@ -5934,6 +6277,263 @@ refreshIcons();
     </div>
     <button class="pix-confirmado-btn" onclick="confirmarPagamentoPix()">Ja paguei — Confirmar pedido</button>
     <button class="pix-cancelar-btn" onclick="fecharPixModal()">Voltar</button>
+  </div>
+</div>
+
+<!-- ══ CHECKOUT 3 PASSOS ══ -->
+<div class="co3-ov" id="co3-ov">
+
+  <!-- HEADER -->
+  <div class="co3-header">
+    <div class="co3-logo">
+      <div class="co3-logo-ico">
+        <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>
+      </div>
+      <span class="co3-logo-txt">Cortadinhos</span>
+    </div>
+    <div class="co3-secure">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Ambiente seguro
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="co3-progress">
+    <div class="co3-steps">
+      <div class="co3-step active" id="co3-s1">
+        <div class="co3-step-dot" id="co3-d1">1</div>
+        <span class="co3-step-lbl">Carrinho</span>
+      </div>
+      <div class="co3-step" id="co3-s2">
+        <div class="co3-step-dot" id="co3-d2">2</div>
+        <span class="co3-step-lbl">Dados</span>
+      </div>
+      <div class="co3-step" id="co3-s3">
+        <div class="co3-step-dot" id="co3-d3">3</div>
+        <span class="co3-step-lbl">Pagamento</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <div class="co3-body">
+    <div>
+
+      <!-- PASSO 1: CARRINHO -->
+      <div id="co3-p1">
+        <div class="co3-card">
+          <div class="co3-card-title">
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Seu carrinho
+          </div>
+          <div id="co3-items-list"></div>
+          <button class="co3-add-more" onclick="fecharCo3();renderShop()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar mais produtos
+          </button>
+        </div>
+
+        <!-- FRETE -->
+        <div class="co3-card" style="margin-top:16px">
+          <div class="co3-card-title">
+            <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Modalidade de entrega
+          </div>
+          <div class="co3-modal-toggle">
+            <button class="co3-modal-btn active" id="co3-btn-entrega" onclick="co3SetModalidade('Entrega')">
+              <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              Entrega
+            </button>
+            <button class="co3-modal-btn" id="co3-btn-retirada" onclick="co3SetModalidade('Retirada')">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Retirada
+            </button>
+          </div>
+          <div id="co3-cep-bloco" style="margin-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">CEP para calcular frete</div>
+            <div style="display:flex;gap:8px">
+              <input id="co3-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)">
+              <button class="btn btn-g btn-sm" onclick="co3CalcFrete()">Calcular</button>
+            </div>
+            <div id="co3-frete-info" style="font-size:12px;margin-top:8px;display:none"></div>
+          </div>
+        </div>
+
+        <!-- CUPOM -->
+        <div class="co3-card" style="margin-top:16px">
+          <div style="display:flex;gap:8px">
+            <input id="co3-cupom" type="text" placeholder="Codigo do cupom" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn btn-g btn-sm" onclick="co3AplicarCupom()">Aplicar</button>
+          </div>
+          <div id="co3-cupom-msg" style="font-size:12px;margin-top:8px;display:none"></div>
+        </div>
+
+        <div class="co3-nav">
+          <button class="co3-btn-back" onclick="fecharCo3()">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            Continuar comprando
+          </button>
+          <button class="co3-btn-next" onclick="co3Passo2()">
+            Continuar para dados
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- PASSO 2: DADOS -->
+      <div id="co3-p2" style="display:none">
+        <div class="co3-card">
+          <div class="co3-card-title">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Seus dados
+          </div>
+          <div class="field"><label>Nome completo *</label><input id="co3-nome" type="text" placeholder="Seu nome"></div>
+          <div class="field"><label>Telefone *</label><input id="co3-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+          <div class="field"><label>Data de <span id="co3-data-lbl">entrega</span> *</label>
+            <button type="button" class="cal-trigger" id="co3-data-btn" onclick="event.stopPropagation();abrirCal('co3')">Selecionar data</button>
+            <input type="hidden" id="co3-data">
+          </div>
+
+          <!-- Endereço (entrega) -->
+          <div id="co3-end-bloco">
+            <div class="field">
+              <label>CEP *</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="co3-cep2" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="co3BuscarCep()">
+                <div id="co3-cep-spin" class="spin hidden" style="flex-shrink:0"></div>
+              </div>
+            </div>
+            <div id="co3-end-fields" class="hidden">
+              <div class="field"><label>Rua</label><input id="co3-rua" type="text" readonly style="background:var(--bg4)"></div>
+              <div class="row2">
+                <div class="field"><label>Bairro</label><input id="co3-bairro" type="text" readonly style="background:var(--bg4)"></div>
+                <div class="field"><label>Cidade/UF</label><input id="co3-cidade" type="text" readonly style="background:var(--bg4)"></div>
+              </div>
+              <div class="row2">
+                <div class="field"><label>Numero *</label><input id="co3-num" type="text" placeholder="Ex: 123"></div>
+                <div class="field"><label>Complemento</label><input id="co3-comp" type="text" placeholder="Apto, bloco..."></div>
+              </div>
+            </div>
+            <input type="hidden" id="co3-end-full">
+            <div id="co3-zona-info" style="margin-top:8px;display:none"></div>
+          </div>
+
+          <!-- Local de retirada -->
+          <div id="co3-ret-bloco" class="hidden">
+            <div id="co3-ret-info" style="background:var(--bg3);border:2px solid var(--green);border-radius:12px;padding:12px;margin-top:4px">
+              <div style="font-size:11px;color:var(--text3)">Selecione a data acima para ver o local de retirada</div>
+            </div>
+            <input type="hidden" id="co3-ret-local">
+          </div>
+
+          <div class="field" style="margin-top:12px"><label>Observacoes</label><textarea id="co3-obs" placeholder="Alguma observacao..." style="height:68px;resize:none"></textarea></div>
+        </div>
+
+        <div class="co3-nav">
+          <button class="co3-btn-back" onclick="co3GoStep(1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            Voltar
+          </button>
+          <button class="co3-btn-next" onclick="co3Passo3()">
+            Continuar para pagamento
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- PASSO 3: PAGAMENTO -->
+      <div id="co3-p3" style="display:none">
+        <div class="co3-card">
+          <div class="co3-card-title">
+            <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Forma de pagamento
+          </div>
+
+          <div class="co3-pag-opts">
+            <button class="co3-pag-opt active" id="co3-opt-pix" onclick="co3SetPag('Pix')">
+              <div class="pag-ico"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+              <div class="pag-lbl">Pix</div>
+            </button>
+            <button class="co3-pag-opt" id="co3-opt-cartao" onclick="co3SetPag('Cartao')">
+              <div class="pag-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+              <div class="pag-lbl">Cartao</div>
+            </button>
+            <button class="co3-pag-opt" id="co3-opt-dinheiro" onclick="co3SetPag('Dinheiro')">
+              <div class="pag-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <div class="pag-lbl">Dinheiro</div>
+            </button>
+          </div>
+          <input type="hidden" id="co3-pag" value="Pix">
+
+          <!-- PIX -->
+          <div id="co3-pix-box">
+            <div class="co3-pix-box">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Escaneie o QR Code</div>
+              <div class="co3-pix-qr"><canvas id="co3-pix-canvas" width="160" height="160"></canvas></div>
+              <div style="font-size:20px;font-weight:900;color:var(--green-bright);margin:8px 0" id="co3-pix-valor">R$ 0,00</div>
+              <div class="co3-pix-codigo">
+                <span class="co3-pix-codigo-txt" id="co3-pix-codigo"></span>
+                <button class="co3-pix-copy" onclick="co3CopiarPix()">Copiar</button>
+              </div>
+              <div class="co3-pix-steps">
+                <div class="co3-pix-step"><span class="co3-pix-step-n">1</span><span>Abra o app do banco e acesse o Pix</span></div>
+                <div class="co3-pix-step"><span class="co3-pix-step-n">2</span><span>Escaneie o QR Code ou cole o codigo</span></div>
+                <div class="co3-pix-step"><span class="co3-pix-step-n">3</span><span>Confirme e clique em "Ja paguei" abaixo</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARTÃO -->
+          <div id="co3-cartao-box" style="display:none">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;color:var(--text2);font-size:13px">
+              Pagamento com cartao na entrega.<br>Aceitamos debito e credito.
+            </div>
+          </div>
+
+          <!-- DINHEIRO -->
+          <div id="co3-dinheiro-box" style="display:none">
+            <div class="co3-troco-box">
+              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Vai precisar de troco?</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Informe o valor que vai pagar (maior que o total)</div>
+              <input id="co3-troco-val" type="number" step="0.01" placeholder="Ex: 50,00" style="width:100%;margin-bottom:8px" oninput="co3ValidarTroco()">
+              <div id="co3-troco-err" style="font-size:11px;color:var(--red);margin-bottom:8px;display:none"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-g btn-sm" style="flex:1" onclick="co3ConfirmarTroco()">Confirmar troco</button>
+                <button class="btn btn-o btn-sm" style="flex:1" onclick="co3SemTroco()">Sem troco</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="co3-troco">
+        </div>
+
+        <div class="co3-nav">
+          <button class="co3-btn-back" onclick="co3GoStep(2)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            Voltar
+          </button>
+          <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()">
+            <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Ja paguei — Confirmar
+          </button>
+        </div>
+        <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">Ao finalizar, voce concorda com nossos <a href="https://cortadinhos.com/privacidade" target="_blank" style="color:var(--text3);text-decoration:underline">Termos e Privacidade</a></p>
+      </div>
+
+    </div>
+
+    <!-- RESUMO LATERAL -->
+    <div class="co3-resumo">
+      <div class="co3-resumo-title">Resumo do pedido</div>
+      <div id="co3-resumo-items"></div>
+      <div class="co3-divider"></div>
+      <div class="co3-row"><span>Subtotal</span><span id="co3-r-sub">R$ 0,00</span></div>
+      <div class="co3-row taxa" id="co3-r-frete-row" style="display:none"><span>Frete</span><span id="co3-r-frete">R$ 0,00</span></div>
+      <div class="co3-row desc" id="co3-r-desc-row" style="display:none"><span id="co3-r-desc-lbl">Desconto</span><span id="co3-r-desc">- R$ 0,00</span></div>
+      <div class="co3-total">
+        <span class="co3-total-lbl">Total</span>
+        <span class="co3-total-val" id="co3-r-total">R$ 0,00</span>
+      </div>
+    </div>
   </div>
 </div>
 </body>
