@@ -3176,11 +3176,11 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template padrao formatado
   const partes = [];
-  partes.push('Tipo de servico: ' + (isEntrega ? 'Entrega' : 'Retirada'));
+  partes.push('Tipo de serviço: ' + (isEntrega ? 'Entrega' : 'Retirada'));
   partes.push('');
   partes.push('Nome: ' + (pedido.nome||''));
   partes.push('Telefone: ' + (pedido.contato||''));
-  partes.push((isEntrega ? 'Endereco: ' : 'Local de retirada: ') + (endFull||''));
+  partes.push((isEntrega ? 'Endereço: ' : 'Local de retirada: ') + (endFull||''));
   partes.push('Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''));
   partes.push('');
   partes.push('-- Produtos --');
@@ -3195,7 +3195,7 @@ function buildTextoWhatsApp(pedido,itens){
   partes.push('Total a pagar: R$ ' + fp(totalFinal));
   partes.push('Forma de pagamento: ' + pagLabel);
   if(pagExtra) partes.push(pagExtra);
-  if(pedido.obs){ partes.push(''); partes.push('-- Observacoes --'); partes.push(pedido.obs); }
+  if(pedido.obs){ partes.push(''); partes.push('-- Observações --'); partes.push(pedido.obs); }
   partes.push('');
   partes.push('Por favor, envie-nos esta mensagem agora.');
   return partes.join('\n');
