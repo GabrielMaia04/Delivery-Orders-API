@@ -3182,31 +3182,30 @@ function buildTextoWhatsApp(pedido,itens){
   }
 
   // Template padrão formatado
-  const linhas = [
-    'Tipo de serviço: ' + (isEntrega ? 'Entrega' : 'Retirada'),
-    '',
-    'Nome: ' + (pedido.nome||''),
-    'Telefone: ' + (pedido.contato||''),
-    isEntrega ? 'Endereço: ' + endFull : 'Local de retirada: ' + (endFull||''),
-    'Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''),
-    '',
-    '📝 Produtos',
-    itensTxt,
-    'Subtotal: R$ ' + fp(sub),
-    isEntrega ? 'Delivery: R$ ' + fp(taxa) : '',
-    descCupom > 0 ? 'Desconto (' + (cupomAtivo?.nome||'cupom') + '): - R$ ' + fp(descCupom) : '',
-    'Total: R$ ' + fp(totalFinal),
-    '',
-    '💲 Pagamento',
-    'Total a pagar: R$ ' + fp(totalFinal),
-    'Forma de pagamento: ' + pagLabel,
-    pagExtra,
-    '',
-    pedido.obs ? '📋 Observações\n' + pedido.obs : '',
-    '',
-    '👆 Por favor, envie-nos esta mensagem agora. 👆'
-  ];
-    return linhas.filter(v=>v!==null&&v!==undefined&&v!=='').join('\n');
+  const partes = [];
+  partes.push('Tipo de servi\u00e7o: ' + (isEntrega ? 'Entrega' : 'Retirada'));
+  partes.push('');
+  partes.push('Nome: ' + (pedido.nome||''));
+  partes.push('Telefone: ' + (pedido.contato||''));
+  partes.push((isEntrega ? 'Endere\u00e7o: ' : 'Local de retirada: ') + (endFull||''));
+  partes.push('Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''));
+  partes.push('');
+  partes.push('\uD83D\uDCDD Produtos');
+  partes.push(itensTxt);
+  partes.push('');
+  partes.push('Subtotal: R$ ' + fp(sub));
+  if(isEntrega) partes.push('Delivery: R$ ' + fp(taxa));
+  if(descCupom > 0) partes.push('Desconto (' + (cupomAtivo?.nome||'cupom') + '): - R$ ' + fp(descCupom));
+  partes.push('Total: R$ ' + fp(totalFinal));
+  partes.push('');
+  partes.push('\uD83D\uDCB2 Pagamento');
+  partes.push('Total a pagar: R$ ' + fp(totalFinal));
+  partes.push('Forma de pagamento: ' + pagLabel);
+  if(pagExtra) partes.push(pagExtra);
+  if(pedido.obs){ partes.push(''); partes.push('\uD83D\uDCCB Observa\u00e7\u00f5es'); partes.push(pedido.obs); }
+  partes.push('');
+  partes.push('\uD83D\uDC46 Por favor, envie-nos esta mensagem agora. \uD83D\uDC46');
+  return partes.join('\n');
 }
 
 async function gerarCodigo(dataPedido){
