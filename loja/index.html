@@ -722,14 +722,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="metodos">
             <button type="button" class="met-btn active" id="met-pix">Pix</button>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:10px;padding:12px 14px;margin-top:10px">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <div>
-              <div style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Chave Pix</div>
-              <div id="co-chave-pix" style="font-size:15px;font-weight:800;color:var(--green-bright);letter-spacing:.5px">21976081746</div>
-            </div>
-            <button onclick="navigator.clipboard.writeText(document.getElementById('co-chave-pix').textContent).then(()=>toast('Chave copiada!','ok'))" style="margin-left:auto;background:none;border:1px solid var(--green-mid);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--green-bright);font-family:var(--font)">Copiar</button>
-          </div>
         </div>
         <!-- Métodos na entrega -->
         <div id="co-pag-entr-box" class="hidden">
@@ -3018,10 +3010,6 @@ function abrirCo(){
     document.getElementById('co-end').value=(perfil.endereco||'')+', '+(perfil.bairro||'')+' - '+(perfil.cidade||'');
     document.getElementById('co-end-fields').classList.remove('hidden');
   }
-  // Atualizar chave Pix com número configurado
-  const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
-  const chavePIXel = document.getElementById('co-chave-pix');
-  if(chavePIXel) chavePIXel.textContent = chavePix;
   updCoResumo();
   setOverlayState('co-ov',true);
 }
@@ -3183,14 +3171,14 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template padrão formatado
   const partes = [];
-  partes.push('Tipo de servi\u00e7o: ' + (isEntrega ? 'Entrega' : 'Retirada'));
+  partes.push('Tipo de serviço: ' + (isEntrega ? 'Entrega' : 'Retirada'));
   partes.push('');
   partes.push('Nome: ' + (pedido.nome||''));
   partes.push('Telefone: ' + (pedido.contato||''));
-  partes.push((isEntrega ? 'Endere\u00e7o: ' : 'Local de retirada: ') + (endFull||''));
+  partes.push((isEntrega ? 'Endereço: ' : 'Local de retirada: ') + (endFull||''));
   partes.push('Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''));
   partes.push('');
-  partes.push('\uD83D\uDCDD Produtos');
+  partes.push('📝 Produtos');
   partes.push(itensTxt);
   partes.push('');
   partes.push('Subtotal: R$ ' + fp(sub));
@@ -3198,13 +3186,13 @@ function buildTextoWhatsApp(pedido,itens){
   if(descCupom > 0) partes.push('Desconto (' + (cupomAtivo?.nome||'cupom') + '): - R$ ' + fp(descCupom));
   partes.push('Total: R$ ' + fp(totalFinal));
   partes.push('');
-  partes.push('\uD83D\uDCB2 Pagamento');
+  partes.push('💲 Pagamento');
   partes.push('Total a pagar: R$ ' + fp(totalFinal));
   partes.push('Forma de pagamento: ' + pagLabel);
   if(pagExtra) partes.push(pagExtra);
-  if(pedido.obs){ partes.push(''); partes.push('\uD83D\uDCCB Observa\u00e7\u00f5es'); partes.push(pedido.obs); }
+  if(pedido.obs){ partes.push(''); partes.push('📋 Observações'); partes.push(pedido.obs); }
   partes.push('');
-  partes.push('\uD83D\uDC46 Por favor, envie-nos esta mensagem agora. \uD83D\uDC46');
+  partes.push('👆 Por favor, envie-nos esta mensagem agora. 👆');
   return partes.join('\n');
 }
 
