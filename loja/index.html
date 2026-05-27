@@ -3178,7 +3178,7 @@ function buildTextoWhatsApp(pedido,itens){
   partes.push((isEntrega ? 'Endereço: ' : 'Local de retirada: ') + (endFull||''));
   partes.push('Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''));
   partes.push('');
-  partes.push('📝 Produtos');
+  partes.push('-- Produtos --');
   partes.push(itensTxt);
   partes.push('');
   partes.push('Subtotal: R$ ' + fp(sub));
@@ -3186,13 +3186,13 @@ function buildTextoWhatsApp(pedido,itens){
   if(descCupom > 0) partes.push('Desconto (' + (cupomAtivo?.nome||'cupom') + '): - R$ ' + fp(descCupom));
   partes.push('Total: R$ ' + fp(totalFinal));
   partes.push('');
-  partes.push('💲 Pagamento');
+  partes.push('-- Pagamento --');
   partes.push('Total a pagar: R$ ' + fp(totalFinal));
   partes.push('Forma de pagamento: ' + pagLabel);
   if(pagExtra) partes.push(pagExtra);
-  if(pedido.obs){ partes.push(''); partes.push('📋 Observações'); partes.push(pedido.obs); }
+  if(pedido.obs){ partes.push(''); partes.push('-- Observações --'); partes.push(pedido.obs); }
   partes.push('');
-  partes.push('👆 Por favor, envie-nos esta mensagem agora. 👆');
+  partes.push('Por favor, envie-nos esta mensagem agora.');
   return partes.join('\n');
 }
 
