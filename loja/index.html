@@ -3348,7 +3348,7 @@ async function enviarPedido(){
     obs:document.getElementById('co-obs').value
   },itensCopy);
   // Se for Pix: abre modal Pix primeiro, WhatsApp depois da confirmação
-  if(pag === 'Pix'){
+  if(pag === 'Pix' || pag === 'pix' || (momento === 'agora' && pag.toLowerCase().includes('pix'))){
     const sub2=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     const _pr2=calcPromoAuto(sub2);
     const _fg2=_pr2?.freteGratis||false;
@@ -3357,6 +3357,7 @@ async function enviarPedido(){
     const dp2=_pr2?.desconto||0;
     const totalPix=Math.max(0,sub2+taxa2-dc2-dp2);
     btn.disabled=false;btn.textContent='FINALIZAR PEDIDO';
+    fecharCo();
     abrirPixModal(totalPix, {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed:document.getElementById('co-data').value, pagLabel, pag});
     return;
   }
