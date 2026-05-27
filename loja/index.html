@@ -636,6 +636,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .co3-modal-btn{padding:12px;border-radius:10px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
 .co3-modal-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .co3-modal-btn.active{background:var(--green);border-color:var(--green);color:#fff}
+
+.co3-addr-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.co3-addr-date-grid{grid-template-columns:1fr}}
+.co3-data-opt{padding:12px 14px;border-radius:10px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text2);transition:all .15s;text-align:left;width:100%}
+.co3-data-opt:hover{border-color:var(--green-mid);background:var(--green-pale)}
+.co3-data-opt.selected{border-color:var(--green);background:var(--green-light);color:var(--green-bright);font-weight:800}
+.co3-data-opt .co3-data-dia{font-size:11px;color:var(--text3);margin-top:2px;font-weight:500}
+.co3-data-opt.selected .co3-data-dia{color:var(--green)}
 </style>
 </head>
 <body>
@@ -687,37 +695,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="drawer-header"><span class="drawer-title ico-gap"><i data-lucide="shopping-cart"></i> Carrinho</span><button class="close-btn" onclick="fecharCart()">&#10005;</button></div>
     <div class="cart-list" id="cart-list"><div class="empty">Carrinho vazio</div></div>
     <div class="cart-footer">
-      <!-- Modalidade no carrinho -->
-      <div style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Como vai querer?</div>
-        <div class="dtog-wrap">
-          <button class="dtog active ico-gap" id="cart-de" onclick="setCartModalidade('Entrega')"><i data-lucide="truck"></i> Entrega</button>
-          <button class="dtog ico-gap" id="cart-dr" onclick="setCartModalidade('Retirada')"><i data-lucide="store"></i> Retirada</button>
-        </div>
-      </div>
-      <!-- CEP para calcular frete (só entrega) -->
-      <div id="cart-cep-bloco" style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">CEP para calcular frete</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="cart-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" oninput="mascaraCep(this)">
-          <button class="btn btn-o btn-sm" style="flex-shrink:0;padding:8px 12px" onclick="calcularFreteCarrinho()">Calcular</button>
-        </div>
-        <div id="cart-frete-info" style="font-size:11px;margin-top:6px;display:none"></div>
-      </div>
-      <!-- Aviso pedido mínimo (só entrega) -->
-      <div id="cart-min-aviso" style="display:none;font-size:12px;font-weight:600;padding:8px 10px;border-radius:8px;margin-bottom:8px;background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange)"></div>
-      <!-- Cupom -->
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="cart-cupom-input" type="text" placeholder="Código do cupom" style="flex:1;font-size:13px;padding:8px 12px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-        <button class="btn btn-o btn-sm" style="flex-shrink:0;padding:8px 12px" onclick="aplicarCupom()">Aplicar</button>
-      </div>
-      <div id="cart-cupom-msg" style="font-size:11px;margin-bottom:8px;display:none"></div>
       <div class="sum-row"><span>Itens</span><span id="c-itens">0</span></div>
       <div class="sum-row"><span>Subtotal</span><span id="c-sub">R$ 0,00</span></div>
-      <div class="sum-row taxa hidden" id="c-taxa"><span class="ico-gap"><i data-lucide="truck"></i> Frete</span><span id="c-taxa-val">+ R$ 2,50</span></div>
+      <div class="sum-row taxa hidden" id="c-taxa"><span class="ico-gap"><i data-lucide="truck"></i> Frete</span><span id="c-taxa-val">—</span></div>
       <div class="sum-row hidden" id="c-desc-row" style="color:var(--green-bright)"><span id="c-desc-label">Desconto</span><span id="c-desc-val" style="color:var(--green-bright)">- R$ 0,00</span></div>
       <div class="total-row"><span class="total-label">Total</span><span class="total-val" id="c-total">R$ 0,00</span></div>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px">
+      <!-- campos hidden mantidos para compatibilidade -->
+      <input id="cart-cep" type="hidden"><div id="cart-frete-info" style="display:none"></div>
+      <div id="cart-min-aviso" style="display:none"></div>
+      <input id="cart-cupom-input" type="hidden"><div id="cart-cupom-msg" style="display:none"></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px">
         <button class="big-btn" style="margin-top:0" id="cart-continuar-btn" onclick="irCheckout()">Continuar</button>
         <button type="button" style="padding:0 16px;border-radius:12px;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)" onclick="limparCarrinho()">Limpar</button>
       </div>
@@ -6055,6 +6042,20 @@ function co3GoStep(n){
     else{d.textContent=i;}
   });
   ['co3-p1','co3-p2','co3-p3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=(i+1===n)?'block':'none';});
+  // Mostrar resumo endereço no passo 2
+  if(n>=2){
+    const resumoEl=document.getElementById('co3-end-resumo');
+    const endFull=document.getElementById('co3-end-full')?.value;
+    const data=document.getElementById('co3-data')?.value;
+    const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+    const MESES2=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    let dataLabel='';
+    if(data){const[y,m,d]=data.split('-').map(Number);const dt=new Date(y,m-1,d);dataLabel=DIAS[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES2[m-1];}
+    if(resumoEl){
+      resumoEl.style.display=endFull?'block':'none';
+      if(endFull)resumoEl.innerHTML='<strong>'+co3Modalidade+'</strong> · '+dataLabel+(endFull?' · '+endFull.split(' - ')[0]:'');
+    }
+  }
   const ov=document.getElementById('co3-ov');if(ov)ov.scrollTop=0;
   const lbl=document.getElementById('co3-data-lbl');if(lbl)lbl.textContent=co3Modalidade==='Entrega'?'entrega':'retirada';
   if(n===3&&co3PagMetodo==='Pix')co3GerarQR();
@@ -6164,10 +6165,8 @@ async function co3BuscarCep(){
 }
 
 function co3Passo3(){
-  const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim(),data=document.getElementById('co3-data')?.value;
-  const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');if(!data)erros.push('Data');
-  if(co3Modalidade==='Entrega'){const end=document.getElementById('co3-end-full')?.value,num=document.getElementById('co3-num')?.value;if(!end)erros.push('CEP e endereco');if(!num)erros.push('Numero');}
-  if(co3Modalidade==='Retirada'){const local=document.getElementById('co3-ret-local')?.value;if(!local)erros.push('Local de retirada');}
+  const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim();
+  const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');
   if(erros.length){popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
   co3GoStep(3);co3SetPag('Pix');
 }
@@ -6248,6 +6247,127 @@ async function co3Finalizar(){
   }catch(e){toast('Erro ao salvar pedido: '+e.message,'err');if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}}
 }
 
+// ── CO3: DATAS DISPONÍVEIS (próximas 3 terças e sextas) ──
+function co3RenderDatas(){
+  const el = document.getElementById('co3-datas-grid');
+  if(!el) return;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
+  const proximas = [];
+  const d = new Date(amanha);
+  while(proximas.length < 3){
+    if(d.getDay()===2 || d.getDay()===5) proximas.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  const DIAS=['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
+  const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const selVal = document.getElementById('co3-data')?.value;
+  el.innerHTML = proximas.map(dt=>{
+    const iso = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    const label = DIAS[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'/'+MESES[dt.getMonth()];
+    const tipo = dt.getDay()===2?'Terca-feira':'Sexta-feira';
+    const sel = iso===selVal?' selected':'';
+    return `<button class="co3-data-opt${sel}" onclick="co3SelecionarData('${iso}','${label}')">
+      ${label}
+      <div class="co3-data-dia">${tipo}</div>
+    </button>`;
+  }).join('');
+}
+
+function co3SelecionarData(iso, label){
+  document.getElementById('co3-data').value = iso;
+  // Atualizar visual
+  document.querySelectorAll('.co3-data-opt').forEach(b=>b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  // Se retirada, atualizar local
+  if(co3Modalidade==='Retirada') co3RenderRetOpts();
+}
+
+// ── CO3: AUTO BUSCAR CEP (no blur) ──
+async function co3AutoBuscarCep(){
+  const cepEl = document.getElementById('co3-cep');
+  if(!cepEl) return;
+  const cep = cepEl.value.replace(/\D/g,'');
+  if(cep.length===8) await co3CalcFrete();
+}
+
+// ── CO3: Sobrescrever co3CalcFrete para preencher campos p1 também ──
+const _co3CalcFreteOrig = co3CalcFrete;
+co3CalcFrete = async function(){
+  const cepEl=document.getElementById('co3-cep'),info=document.getElementById('co3-frete-info');
+  if(!cepEl||!info)return;
+  const cep=cepEl.value.replace(/\D/g,'');
+  if(cep.length!==8){info.style.display='block';info.style.color='var(--orange)';info.textContent='Digite um CEP valido.';return;}
+  info.style.display='block';info.textContent='Calculando...';info.style.color='var(--text2)';
+  const result=await geocodificarCEP(cep);
+  if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
+  window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
+  // Preencher campos de endereço do passo 1
+  const dv=result.viacep;
+  const rP1=document.getElementById('co3-rua-p1'),bP1=document.getElementById('co3-bairro-p1'),cP1=document.getElementById('co3-cidade-p1');
+  const r2=document.getElementById('co3-rua'),b2=document.getElementById('co3-bairro'),c2=document.getElementById('co3-cidade'),cep2=document.getElementById('co3-cep2');
+  if(rP1)rP1.value=dv.logradouro||'';if(bP1)bP1.value=dv.bairro||'';if(cP1)cP1.value=(dv.localidade||'')+' / '+(dv.uf||'');
+  if(r2)r2.value=dv.logradouro||'';if(b2)b2.value=dv.bairro||'';if(c2)c2.value=(dv.localidade||'')+' / '+(dv.uf||'');
+  if(cep2)cep2.value=cepEl.value;
+  document.getElementById('co3-end-full').value=(dv.logradouro||'')+', '+(dv.bairro||'')+' - '+(dv.localidade||'')+'/'+dv.uf;
+  document.getElementById('co3-end-p1')?.classList.remove('hidden');
+  document.getElementById('co3-end-fields')?.classList.remove('hidden');
+  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
+  const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
+  if(dist>RAIO_MAX){info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
+  const zona=calcularZona(dist);
+  if(zona){TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=dv.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
+  else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
+};
+
+// ── CO3: Atualizar co3SetModalidade para p1 ──
+const _co3SetModalidadeOrig = co3SetModalidade;
+co3SetModalidade = function(v){
+  co3Modalidade=v;cart.entrega=v;
+  const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
+  if(be)be.classList.toggle('active',v==='Entrega');
+  if(br)br.classList.toggle('active',v==='Retirada');
+  // Passo 1
+  const cepBloco=document.getElementById('co3-cep-bloco'),retBloco=document.getElementById('co3-ret-bloco');
+  if(cepBloco)cepBloco.classList.toggle('hidden',v==='Retirada');
+  if(retBloco)retBloco.classList.toggle('hidden',v==='Entrega');
+  // Passo 2
+  const endBloco=document.getElementById('co3-end-bloco'),retBloco2=document.getElementById('co3-ret-bloco');
+  // label data
+  const lbl=document.getElementById('co3-data-lbl');if(lbl)lbl.textContent=v==='Entrega'?'entrega':'retirada';
+  if(v==='Retirada'){co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
+  co3UpdateResumo();co3RenderRetOpts();co3RenderDatas();
+};
+
+// ── CO3: Atualizar co3Passo2 para validar passo 1 ──
+const _co3Passo2Orig = co3Passo2;
+co3Passo2 = function(){
+  if(!cart.itens.length){toast('Carrinho vazio.','err');return;}
+  const data = document.getElementById('co3-data')?.value;
+  if(!data){toast('Selecione uma data de '+co3Modalidade.toLowerCase()+'.','err');return;}
+  if(co3Modalidade==='Entrega'){
+    if(!co3FreteCalculado){toast('Calcule o frete pelo CEP antes de continuar.','err');return;}
+    const num = document.getElementById('co3-num-p1')?.value;
+    if(!num){toast('Informe o numero do endereco.','err');return;}
+    // Atualizar end-full com numero
+    const endBase=document.getElementById('co3-end-full')?.value||'';
+    const comp=document.getElementById('co3-comp-p1')?.value||'';
+    document.getElementById('co3-end-full').value=endBase+(endBase.includes(',')?' - N.'+num:', '+num)+(comp?' - '+comp:'');
+  }
+  if(co3Modalidade==='Retirada'){
+    const local=document.getElementById('co3-ret-local')?.value;
+    if(!local){toast('Selecione uma data para ver o local de retirada.','err');return;}
+  }
+  co3GoStep(2);
+};
+
+// ── CO3: Abrir co3 chama RenderDatas ──
+const _abrirCo3Orig = abrirCo3;
+abrirCo3 = function(){
+  _abrirCo3Orig();
+  co3RenderDatas();
+};
+
 init();
 verificarResetSenha();
 
@@ -6302,7 +6422,7 @@ refreshIcons();
     <div class="co3-steps">
       <div class="co3-step active" id="co3-s1">
         <div class="co3-step-dot" id="co3-d1">1</div>
-        <span class="co3-step-lbl">Carrinho</span>
+        <span class="co3-step-lbl">Entrega</span>
       </div>
       <div class="co3-step" id="co3-s2">
         <div class="co3-step-dot" id="co3-d2">2</div>
@@ -6319,25 +6439,14 @@ refreshIcons();
   <div class="co3-body">
     <div>
 
-      <!-- PASSO 1: CARRINHO -->
+      <!-- PASSO 1: ENTREGA -->
       <div id="co3-p1">
+
+        <!-- MODALIDADE -->
         <div class="co3-card">
           <div class="co3-card-title">
-            <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            Seu carrinho
-          </div>
-          <div id="co3-items-list"></div>
-          <button class="co3-add-more" onclick="fecharCo3();renderShop()">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Adicionar mais produtos
-          </button>
-        </div>
-
-        <!-- FRETE -->
-        <div class="co3-card" style="margin-top:16px">
-          <div class="co3-card-title">
             <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            Modalidade de entrega
+            Como vai receber?
           </div>
           <div class="co3-modal-toggle">
             <button class="co3-modal-btn active" id="co3-btn-entrega" onclick="co3SetModalidade('Entrega')">
@@ -6349,29 +6458,66 @@ refreshIcons();
               Retirada
             </button>
           </div>
-          <div id="co3-cep-bloco" style="margin-top:14px">
-            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">CEP para calcular frete</div>
-            <div style="display:flex;gap:8px">
-              <input id="co3-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)">
-              <button class="btn btn-g btn-sm" onclick="co3CalcFrete()">Calcular</button>
+        </div>
+
+        <!-- ENDEREÇO + DATA (grid 2 colunas no desktop) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px" class="co3-addr-date-grid">
+
+          <!-- ENDEREÇO / LOCAL RETIRADA -->
+          <div class="co3-card">
+            <div id="co3-cep-bloco">
+              <div class="co3-card-title" style="margin-bottom:14px">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Endereco de entrega
+              </div>
+              <div class="field"><label>CEP *</label>
+                <div style="display:flex;gap:8px">
+                  <input id="co3-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="co3AutoBuscarCep()">
+                  <button class="btn btn-g btn-sm" onclick="co3CalcFrete()">Calcular</button>
+                </div>
+              </div>
+              <div id="co3-frete-info" style="font-size:12px;margin-bottom:8px;display:none"></div>
+              <div id="co3-end-p1" class="hidden">
+                <div class="field"><label>Rua</label><input id="co3-rua-p1" type="text" readonly style="background:var(--bg4)"></div>
+                <div class="row2">
+                  <div class="field"><label>Bairro</label><input id="co3-bairro-p1" type="text" readonly style="background:var(--bg4)"></div>
+                  <div class="field"><label>Cidade/UF</label><input id="co3-cidade-p1" type="text" readonly style="background:var(--bg4)"></div>
+                </div>
+                <div class="row2">
+                  <div class="field"><label>Numero *</label><input id="co3-num-p1" type="text" placeholder="Ex: 123"></div>
+                  <div class="field"><label>Complemento</label><input id="co3-comp-p1" type="text" placeholder="Apto..."></div>
+                </div>
+              </div>
+              <input type="hidden" id="co3-end-full">
             </div>
-            <div id="co3-frete-info" style="font-size:12px;margin-top:8px;display:none"></div>
+            <div id="co3-ret-bloco" class="hidden">
+              <div class="co3-card-title" style="margin-bottom:14px">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Local de retirada
+              </div>
+              <div id="co3-ret-info" style="background:var(--bg3);border:2px solid var(--green);border-radius:12px;padding:12px">
+                <div style="font-size:11px;color:var(--text3)">Selecione a data ao lado para ver o local</div>
+              </div>
+              <input type="hidden" id="co3-ret-local">
+            </div>
+          </div>
+
+          <!-- DATA -->
+          <div class="co3-card">
+            <div class="co3-card-title" style="margin-bottom:14px">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Data de <span id="co3-data-lbl">entrega</span>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Entregas disponíveis nas proximas 3 terças e sextas.</p>
+            <div id="co3-datas-grid" style="display:flex;flex-direction:column;gap:8px"></div>
+            <input type="hidden" id="co3-data">
           </div>
         </div>
 
-        <!-- CUPOM -->
-        <div class="co3-card" style="margin-top:16px">
-          <div style="display:flex;gap:8px">
-            <input id="co3-cupom" type="text" placeholder="Codigo do cupom" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-            <button class="btn btn-g btn-sm" onclick="co3AplicarCupom()">Aplicar</button>
-          </div>
-          <div id="co3-cupom-msg" style="font-size:12px;margin-top:8px;display:none"></div>
-        </div>
-
-        <div class="co3-nav">
+        <div class="co3-nav" style="margin-top:16px">
           <button class="co3-btn-back" onclick="fecharCo3()">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            Continuar comprando
+            Voltar ao carrinho
           </button>
           <button class="co3-btn-next" onclick="co3Passo2()">
             Continuar para dados
@@ -6389,42 +6535,17 @@ refreshIcons();
           </div>
           <div class="field"><label>Nome completo *</label><input id="co3-nome" type="text" placeholder="Seu nome"></div>
           <div class="field"><label>Telefone *</label><input id="co3-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-          <div class="field"><label>Data de <span id="co3-data-lbl">entrega</span> *</label>
-            <button type="button" class="cal-trigger" id="co3-data-btn" onclick="event.stopPropagation();abrirCal('co3')">Selecionar data</button>
-            <input type="hidden" id="co3-data">
-          </div>
+          <!-- Data foi para passo 1 -->
 
-          <!-- Endereço (entrega) -->
-          <div id="co3-end-bloco">
-            <div class="field">
-              <label>CEP *</label>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input id="co3-cep2" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="co3BuscarCep()">
-                <div id="co3-cep-spin" class="spin hidden" style="flex-shrink:0"></div>
-              </div>
-            </div>
-            <div id="co3-end-fields" class="hidden">
-              <div class="field"><label>Rua</label><input id="co3-rua" type="text" readonly style="background:var(--bg4)"></div>
-              <div class="row2">
-                <div class="field"><label>Bairro</label><input id="co3-bairro" type="text" readonly style="background:var(--bg4)"></div>
-                <div class="field"><label>Cidade/UF</label><input id="co3-cidade" type="text" readonly style="background:var(--bg4)"></div>
-              </div>
-              <div class="row2">
-                <div class="field"><label>Numero *</label><input id="co3-num" type="text" placeholder="Ex: 123"></div>
-                <div class="field"><label>Complemento</label><input id="co3-comp" type="text" placeholder="Apto, bloco..."></div>
-              </div>
-            </div>
-            <input type="hidden" id="co3-end-full">
-            <div id="co3-zona-info" style="margin-top:8px;display:none"></div>
-          </div>
-
-          <!-- Local de retirada -->
-          <div id="co3-ret-bloco" class="hidden">
-            <div id="co3-ret-info" style="background:var(--bg3);border:2px solid var(--green);border-radius:12px;padding:12px;margin-top:4px">
-              <div style="font-size:11px;color:var(--text3)">Selecione a data acima para ver o local de retirada</div>
-            </div>
-            <input type="hidden" id="co3-ret-local">
-          </div>
+          <!-- campos hidden para compatibilidade -->
+          <input type="hidden" id="co3-cep2">
+          <input type="hidden" id="co3-num">
+          <input type="hidden" id="co3-comp">
+          <div id="co3-end-fields" class="hidden"></div>
+          <div id="co3-end-bloco"></div>
+          <div id="co3-zona-info" style="display:none"></div>
+          <!-- Resumo do endereço escolhido no passo 1 -->
+          <div id="co3-end-resumo" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);display:none;margin-bottom:12px"></div>
 
           <div class="field" style="margin-top:12px"><label>Observacoes</label><textarea id="co3-obs" placeholder="Alguma observacao..." style="height:68px;resize:none"></textarea></div>
         </div>
