@@ -722,6 +722,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="metodos">
             <button type="button" class="met-btn active" id="met-pix">Pix</button>
           </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:10px;padding:12px 14px;margin-top:10px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div>
+              <div style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Chave Pix</div>
+              <div id="co-chave-pix" style="font-size:15px;font-weight:800;color:var(--green-bright);letter-spacing:.5px">21976081746</div>
+            </div>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('co-chave-pix').textContent).then(()=>toast('Chave copiada!','ok'))" style="margin-left:auto;background:none;border:1px solid var(--green-mid);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--green-bright);font-family:var(--font)">Copiar</button>
+          </div>
         </div>
         <!-- Métodos na entrega -->
         <div id="co-pag-entr-box" class="hidden">
@@ -3010,6 +3018,10 @@ function abrirCo(){
     document.getElementById('co-end').value=(perfil.endereco||'')+', '+(perfil.bairro||'')+' - '+(perfil.cidade||'');
     document.getElementById('co-end-fields').classList.remove('hidden');
   }
+  // Atualizar chave Pix com número configurado
+  const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+  const chavePIXel = document.getElementById('co-chave-pix');
+  if(chavePIXel) chavePIXel.textContent = chavePix;
   updCoResumo();
   setOverlayState('co-ov',true);
 }
@@ -3113,54 +3125,88 @@ function updCoResumo(){
 }
 
 function buildTextoWhatsApp(pedido,itens){
-  const end=[pedido.endereco,pedido.numero].filter(Boolean).join(', no ');
-  const sub=itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  const promo=calcPromoAuto(sub);
-  const freteGratis=promo?.freteGratis||false;
-  const taxa=pedido.entrega==='Entrega'&&!freteGratis?TAXA:0;
-  const descCupom=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
-  const descPromo=promo?.desconto||0;
-  const desc=descCupom+descPromo;
-  const totalFinal=Math.max(0,sub+taxa-desc);
-  const itensTxt=itens.map(it=>{
-    const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
-    return it.qty+'x '+p.nome+(p.peso?' ('+p.peso+')':'')+' = R$ '+fp(p.preco*it.qty);
+  const isEntrega = pedido.entrega === 'Entrega';
+  const end = [pedido.endereco, pedido.numero].filter(Boolean).join(' - N.');
+  const endFull = end + (pedido.complemento ? ' - ' + pedido.complemento : '');
+
+  const sub = itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+  const promo = calcPromoAuto(sub);
+  const freteGratis = promo?.freteGratis||false;
+  const taxa = isEntrega && !freteGratis ? TAXA : 0;
+  const descCupom = cupomAtivo ? Math.round(sub*cupomAtivo.desconto/100*100)/100 : 0;
+  const descPromo = promo?.desconto||0;
+  const desc = descCupom + descPromo;
+  const totalFinal = Math.max(0, sub + taxa - desc);
+
+  // Itens
+  const itensTxt = itens.map(it=>{
+    const p = prods.find(x=>x.id===it.prodId); if(!p) return '';
+    return it.qty + 'x ' + p.nome;
   }).filter(Boolean).join('\n');
-  // Se tiver template personalizado, usa ele
+
+  // Pagamento
+  const pagBruto = pedido.pagamento||'';
+  let pagLabel = '';
+  let pagExtra = '';
+  if(pagBruto.toLowerCase().includes('pix')){
+    pagLabel = 'Pix';
+    const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+    pagExtra = 'Chave Pix: ' + chavePix;
+  } else if(pagBruto.toLowerCase().includes('dinheiro')){
+    pagLabel = 'Dinheiro';
+    // Troco
+    const trocoVal = pedido.troco||'';
+    if(trocoVal && trocoVal !== 'sem troco'){
+      pagExtra = 'Troco: R$ ' + fp(parseFloat(trocoVal));
+    } else {
+      pagExtra = 'Troco: Não';
+    }
+  } else {
+    pagLabel = 'Cartão';
+  }
+
+  // Template personalizado (se existir)
   if(WPP_MSG_TEMPLATE){
     return WPP_MSG_TEMPLATE
-      .replace(/{nome}/g,pedido.nome||'')
-      .replace(/{contato}/g,pedido.contato||'')
-      .replace(/{itens}/g,itensTxt)
-      .replace(/{total}/g,'R$ '+fp(totalFinal))
-      .replace(/{subtotal}/g,'R$ '+fp(sub))
-      .replace(/{taxa}/g,'R$ '+fp(taxa))
-      .replace(/{entrega}/g,pedido.entrega||'')
-      .replace(/{pagamento}/g,pedido.pagamento||'')
-      .replace(/{data}/g,pedido.data||'')
-      .replace(/{endereco}/g,end||pedido.endereco||'')
-      .replace(/{obs}/g,pedido.obs||'');
+      .replace(/{nome}/g, pedido.nome||'')
+      .replace(/{contato}/g, pedido.contato||'')
+      .replace(/{itens}/g, itensTxt)
+      .replace(/{total}/g, 'R$ '+fp(totalFinal))
+      .replace(/{subtotal}/g, 'R$ '+fp(sub))
+      .replace(/{taxa}/g, 'R$ '+fp(taxa))
+      .replace(/{entrega}/g, pedido.entrega||'')
+      .replace(/{pagamento}/g, pagLabel)
+      .replace(/{data}/g, pedido.data||'')
+      .replace(/{endereco}/g, endFull||'')
+      .replace(/{obs}/g, pedido.obs||'');
   }
-  // Template padrão
-  const linhas=[
-    '=== PEDIDO ===',
-    'Cliente: '+pedido.nome,
-    pedido.contato?'Contato: '+pedido.contato:'',
-    'Entrega prevista: '+pedido.data,
-    end?'Endereco: '+end:'',
-    pedido.complemento?'Complemento: '+pedido.complemento:'',
-    'Entrega: '+pedido.entrega,
-    'Pagamento: '+pedido.pagamento,
-    pedido.obs?'Obs: '+pedido.obs:'',
-    '---',
+
+  // Template padrão formatado
+  const linhas = [
+    'Tipo de serviço: ' + (isEntrega ? 'Entrega' : 'Retirada'),
+    '',
+    'Nome: ' + (pedido.nome||''),
+    'Telefone: ' + (pedido.contato||''),
+    isEntrega ? 'Endereço: ' + endFull : 'Local de retirada: ' + (endFull||''),
+    'Data de ' + (isEntrega ? 'entrega' : 'retirada') + ': ' + (pedido.data||''),
+    '',
+    '📝 Produtos',
     itensTxt,
-    '---',
-    pedido.entrega==='Entrega'?'Taxa entrega = R$ '+fp(taxa):'',
-    cupomAtivo?'Desconto cupom '+cupomAtivo.nome+' = - R$ '+fp(descCupom):'',
-    promo?'Promo acima R$200 (10% off + frete grátis) = - R$ '+fp(descPromo):'',
-    'TOTAL: R$ '+fp(totalFinal)
+    'Subtotal: R$ ' + fp(sub),
+    isEntrega ? 'Delivery: R$ ' + fp(taxa) : '',
+    descCupom > 0 ? 'Desconto (' + (cupomAtivo?.nome||'cupom') + '): - R$ ' + fp(descCupom) : '',
+    'Total: R$ ' + fp(totalFinal),
+    '',
+    '💲 Pagamento',
+    'Total a pagar: R$ ' + fp(totalFinal),
+    'Forma de pagamento: ' + pagLabel,
+    pagExtra,
+    '',
+    pedido.obs ? '📋 Observações\n' + pedido.obs : '',
+    '',
+    '👆 Por favor, envie-nos esta mensagem agora. 👆'
   ];
-  return linhas.filter(Boolean).join('\n');
+    return linhas.filter(v=>v!==null&&v!==undefined&&v!=='').join('\n');
 }
 
 async function gerarCodigo(dataPedido){
@@ -3286,7 +3332,8 @@ async function enviarPedido(){
     numero:isRetirada?'':document.getElementById('co-num').value,
     complemento:comp,
     data:fd(document.getElementById('co-data').value),
-    entrega:cart.entrega,pagamento:pagLabel,
+    entrega:cart.entrega,pagamento:pag,
+    troco:document.getElementById('co-troco').value,
     obs:document.getElementById('co-obs').value
   },itensCopy);
   abrirWhatsApp(txtWpp);
