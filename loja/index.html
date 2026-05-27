@@ -1264,7 +1264,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <!-- Mensagem WhatsApp -->
       <div class="acard-sm full-col">
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="message-circle"></i> Mensagem de Pedido (WhatsApp)</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Variáveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:2">Variaveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{contato}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{subtotal}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{taxa}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{troco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{chave_pix}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
         <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
         <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
         <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
@@ -3155,6 +3155,9 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template personalizado (se existir)
   if(WPP_MSG_TEMPLATE){
+    const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+    const trocoVal = pedido.troco||'';
+    const trocoTxt = trocoVal && trocoVal!=='sem troco' ? 'R$ '+fp(parseFloat(trocoVal)) : 'Nao';
     return WPP_MSG_TEMPLATE
       .replace(/{nome}/g, pedido.nome||'')
       .replace(/{contato}/g, pedido.contato||'')
@@ -3166,7 +3169,9 @@ function buildTextoWhatsApp(pedido,itens){
       .replace(/{pagamento}/g, pagLabel)
       .replace(/{data}/g, pedido.data||'')
       .replace(/{endereco}/g, endFull||'')
-      .replace(/{obs}/g, pedido.obs||'');
+      .replace(/{obs}/g, pedido.obs||'')
+      .replace(/{troco}/g, trocoTxt)
+      .replace(/{chave_pix}/g, pagLabel==='Pix' ? chavePix : '');
   }
 
   // Template padrao formatado
