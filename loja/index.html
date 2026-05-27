@@ -3357,7 +3357,6 @@ async function enviarPedido(){
     const dp2=_pr2?.desconto||0;
     const totalPix=Math.max(0,sub2+taxa2-dc2-dp2);
     btn.disabled=false;btn.textContent='FINALIZAR PEDIDO';
-    fecharCo();
     abrirPixModal(totalPix, {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed:document.getElementById('co-data').value, pagLabel, pag});
     return;
   }
@@ -5817,6 +5816,7 @@ function abrirPixModal(total, pedidoData){
   document.getElementById('pix-codigo-txt').textContent = payload;
   _pixQR(document.getElementById('pix-qr-canvas'), payload);
   const ov = document.getElementById('pix-modal-ov');
+  document.body.appendChild(ov); // garantir que está no topo do DOM
   ov.style.display = 'flex';
   ov.classList.add('open');
 }
@@ -5843,6 +5843,66 @@ async function confirmarPagamentoPix(){
   if(!_pixPedidoData){ fecharPixModal(); return; }
   fecharPixModal();
   await _finalizarPedido(_pixPedidoData);
+}
+
+// ── FINALIZAR PEDIDO APÓS PIX ──
+async function _finalizarPedido(dados){
+  const {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed, pagLabel, pag} = dados;
+  fecharCo();
+  abrirWhatsApp(txtWpp);
+  try{
+    const codigo = await gerarCodigo(dataPed);
+    const sub = itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
+    const _promo = calcPromoAuto(sub);
+    const _freteGratis = _promo?.freteGratis||false;
+    const taxaBase = (_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0));
+    const taxa = !isRetirada&&!_freteGratis ? taxaBase : 0;
+    const descCupomEnv = cupomAtivo ? Math.round(sub*cupomAtivo.desconto/100*100)/100 : 0;
+    const descPromoEnv = _promo?.desconto||0;
+    const desc = descCupomEnv + descPromoEnv;
+    const insertData = {
+      user_id: perfil.id,
+      cliente_nome: nome,
+      cliente_contato: tel,
+      cliente_endereco: end,
+      cliente_numero: isRetirada ? '' : (document.getElementById('co-num')?.value||''),
+      cliente_complemento: comp||null,
+      entrega: isRetirada ? 'Retirada' : 'Entrega',
+      taxa_entrega: taxa,
+      pagamento: pagLabel,
+      status: 'Pendente',
+      observacoes: document.getElementById('co-obs')?.value||'',
+      subtotal: sub,
+      total: Math.max(0, sub + taxa - desc),
+      data_pedido: dataPed
+    };
+    if(codigo) insertData.codigo = codigo;
+    if(cupomAtivo) insertData.cupom = cupomAtivo.nome;
+    const {data:ped, error} = await sb.from('pedidos').insert(insertData).select().single();
+    if(error) throw error;
+    await sb.from('itens_pedido').insert(itensCopy.map(it=>{
+      const p = prods.find(x=>x.id===it.prodId);
+      return {pedido_id:ped.id, produto_id:p.id, nome_produto:p.nome, peso_produto:p.peso||'', preco_unitario:p.preco, quantidade:it.qty, subtotal:p.preco*it.qty};
+    }));
+    if(cupomAtivo){
+      const {data:cupNow} = await sb.from('cupons').select('usos_restantes').eq('id',cupomAtivo.id).single();
+      if(cupNow && cupNow.usos_restantes > 0)
+        await sb.from('cupons').update({usos_restantes: cupNow.usos_restantes-1}).eq('id', cupomAtivo.id);
+    }
+    await Promise.all(itensCopy.map(it=>{
+      const p = prods.find(x=>x.id===it.prodId);
+      if(!p || p.estoque==null) return Promise.resolve();
+      const novo = Math.max(0, p.estoque - it.qty);
+      p.estoque = novo;
+      return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
+    }));
+    cupomAtivo = null;
+    cart = {itens:[], entrega:'Entrega'};
+    updCartBadge();
+    mostrarSucesso();
+  }catch(e){
+    toast('Erro ao salvar pedido: ' + e.message, 'err');
+  }
 }
 
 init();
