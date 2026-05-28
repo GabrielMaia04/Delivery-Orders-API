@@ -697,22 +697,23 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 /* ── COUNTDOWN BOTÃO PIX ── */
 .co3-pix-countdown{
   width:100%;padding:14px;border-radius:12px;
-  background:var(--bg3);border:2px solid var(--border);
-  color:var(--text2);font-size:14px;font-weight:700;
+  background:transparent;border:2px solid var(--border);
+  color:transparent;font-size:14px;font-weight:800;
   font-family:var(--font);text-align:center;cursor:not-allowed;
-  margin-top:8px;transition:all .3s;
+  transition:all .4s ease;display:flex;align-items:center;justify-content:center;gap:8px;
+  pointer-events:none;
 }
 .co3-pix-countdown.ready{
   background:var(--green);border-color:var(--green);
-  color:#fff;cursor:pointer;
+  color:#fff;cursor:pointer;pointer-events:auto;
 }
 .co3-pix-countdown-bar{
   width:100%;height:3px;background:var(--border);border-radius:2px;
-  margin-top:10px;overflow:hidden;
+  margin-top:6px;overflow:hidden;
 }
 .co3-pix-countdown-progress{
   height:100%;background:var(--green);border-radius:2px;
-  transition:width .1s linear;
+  transition:width 1s linear;
 }
 </style>
 </head>
@@ -6109,8 +6110,10 @@ function co3RenderResumoItens(){
   if(!el2) return;
   el2.innerHTML=cart.itens.map(it=>{
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
-    const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="">`:'<span style="font-size:18px">🥦</span>';
-    return`<div class="co3-resumo-item"><div class="co3-resumo-img">${imgEl}</div><div class="co3-resumo-nome">${p.nome}<br><span class="co3-resumo-qty">${it.qty}x</span></div><div class="co3-resumo-preco">R$ ${fp(p.preco*it.qty)}</div></div>`;
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span style="color:var(--text2)">${it.qty}x <strong style="color:var(--text)">${p.nome}</strong></span>
+      <span style="font-weight:700;color:var(--text);white-space:nowrap;margin-left:8px">R$ ${fp(p.preco*it.qty)}</span>
+    </div>`;
   }).join('');
 }
 
@@ -6322,8 +6325,25 @@ function co3SetMomento(v){
     else btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
   }
   document.getElementById('co3-pag').value = v==='agora' ? 'Pix' : document.getElementById('co3-pag-entrega-met').value;
-  if(v==='agora'){ setTimeout(co3GerarQR,50); co3IniciarCountdown(); }
-  else { const w=document.getElementById('co3-countdown-wrap');if(w)w.style.display='none'; clearInterval(_co3CountdownTimer); }
+  if(v==='agora'){
+    // Pagar agora (Pix): iniciar countdown, esconder botão direto
+    const wrap=document.getElementById('co3-countdown-wrap');
+    const btn=document.getElementById('co3-btn-finalizar');
+    if(wrap)wrap.style.display='block';
+    if(btn)btn.style.display='none';
+    setTimeout(co3GerarQR,50);
+    co3IniciarCountdown();
+  }else{
+    // Pagar na entrega: esconder countdown, mostrar botão direto
+    const wrap=document.getElementById('co3-countdown-wrap');
+    const btn=document.getElementById('co3-btn-finalizar');
+    if(wrap)wrap.style.display='none';
+    if(btn){
+      btn.style.display='flex';
+      btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
+    }
+    clearInterval(_co3CountdownTimer);
+  }
 }
 
 // ── CO3: MÉTODO NA ENTREGA ──
@@ -6403,17 +6423,9 @@ function co3Passo2(){
 function co3SetPag(v){
   co3PagMetodo=v;
   document.getElementById('co3-pag').value=v;
-  const wrap=document.getElementById('co3-countdown-wrap');
-  const btn=document.getElementById('co3-btn-finalizar');
   if(v==='Pix'){
-    if(wrap)wrap.style.display='block';
-    if(btn)btn.style.display='none';
     setTimeout(co3GerarQR,100);
     co3IniciarCountdown();
-  }else{
-    if(wrap)wrap.style.display='none';
-    if(btn){btn.style.display='flex';btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';}
-    clearInterval(_co3CountdownTimer);
   }
 }
 
@@ -6671,35 +6683,25 @@ async function co3CalcFreteComNum(){
 let _co3CountdownTimer = null;
 
 function co3IniciarCountdown(){
-  const wrap = document.getElementById('co3-countdown-wrap');
-  const btn = document.getElementById('co3-btn-finalizar');
-  const num = document.getElementById('co3-countdown-num');
-  const bar = document.getElementById('co3-countdown-bar');
-  const cbtn = document.getElementById('co3-countdown-btn');
-  if(!wrap) return;
-
-  // Mostrar countdown, esconder botão finalizar
-  wrap.style.display = 'block';
-  if(btn) btn.style.display = 'none';
-  if(cbtn) cbtn.classList.remove('ready');
-
-  let segundos = 15;
-  if(num) num.textContent = segundos;
-  if(bar) bar.style.width = '100%';
-
+  const wrap=document.getElementById('co3-countdown-wrap');
+  const btn=document.getElementById('co3-btn-finalizar');
+  const bar=document.getElementById('co3-countdown-bar');
+  const cbtn=document.getElementById('co3-countdown-btn');
+  if(!wrap)return;
+  wrap.style.display='block';
+  if(btn)btn.style.display='none';
+  if(cbtn)cbtn.classList.remove('ready');
+  if(bar)bar.style.width='100%';
   clearInterval(_co3CountdownTimer);
-  _co3CountdownTimer = setInterval(()=>{
-    segundos--;
-    if(num) num.textContent = segundos;
-    if(bar) bar.style.width = (segundos/15*100)+'%';
-    if(segundos <= 0){
+  let seg=15;
+  _co3CountdownTimer=setInterval(()=>{
+    seg--;
+    if(bar)bar.style.width=(seg/15*100)+'%';
+    if(seg<=0){
       clearInterval(_co3CountdownTimer);
-      if(cbtn){
-        cbtn.classList.add('ready');
-        cbtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei — Confirmar pedido';
-      }
+      if(cbtn)cbtn.classList.add('ready');
     }
-  }, 1000);
+  },1000);
 }
 
 function co3FinalizarReady(){
@@ -6996,7 +6998,8 @@ refreshIcons();
           </button>
           <div id="co3-countdown-wrap" style="display:none;width:100%">
             <button class="co3-pix-countdown" id="co3-countdown-btn" onclick="co3FinalizarReady()">
-              Aguarde <span id="co3-countdown-num">15</span>s para confirmar o pagamento...
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Ja paguei — Confirmar pedido
             </button>
             <div class="co3-pix-countdown-bar"><div class="co3-pix-countdown-progress" id="co3-countdown-bar" style="width:100%"></div></div>
           </div>
