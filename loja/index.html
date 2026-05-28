@@ -6550,32 +6550,81 @@ function co3CalSel(iso){
 // Usar Haversine * 1.3 como fator de correção urbana para RJ é mais preciso
 
 async function distanciaRota(lat1,lng1,lat2,lng2){
-  // Usar Haversine * fator urbano (mais confiável para RJ)
-  // ORS frequentemente retorna rotas via vias expressas causando valores 2x maiores
-  const linhaReta = haversine(lat1,lng1,lat2,lng2);
-  
-  // Tentar ORS mas aceitar só se estiver dentro de 1.6x a linha reta
+  // Haversine * 1.35 (fator urbano RJ calibrado)
+  // ORS retorna rotas inconsistentes no RJ (via vias expressas)
+  return haversine(lat1,lng1,lat2,lng2) * 1.35;
+}
+
+// Busca CEP sem calcular frete (só preenche os campos de endereço)
+async function co3BuscarCepSemFrete(){
+  const cepEl = document.getElementById('co3-cep');
+  const info = document.getElementById('co3-frete-info');
+  if(!cepEl) return;
+  const cep = cepEl.value.replace(/\D/g,'');
+  if(cep.length !== 8) return;
+  if(info){ info.style.display='block'; info.textContent='Buscando endereço...'; info.style.color='var(--text2)'; }
   try{
-    const url='https://api.openrouteservice.org/v2/directions/driving-car';
-    const body={coordinates:[[lng1,lat1],[lng2,lat2]],units:'km'};
-    const r=await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
-      body:JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error('ORS '+r.status);
-    const data=await r.json();
-    const km=data.routes?.[0]?.summary?.distance;
-    if(!km||km<=0) throw new Error('sem rota');
-    // Aceitar ORS somente se plausível (≤ 1.6x linha reta)
-    if(km <= linhaReta * 1.6) return km;
-    // ORS retornou rota suspeita — usar Haversine calibrada
-    console.warn('ORS retornou '+km.toFixed(1)+'km vs '+linhaReta.toFixed(1)+'km linha reta — usando Haversine');
+    const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d = await r.json();
+    if(!d.erro){
+      document.getElementById('co3-rua-p1').value = d.logradouro||'';
+      document.getElementById('co3-bairro-p1').value = d.bairro||'';
+      document.getElementById('co3-cidade-p1').value = (d.localidade||'')+' / '+(d.uf||'');
+      document.getElementById('co3-end-full').value = (d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
+      window._cartCepData = d;
+      if(info){ info.textContent='CEP encontrado. Informe o numero para calcular o frete.'; info.style.color='var(--text2)'; }
+      document.getElementById('co3-num-p1').focus();
+    } else {
+      if(info){ info.textContent='CEP não encontrado.'; info.style.color='var(--red)'; }
+    }
   }catch(e){
-    console.warn('ORS indisponível:', e.message);
+    if(info){ info.textContent='Erro ao buscar CEP.'; info.style.color='var(--red)'; }
   }
-  // Haversine * 1.35 (fator empírico para área urbana do RJ)
-  return linhaReta * 1.35;
+}
+
+// Calcula frete após o número ser preenchido
+async function co3CalcFreteComNum(){
+  const num = document.getElementById('co3-num-p1')?.value.trim();
+  const cepEl = document.getElementById('co3-cep');
+  const info = document.getElementById('co3-frete-info');
+  if(!num || !cepEl) return;
+  const cep = cepEl.value.replace(/\D/g,'');
+  if(cep.length !== 8 || !window._cartCepData) return;
+
+  if(info){ info.style.display='block'; info.textContent='Calculando frete...'; info.style.color='var(--text2)'; }
+
+  // Atualizar end-full com número
+  const d = window._cartCepData;
+  const endBase = (d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
+  document.getElementById('co3-end-full').value = endBase;
+
+  if(!LOJA_LAT || !LOJA_LNG){
+    TAXA = zonas[0]?.taxa || TAXA;
+    co3FreteCalculado = true; _freteCalculado = true;
+    if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
+    co3UpdateResumo(); return;
+  }
+
+  try{
+    const result = await geocodificarCEP(cep);
+    if(!result){ if(info){ info.textContent='Não foi possível calcular o frete.'; info.style.color='var(--orange)'; } return; }
+    window._cartCoords = {lat:result.lat, lng:result.lng};
+    const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
+    if(dist > RAIO_MAX){
+      if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; }
+      return;
+    }
+    const zona = calcularZona(dist);
+    if(zona){
+      TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true;
+      if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
+      co3UpdateResumo();
+    } else {
+      if(info){ info.textContent='Endereço fora das zonas configuradas.'; info.style.color='var(--orange)'; }
+    }
+  }catch(e){
+    if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }
+  }
 }
 
 init();
@@ -6704,11 +6753,11 @@ refreshIcons();
               </div>
               <div class="field"><label>Nome de quem vai receber *</label><input id="co3-recebedor" type="text" placeholder="Nome completo"></div>
               <div class="field"><label>CEP *</label>
-                <input id="co3-cep" type="text" placeholder="00000-000" maxlength="9" oninput="mascaraCep(this)" onblur="co3AutoBuscarCep()">
+                <input id="co3-cep" type="text" placeholder="00000-000" maxlength="9" oninput="mascaraCep(this)" onblur="co3BuscarCepSemFrete()">
               </div>
               <div class="field"><label>Rua / Logradouro</label><input id="co3-rua-p1" type="text" placeholder="Preenchido pelo CEP" class="co3-readonly" readonly></div>
               <div class="row2">
-                <div class="field"><label>Numero *</label><input id="co3-num-p1" type="text" placeholder="Ex: 123"></div>
+                <div class="field"><label>Numero *</label><input id="co3-num-p1" type="text" placeholder="Ex: 123" onblur="co3CalcFreteComNum()"></div>
                 <div class="field"><label>Complemento</label><input id="co3-comp-p1" type="text" placeholder="Apto..."></div>
               </div>
               <div class="field"><label>Bairro</label><input id="co3-bairro-p1" type="text" class="co3-readonly" readonly></div>
