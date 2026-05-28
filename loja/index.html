@@ -2321,31 +2321,7 @@ function pararRealtime(){
 
 // Fórmula Haversine — distância em km entre dois pontos lat/lng
 // Distância por ROTA REAL via OpenRouteService
-async function distanciaRota(lat1,lng1,lat2,lng2){
-  try{
-    const url='https://api.openrouteservice.org/v2/directions/driving-car';
-    const body={
-      coordinates:[[lng1,lat1],[lng2,lat2]], // ORS usa [lng,lat]
-      units:'km'
-    };
-    const r=await fetch(url,{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':ORS_KEY
-      },
-      body:JSON.stringify(body)
-    });
-    if(!r.ok)throw new Error('ORS status '+r.status);
-    const d=await r.json();
-    const km=d.routes?.[0]?.summary?.distance;
-    if(!km)throw new Error('Sem rota');
-    return km; // distância em km por rota real
-  }catch(e){
-    console.warn('ORS falhou, usando linha reta:',e.message);
-    return haversine(lat1,lng1,lat2,lng2); // fallback
-  }
-}
+
 
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371;
