@@ -6498,7 +6498,7 @@ co3SetPag = function(v){
 // ── CO3: co3Finalizar atualizado ──
 co3Finalizar = async function(){
   const momento = document.getElementById('co3-pag-momento')?.value||'agora';
-  const pag = documento?.getElementById ? document.getElementById('co3-pag')?.value : 'Pix';
+  const pag = document.getElementById('co3-pag')?.value||'Pix';
   
   if(momento==='entrega'){
     const met = document.getElementById('co3-pag-entrega-met')?.value||'Cartao';
