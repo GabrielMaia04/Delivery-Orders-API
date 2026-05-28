@@ -693,6 +693,27 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 /* Quando resumo oculto, conteúdo ocupa tudo */
 .co3-body.sem-resumo{grid-template-columns:1fr;max-width:680px}
+
+/* ── COUNTDOWN BOTÃO PIX ── */
+.co3-pix-countdown{
+  width:100%;padding:14px;border-radius:12px;
+  background:var(--bg3);border:2px solid var(--border);
+  color:var(--text2);font-size:14px;font-weight:700;
+  font-family:var(--font);text-align:center;cursor:not-allowed;
+  margin-top:8px;transition:all .3s;
+}
+.co3-pix-countdown.ready{
+  background:var(--green);border-color:var(--green);
+  color:#fff;cursor:pointer;
+}
+.co3-pix-countdown-bar{
+  width:100%;height:3px;background:var(--border);border-radius:2px;
+  margin-top:10px;overflow:hidden;
+}
+.co3-pix-countdown-progress{
+  height:100%;background:var(--green);border-radius:2px;
+  transition:width .1s linear;
+}
 </style>
 </head>
 <body>
@@ -6058,6 +6079,7 @@ function co3GoStep(n){
   // Resumo só no passo 1
   const _resumo=document.getElementById('co3-resumo-sidebar');
   if(_resumo) _resumo.style.display = n===1 ? 'block' : 'none';
+  co3RenderResumoItens();
   // Resumo: só no passo 1
   const resumoEl=document.querySelector('.co3-resumo');
   const bodyEl=document.querySelector('.co3-body');
@@ -6082,8 +6104,19 @@ function co3GoStep(n){
   if(n===3&&co3PagMetodo==='Pix')co3GerarQR();
 }
 
+function co3RenderResumoItens(){
+  const el2=document.getElementById('co3-resumo-items');
+  if(!el2) return;
+  el2.innerHTML=cart.itens.map(it=>{
+    const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
+    const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="">`:'<span style="font-size:18px">🥦</span>';
+    return`<div class="co3-resumo-item"><div class="co3-resumo-img">${imgEl}</div><div class="co3-resumo-nome">${p.nome}<br><span class="co3-resumo-qty">${it.qty}x</span></div><div class="co3-resumo-preco">R$ ${fp(p.preco*it.qty)}</div></div>`;
+  }).join('');
+}
+
 function co3RenderItems(){
-  const el=document.getElementById('co3-items-list'),el2=document.getElementById('co3-resumo-items');
+  co3RenderResumoItens();
+  const el=document.getElementById('co3-items-list');
   if(!el)return;
   if(!cart.itens.length){el.innerHTML='<div class="empty">Carrinho vazio</div>';return;}
   el.innerHTML=cart.itens.map((it,i)=>{
@@ -6091,7 +6124,6 @@ function co3RenderItems(){
     const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="${p.nome}">`:'<span style="font-size:24px">🥦</span>';
     return`<div class="co3-item"><div class="co3-item-img">${imgEl}</div><div class="co3-item-info"><div class="co3-item-name">${p.nome}</div><div class="co3-item-peso">${p.peso||''}</div><div class="co3-item-qty"><button class="co3-qty-btn" onclick="co3ChgQty(${i},-1)">−</button><span class="co3-qty-num">${it.qty}</span><button class="co3-qty-btn" onclick="co3ChgQty(${i},1)">+</button></div></div><div class="co3-item-price">R$ ${fp(p.preco*it.qty)}</div></div>`;
   }).join('');
-  if(el2){el2.innerHTML=cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);if(!p)return'';const imgEl=p.imagem_url?`<img src="${p.imagem_url}" alt="">`:'<span style="font-size:18px">🥦</span>';return`<div class="co3-resumo-item"><div class="co3-resumo-img">${imgEl}</div><div class="co3-resumo-nome">${p.nome}<br><span class="co3-resumo-qty">${it.qty}x</span></div><div class="co3-resumo-preco">R$ ${fp(p.preco*it.qty)}</div></div>`;}).join('');}
 }
 
 function co3ChgQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();co3RenderItems();co3UpdateResumo();}
@@ -6290,7 +6322,8 @@ function co3SetMomento(v){
     else btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
   }
   document.getElementById('co3-pag').value = v==='agora' ? 'Pix' : document.getElementById('co3-pag-entrega-met').value;
-  if(v==='agora') setTimeout(co3GerarQR, 50);
+  if(v==='agora'){ setTimeout(co3GerarQR,50); co3IniciarCountdown(); }
+  else { const w=document.getElementById('co3-countdown-wrap');if(w)w.style.display='none'; clearInterval(_co3CountdownTimer); }
 }
 
 // ── CO3: MÉTODO NA ENTREGA ──
@@ -6368,10 +6401,21 @@ function co3Passo2(){
 
 // ── CO3: co3SetPag para pagar agora (só Pix) ──
 function co3SetPag(v){
-  co3PagMetodo = v;
-  document.getElementById('co3-pag').value = v;
-  if(v==='Pix') setTimeout(co3GerarQR, 100);
-};
+  co3PagMetodo=v;
+  document.getElementById('co3-pag').value=v;
+  const wrap=document.getElementById('co3-countdown-wrap');
+  const btn=document.getElementById('co3-btn-finalizar');
+  if(v==='Pix'){
+    if(wrap)wrap.style.display='block';
+    if(btn)btn.style.display='none';
+    setTimeout(co3GerarQR,100);
+    co3IniciarCountdown();
+  }else{
+    if(wrap)wrap.style.display='none';
+    if(btn){btn.style.display='flex';btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';}
+    clearInterval(_co3CountdownTimer);
+  }
+}
 
 // ── CO3: co3Finalizar atualizado ──
 async function co3Finalizar(){
@@ -6622,6 +6666,46 @@ async function co3CalcFreteComNum(){
   }catch(e){
     if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }
   }
+}
+
+let _co3CountdownTimer = null;
+
+function co3IniciarCountdown(){
+  const wrap = document.getElementById('co3-countdown-wrap');
+  const btn = document.getElementById('co3-btn-finalizar');
+  const num = document.getElementById('co3-countdown-num');
+  const bar = document.getElementById('co3-countdown-bar');
+  const cbtn = document.getElementById('co3-countdown-btn');
+  if(!wrap) return;
+
+  // Mostrar countdown, esconder botão finalizar
+  wrap.style.display = 'block';
+  if(btn) btn.style.display = 'none';
+  if(cbtn) cbtn.classList.remove('ready');
+
+  let segundos = 15;
+  if(num) num.textContent = segundos;
+  if(bar) bar.style.width = '100%';
+
+  clearInterval(_co3CountdownTimer);
+  _co3CountdownTimer = setInterval(()=>{
+    segundos--;
+    if(num) num.textContent = segundos;
+    if(bar) bar.style.width = (segundos/15*100)+'%';
+    if(segundos <= 0){
+      clearInterval(_co3CountdownTimer);
+      if(cbtn){
+        cbtn.classList.add('ready');
+        cbtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei — Confirmar pedido';
+      }
+    }
+  }, 1000);
+}
+
+function co3FinalizarReady(){
+  const cbtn = document.getElementById('co3-countdown-btn');
+  if(!cbtn || !cbtn.classList.contains('ready')) return;
+  co3Finalizar();
 }
 
 init();
@@ -6910,9 +6994,15 @@ refreshIcons();
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             Voltar
           </button>
-          <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()">
+          <div id="co3-countdown-wrap" style="display:none;width:100%">
+            <button class="co3-pix-countdown" id="co3-countdown-btn" onclick="co3FinalizarReady()">
+              Aguarde <span id="co3-countdown-num">15</span>s para confirmar o pagamento...
+            </button>
+            <div class="co3-pix-countdown-bar"><div class="co3-pix-countdown-progress" id="co3-countdown-bar" style="width:100%"></div></div>
+          </div>
+          <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()" style="display:none">
             <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Ja paguei — Confirmar
+            Ja paguei — Confirmar pedido
           </button>
         </div>
         <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">Ao finalizar, voce concorda com nossos <a href="https://cortadinhos.com/privacidade" target="_blank" style="color:var(--text3);text-decoration:underline">Termos e Privacidade</a></p>
