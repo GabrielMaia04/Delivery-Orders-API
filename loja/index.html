@@ -3809,7 +3809,10 @@ function popConfirm(icon,title,msg,labelOk,clsOk,cbOk){
     {label:labelOk,cls:clsOk||'pbtn-ok',cb:cbOk}
   ]);
 }
-document.getElementById('g-popup').addEventListener('click',e=>{if(e.target===document.getElementById('g-popup'))closePopup()});
+document.addEventListener('DOMContentLoaded',()=>{
+  const _gpe=document.getElementById('g-popup');
+  if(_gpe)_gpe.addEventListener('click',e=>{if(e.target===_gpe)closePopup();});
+});
 
 
 function abrirModal(id){
@@ -6035,20 +6038,6 @@ async function _finalizarPedido(dados){
 // ══════════════════════════════════════
 let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='';
 
-function abrirCo3(){
-  if(!perfil){window._coPend=true;abrirAuth();return}
-  co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
-  const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
-  if(n&&!n.value)n.value=perfil.nome||'';
-  if(t&&!t.value)t.value=perfil.telefone||'';
-  const cartCep=document.getElementById('cart-cep')?.value;
-  if(cartCep){const c1=document.getElementById('co3-cep'),c2=document.getElementById('co3-cep2');if(c1)c1.value=cartCep;if(c2)c2.value=cartCep;}
-  co3SetModalidade(co3Modalidade);
-  co3GoStep(1);co3RenderItems();co3UpdateResumo();
-  const ov=document.getElementById('co3-ov');
-  document.body.appendChild(ov);ov.style.display='flex';ov.classList.add('open');ov.scrollTop=0;
-}
-
 function fecharCo3(){
   const ov=document.getElementById('co3-ov');
   ov.classList.remove('open');ov.style.display='none';updMobileCartBar();
@@ -6116,19 +6105,6 @@ function co3UpdateResumo(){
   return{sub,taxa,descCupom,total};
 }
 
-function co3SetModalidade(v){
-  co3Modalidade=v;cart.entrega=v;
-  const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
-  const cepBloco=document.getElementById('co3-cep-bloco'),endBloco=document.getElementById('co3-end-bloco'),retBloco=document.getElementById('co3-ret-bloco');
-  if(be)be.classList.toggle('active',v==='Entrega');
-  if(br)br.classList.toggle('active',v==='Retirada');
-  if(cepBloco)cepBloco.style.display=v==='Entrega'?'block':'none';
-  if(endBloco)endBloco.classList.toggle('hidden',v==='Retirada');
-  if(retBloco)retBloco.classList.toggle('hidden',v==='Entrega');
-  if(v==='Retirada'){co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
-  co3UpdateResumo();co3RenderRetOpts();
-}
-
 function co3RenderRetOpts(){
   const dataVal=document.getElementById('co3-data')?.value;
   const info=document.getElementById('co3-ret-info'),localInput=document.getElementById('co3-ret-local');
@@ -6168,16 +6144,6 @@ async function co3AplicarCupom(){
   co3CupomAtivo=c;cupomAtivo=c;msg.style.display='block';msg.style.color='var(--green-bright)';msg.textContent='Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';co3UpdateResumo();
 }
 
-function co3Passo2(){
-  if(!cart.itens.length){toast('Carrinho vazio.','err');return;}
-  if(co3Modalidade==='Entrega'&&!co3FreteCalculado){
-    const cepVal=document.getElementById('co3-cep')?.value.replace(/\D/g,'');
-    if(!cepVal||cepVal.length!==8){toast('Calcule o frete pelo CEP antes de continuar.','err');return;}
-    co3CalcFrete().then(()=>co3GoStep(2));return;
-  }
-  co3GoStep(2);
-}
-
 async function co3BuscarCep(){
   const cepEl=document.getElementById('co3-cep2'),spin=document.getElementById('co3-cep-spin');
   if(!cepEl)return;const cep=cepEl.value.replace(/\D/g,'');if(cep.length!==8)return;
@@ -6192,17 +6158,6 @@ function co3Passo3(){
   const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');
   if(erros.length){popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
   co3GoStep(3);co3SetPag('Pix');
-}
-
-function co3SetPag(v){
-  co3PagMetodo=v;
-  ['Pix','Cartao','Dinheiro'].forEach(m=>{const el=document.getElementById('co3-opt-'+m.toLowerCase());if(el)el.classList.toggle('active',m===v);});
-  document.getElementById('co3-pix-box').style.display=v==='Pix'?'block':'none';
-  document.getElementById('co3-cartao-box').style.display=v==='Cartao'?'block':'none';
-  document.getElementById('co3-dinheiro-box').style.display=v==='Dinheiro'?'block':'none';
-  const btn=document.getElementById('co3-btn-finalizar');
-  if(btn)btn.innerHTML=v==='Pix'?'<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei — Confirmar':'<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
-  if(v==='Pix')co3GerarQR();
 }
 
 function co3GerarQR(){
@@ -6224,51 +6179,6 @@ function co3ValidarTroco(){
 }
 function co3ConfirmarTroco(){const val=parseFloat(document.getElementById('co3-troco-val')?.value)||0;const{total}=co3UpdateResumo();if(val<=total){co3ValidarTroco();return;}co3Troco=val.toFixed(2);toast('Troco para R$ '+fp(val)+' confirmado!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 function co3SemTroco(){co3Troco='sem troco';toast('Sem troco!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
-
-async function co3Finalizar(){
-  const pag=co3PagMetodo;
-  if(pag==='Dinheiro'&&!co3Troco){popAlert('💵','Troco obrigatorio','Informe o troco ou clique em Sem troco.');return;}
-  const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim(),data=document.getElementById('co3-data')?.value,obs=document.getElementById('co3-obs')?.value||'';
-  const isRetirada=co3Modalidade==='Retirada';
-  const endFull=isRetirada?(document.getElementById('co3-ret-local')?.value||''):((document.getElementById('co3-end-full')?.value||'')+', '+(document.getElementById('co3-num')?.value||''));
-  const comp=isRetirada?'':(document.getElementById('co3-comp')?.value||'');
-  const{sub,taxa,descCupom,total}=co3UpdateResumo();
-  const trocoTxt=co3Troco&&co3Troco!=='sem troco'?'R$ '+fp(parseFloat(co3Troco)):'Nao';
-  const chavePix=window._WHATSAPP_NUM_DB||WHATSAPP_NUM;
-  let pagLabel=pag;
-  if(pag==='Dinheiro'&&co3Troco&&co3Troco!=='sem troco')pagLabel='Dinheiro (troco p/ R$ '+fp(parseFloat(co3Troco))+')';
-  if(pag==='Dinheiro'&&co3Troco==='sem troco')pagLabel='Dinheiro (sem troco)';
-  const itensTxt=cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:'';}).filter(Boolean).join('\n');
-  const partes=[];
-  partes.push('Tipo de servico: '+co3Modalidade);partes.push('');
-  partes.push('Nome: '+nome);partes.push('Telefone: '+tel);
-  partes.push((isRetirada?'Local de retirada: ':'Endereco: ')+endFull);
-  partes.push('Data de '+(isRetirada?'retirada':'entrega')+': '+fd(data));partes.push('');
-  partes.push('-- Produtos --');partes.push(itensTxt);partes.push('');
-  partes.push('Subtotal: R$ '+fp(sub));
-  if(!isRetirada&&taxa>0)partes.push('Delivery: R$ '+fp(taxa));
-  if(descCupom>0)partes.push('Desconto ('+co3CupomAtivo?.nome+'): - R$ '+fp(descCupom));
-  partes.push('Total: R$ '+fp(total));partes.push('');
-  partes.push('-- Pagamento --');partes.push('Total a pagar: R$ '+fp(total));partes.push('Forma de pagamento: '+pag);
-  if(pag==='Pix')partes.push('Chave Pix: '+chavePix);
-  if(pag==='Dinheiro')partes.push('Troco: '+trocoTxt);
-  if(obs){partes.push('');partes.push('-- Observacoes --');partes.push(obs);}
-  partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
-  const txtWpp=partes.join('\n');
-  const btn=document.getElementById('co3-btn-finalizar');if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
-  abrirWhatsApp(txtWpp);
-  try{
-    const codigo=await gerarCodigo(data);
-    const insertData={user_id:perfil.id,cliente_nome:nome,cliente_contato:tel,cliente_endereco:endFull,cliente_numero:'',cliente_complemento:comp||null,entrega:co3Modalidade,taxa_entrega:taxa,pagamento:pagLabel,status:'Pendente',observacoes:obs,subtotal:sub,total:Math.max(0,sub+taxa-descCupom),data_pedido:data};
-    if(codigo)insertData.codigo=codigo;if(co3CupomAtivo)insertData.cupom=co3CupomAtivo.nome;
-    const{data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();if(error)throw error;
-    const itensCopy=[...cart.itens];
-    await sb.from('itens_pedido').insert(itensCopy.map(it=>{const p=prods.find(x=>x.id===it.prodId);return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};}));
-    if(co3CupomAtivo){const{data:cupNow}=await sb.from('cupons').select('usos_restantes').eq('id',co3CupomAtivo.id).single();if(cupNow&&cupNow.usos_restantes>0)await sb.from('cupons').update({usos_restantes:cupNow.usos_restantes-1}).eq('id',co3CupomAtivo.id);}
-    await Promise.all(itensCopy.map(it=>{const p=prods.find(x=>x.id===it.prodId);if(!p||p.estoque==null)return Promise.resolve();const novo=Math.max(0,p.estoque-it.qty);p.estoque=novo;return sb.from('produtos').update({estoque:novo}).eq('id',p.id);}));
-    cupomAtivo=null;co3CupomAtivo=null;cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo3();mostrarSucesso();
-  }catch(e){toast('Erro ao salvar pedido: '+e.message,'err');if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}}
-}
 
 // ── CO3: DATAS DISPONÍVEIS (próximas 3 terças e sextas) ──
 function co3RenderDatas(){
@@ -6307,17 +6217,9 @@ function co3SelecionarData(iso, label){
 }
 
 // ── CO3: AUTO BUSCAR CEP (no blur) ──
-async function co3AutoBuscarCep(){
-  const cepEl = document.getElementById('co3-cep');
-  if(!cepEl) return;
-  const cep = cepEl.value.replace(/\D/g,'');
-  if(cep.length===8) await co3CalcFrete();
-}
-
-
 // ── CO3: Atualizar co3SetModalidade para p1 ──
 
-co3SetModalidade = function(v){
+function co3SetModalidade(v){
   co3Modalidade=v;cart.entrega=v;
   const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
   if(be)be.classList.toggle('active',v==='Entrega');
@@ -6338,7 +6240,7 @@ co3SetModalidade = function(v){
 
 // ── CO3: Abrir co3 chama RenderDatas ──
 
-abrirCo3 = function(){
+function abrirCo3(){
   _abrirCo3Orig();
   co3RenderDatas();
 };
@@ -6420,7 +6322,7 @@ async function co3AutoBuscarCep(){
 }
 
 // ── CO3: VALIDAR PASSO 2 ATUALIZADO ──
-co3Passo2 = function(){
+function co3Passo2(){
   if(!cart.itens.length){ toast('Carrinho vazio.','err'); return; }
   const data = document.getElementById('co3-data')?.value;
   if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
@@ -6442,14 +6344,14 @@ co3Passo2 = function(){
 };
 
 // ── CO3: co3SetPag para pagar agora (só Pix) ──
-co3SetPag = function(v){
+function co3SetPag(v){
   co3PagMetodo = v;
   document.getElementById('co3-pag').value = v;
   if(v==='Pix') setTimeout(co3GerarQR, 100);
 };
 
 // ── CO3: co3Finalizar atualizado ──
-co3Finalizar = async function(){
+async function co3Finalizar(){
   const momento = document.getElementById('co3-pag-momento')?.value||'agora';
   const pag = document.getElementById('co3-pag')?.value||'Pix';
   
