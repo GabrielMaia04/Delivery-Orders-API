@@ -657,11 +657,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   max-width:280px;line-height:1.5;
 }
 .min-balloon.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.min-balloon::after{
-  content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
-  width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
-  border-top:8px solid #e53935;
-}
+
 
 /* ── STEP 1 GRID ── */
 .co3-step1-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
@@ -674,6 +670,26 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .co3-momento-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .co3-momento-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green-bright)}
 .co3-pag-disabled{opacity:.35;pointer-events:none}
+
+/* ── CALENDÁRIO INLINE CO3 ── */
+.co3-cal-inline{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.co3-cal-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.co3-cal-nav-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.co3-cal-nav-btn:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.co3-cal-month{font-size:13px;font-weight:700;color:var(--text)}
+.co3-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:8px}
+.co3-cal-dow{font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:4px 0;text-transform:uppercase}
+.co3-cal-day{height:34px;border-radius:8px;border:none;background:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;transition:all .12s;color:var(--text3)}
+.co3-cal-day.empty{pointer-events:none}
+.co3-cal-day.disabled{color:var(--border2);cursor:not-allowed;opacity:.4}
+.co3-cal-day.available{color:var(--green-bright);background:var(--green-light);font-weight:800}
+.co3-cal-day.available:hover{background:var(--green);color:#fff}
+.co3-cal-day.selected{background:var(--green)!important;color:#fff!important;box-shadow:0 2px 8px rgba(45,140,78,.35)}
+.co3-cal-day.today{outline:2px solid var(--border2)}
+.co3-cal-hint{font-size:11px;color:var(--text3);text-align:center;padding:6px 0 10px;display:flex;align-items:center;justify-content:center;gap:5px}
+.co3-cal-dot{width:7px;height:7px;border-radius:50%;background:var(--green-bright);display:inline-block}
+.co3-cal-selected-label{text-align:center;padding:8px;font-size:13px;font-weight:700;color:var(--green-bright);border-top:1px solid var(--border);display:none}
+.co3-cal-selected-label.show{display:block}
 </style>
 </head>
 <body>
@@ -6240,7 +6256,7 @@ function co3SetModalidade(v){
   // Passo 2
   const endBloco=document.getElementById('co3-end-bloco'),retBloco2=document.getElementById('co3-ret-bloco');
   // label data
-  const lbl=document.getElementById('co3-data-lbl');if(lbl)lbl.textContent=v==='Entrega'?'entrega':'retirada';
+  const lbl=document.getElementById('co3-data-lbl-wrap');if(lbl)lbl.textContent='Data de '+(v==='Entrega'?'entrega':'retirada');
   if(v==='Retirada'){co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
   co3UpdateResumo();co3RenderRetOpts();co3RenderDatas();
 };
@@ -6256,7 +6272,8 @@ function abrirCo3(){
   if(n&&!n.value)n.value=perfil.nome||'';
   if(t&&!t.value)t.value=perfil.telefone||'';
   co3SetModalidade(co3Modalidade);
-  co3GoStep(1);co3RenderItems();co3UpdateResumo();co3RenderDatas();
+  co3GoStep(1);co3RenderItems();co3UpdateResumo();
+  co3CalInit();
   const ov=document.getElementById('co3-ov');
   document.body.appendChild(ov);ov.style.display='flex';ov.classList.add('open');ov.scrollTop=0;
 }
@@ -6453,6 +6470,116 @@ async function co3Finalizar(){
   }
 };
 
+// ── CO3: CALENDÁRIO INLINE ──
+let _co3CalAno = 0, _co3CalMes = 0;
+
+function co3CalInit(){
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  _co3CalAno = hoje.getFullYear();
+  _co3CalMes = hoje.getMonth();
+  co3CalRender();
+}
+
+function co3CalNav(d){
+  _co3CalMes += d;
+  if(_co3CalMes > 11){ _co3CalMes = 0; _co3CalAno++; }
+  if(_co3CalMes < 0){ _co3CalMes = 11; _co3CalAno--; }
+  co3CalRender();
+}
+
+function co3CalRender(){
+  const MESES_LONG = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS = ['D','S','T','Q','Q','S','S'];
+  const monthEl = document.getElementById('co3-cal-month');
+  const gridEl = document.getElementById('co3-cal-grid');
+  if(!monthEl||!gridEl) return;
+
+  monthEl.textContent = MESES_LONG[_co3CalMes] + ' ' + _co3CalAno;
+
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
+
+  // Calcular as 3 proximas datas disponíveis
+  const proximas = new Set();
+  const d = new Date(amanha);
+  while(proximas.size < 3){
+    if(d.getDay()===2 || d.getDay()===5) proximas.add(
+      d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+    );
+    d.setDate(d.getDate()+1);
+  }
+
+  const selVal = document.getElementById('co3-data')?.value || '';
+  const primeiroDia = new Date(_co3CalAno, _co3CalMes, 1).getDay();
+  const totalDias = new Date(_co3CalAno, _co3CalMes+1, 0).getDate();
+
+  let html = DOWS.map(d=>`<div class="co3-cal-dow">${d}</div>`).join('');
+  for(let i=0; i<primeiroDia; i++) html += '<div class="co3-cal-day empty"></div>';
+
+  for(let dia=1; dia<=totalDias; dia++){
+    const dt = new Date(_co3CalAno, _co3CalMes, dia);
+    const iso = _co3CalAno+'-'+String(_co3CalMes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+    const isHoje = dt.getTime() === hoje.getTime();
+    const isDisp = proximas.has(iso);
+    const isSel = iso === selVal;
+    let cls = 'co3-cal-day';
+    if(isDisp) cls += ' available';
+    else cls += ' disabled';
+    if(isSel) cls += ' selected';
+    if(isHoje) cls += ' today';
+    if(isDisp){
+      html += `<button class="${cls}" onclick="co3CalSel('${iso}')">${dia}</button>`;
+    } else {
+      html += `<div class="${cls}">${dia}</div>`;
+    }
+  }
+  gridEl.innerHTML = html;
+}
+
+function co3CalSel(iso){
+  document.getElementById('co3-data').value = iso;
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+  const MESES2 = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const label = DIAS[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES2[m-1];
+  const lblEl = document.getElementById('co3-cal-selected-label');
+  if(lblEl){ lblEl.textContent = label + ' selecionado'; lblEl.classList.add('show'); }
+  co3CalRender();
+  if(co3Modalidade==='Retirada') co3RenderRetOpts();
+}
+
+// ══════════════════════════════════════
+// FIX: DISTÂNCIA POR ROTA MAIS PRECISA
+// ══════════════════════════════════════
+// Substituir distanciaRota para usar linha reta com fator de correção
+// A API ORS às vezes retorna rotas muito longas por pegar estradas sem acesso
+// Usar Haversine * 1.3 como fator de correção urbana para RJ é mais preciso
+
+async function distanciaRota(lat1,lng1,lat2,lng2){
+  // Tentar ORS primeiro
+  try{
+    const url='https://api.openrouteservice.org/v2/directions/driving-car';
+    const body={coordinates:[[lng1,lat1],[lng2,lat2]],units:'km'};
+    const r=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
+      body:JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error('ORS '+r.status);
+    const data=await r.json();
+    const km=data.routes?.[0]?.summary?.distance;
+    if(!km||km<=0) throw new Error('sem rota');
+    // Limitar a 2x a distância em linha reta (evitar rotas absurdas)
+    const linhaReta = haversine(lat1,lng1,lat2,lng2);
+    return Math.min(km, linhaReta * 2.0);
+  }catch(e){
+    console.warn('ORS fallback para Haversine:', e.message);
+    // Fallback: linha reta * fator urbano 1.25
+    return haversine(lat1,lng1,lat2,lng2) * 1.25;
+  }
+}
+
 init();
 verificarResetSenha();
 
@@ -6550,12 +6677,21 @@ refreshIcons();
 
           <!-- ESQUERDA: DATA -->
           <div class="co3-card">
-            <div class="co3-card-title" style="margin-bottom:14px">
+            <div class="co3-card-title" style="margin-bottom:10px">
               <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Data de <span id="co3-data-lbl">entrega</span>
+              <span id="co3-data-lbl-wrap">Data de entrega</span>
             </div>
-            <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Somente terças e sextas. Selecione uma das 3 proximas datas disponíveis.</p>
-            <button type="button" class="cal-trigger" id="co3-data-btn" onclick="event.stopPropagation();abrirCal('co3')">Selecionar data</button>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:10px">Somente terças e sextas — próximas 3 datas disponíveis.</p>
+            <div class="co3-cal-inline" id="co3-cal-inline">
+              <div class="co3-cal-nav">
+                <button class="co3-cal-nav-btn" onclick="co3CalNav(-1)">&#8592;</button>
+                <span class="co3-cal-month" id="co3-cal-month"></span>
+                <button class="co3-cal-nav-btn" onclick="co3CalNav(1)">&#8594;</button>
+              </div>
+              <div class="co3-cal-grid" id="co3-cal-grid"></div>
+              <div class="co3-cal-hint"><span class="co3-cal-dot"></span> Terças e sextas disponíveis</div>
+              <div class="co3-cal-selected-label" id="co3-cal-selected-label"></div>
+            </div>
             <input type="hidden" id="co3-data">
           </div>
 
