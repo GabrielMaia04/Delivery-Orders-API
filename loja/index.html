@@ -697,23 +697,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 /* ── COUNTDOWN BOTÃO PIX ── */
 .co3-pix-countdown{
   width:100%;padding:14px;border-radius:12px;
-  background:transparent;border:2px solid var(--border);
-  color:transparent;font-size:14px;font-weight:800;
+  background:var(--green);border:2px solid var(--green);
+  color:#fff;font-size:14px;font-weight:800;
   font-family:var(--font);text-align:center;cursor:not-allowed;
-  transition:all .4s ease;display:flex;align-items:center;justify-content:center;gap:8px;
-  pointer-events:none;
+  transition:opacity .4s ease;display:flex;align-items:center;justify-content:center;gap:8px;
+  pointer-events:none;opacity:.35;
 }
 .co3-pix-countdown.ready{
-  background:var(--green);border-color:var(--green);
-  color:#fff;cursor:pointer;pointer-events:auto;
-}
-.co3-pix-countdown-bar{
-  width:100%;height:3px;background:var(--border);border-radius:2px;
-  margin-top:6px;overflow:hidden;
-}
-.co3-pix-countdown-progress{
-  height:100%;background:var(--green);border-radius:2px;
-  transition:width 1s linear;
+  opacity:1;cursor:pointer;pointer-events:auto;
 }
 </style>
 </head>
@@ -6685,18 +6676,15 @@ let _co3CountdownTimer = null;
 function co3IniciarCountdown(){
   const wrap=document.getElementById('co3-countdown-wrap');
   const btn=document.getElementById('co3-btn-finalizar');
-  const bar=document.getElementById('co3-countdown-bar');
   const cbtn=document.getElementById('co3-countdown-btn');
   if(!wrap)return;
   wrap.style.display='block';
   if(btn)btn.style.display='none';
   if(cbtn)cbtn.classList.remove('ready');
-  if(bar)bar.style.width='100%';
   clearInterval(_co3CountdownTimer);
   let seg=15;
   _co3CountdownTimer=setInterval(()=>{
     seg--;
-    if(bar)bar.style.width=(seg/15*100)+'%';
     if(seg<=0){
       clearInterval(_co3CountdownTimer);
       if(cbtn)cbtn.classList.add('ready');
@@ -7001,7 +6989,7 @@ refreshIcons();
               <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Ja paguei — Confirmar pedido
             </button>
-            <div class="co3-pix-countdown-bar"><div class="co3-pix-countdown-progress" id="co3-countdown-bar" style="width:100%"></div></div>
+
           </div>
           <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()" style="display:none">
             <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
