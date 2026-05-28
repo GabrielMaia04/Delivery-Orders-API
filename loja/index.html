@@ -2348,56 +2348,53 @@ async function geocodificar(endereco){
 }
 
 async function geocodificarCEP(cep){
-  const cepLimpo=cep.replace(/\D/g,'');
+  const cepLimpo = cep.replace(/\D/g,'');
   try{
-    // 1. ViaCEP para dados do endereço
-    const rv=await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
-    const dv=await rv.json();
-    if(dv.erro)return null;
+    // 1. ViaCEP para dados do endereço (nome da rua, bairro, cidade)
+    const rv = await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
+    const dv = await rv.json();
+    if(dv.erro) return null;
 
-    // 2. ORS Geocoding (mais confiável para BR, usa nossa chave existente)
+    // 2. BrasilAPI v2 — retorna centroide do polígono do CEP (mais preciso)
     try{
-      const texto=(dv.logradouro?dv.logradouro+', ':'')+
-        (dv.bairro?dv.bairro+', ':'')+
-        dv.localidade+', '+dv.uf+', Brasil';
-      const orsUrl='https://api.openrouteservice.org/geocode/search?'
-        +'text='+encodeURIComponent(texto)
-        +'&boundary.country=BRA&size=1&lang=pt';
-      const ro=await fetch(orsUrl,{headers:{'Authorization':ORS_KEY,'Accept':'application/json, application/geo+json'}});
-      if(ro.ok){
-        const dors=await ro.json();
-        const feat=dors.features?.[0];
-        if(feat){
-          const[lng,lat]=feat.geometry.coordinates;
-          return{lat,lng,viacep:dv};
+      const rb = await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
+      if(rb.ok){
+        const db = await rb.json();
+        if(db.location?.coordinates?.latitude){
+          return {lat:db.location.coordinates.latitude, lng:db.location.coordinates.longitude, viacep:dv};
         }
       }
     }catch(e2){}
 
-    // 3. BrasilAPI v2 (coordenadas por CEP)
+    // 3. Nominatim buscando por POSTALCODE (mais preciso que busca por rua)
     try{
-      const rb=await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
-      if(rb.ok){
-        const db=await rb.json();
-        if(db.location?.coordinates?.latitude){
-          return{lat:db.location.coordinates.latitude,lng:db.location.coordinates.longitude,viacep:dv};
+      const nomUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&postalcode='+cepLimpo+'&country=Brazil';
+      const rn = await fetch(nomUrl, {headers:{'User-Agent':'Cortadinhos/1.0'}});
+      if(rn.ok){
+        const dn = await rn.json();
+        if(dn[0]){
+          return {lat:parseFloat(dn[0].lat), lng:parseFloat(dn[0].lon), viacep:dv};
         }
       }
     }catch(e3){}
 
-    // 4. Nominatim fallback
-    const tentativas=[];
-    if(dv.logradouro&&dv.bairro)tentativas.push(dv.logradouro+', '+dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
-    if(dv.bairro)tentativas.push(dv.bairro+', '+dv.localidade+', '+dv.uf+', Brasil');
-    tentativas.push(dv.localidade+', '+dv.uf+', Brasil');
-    for(const busca of tentativas){
-      const c=await geocodificar(busca);
-      if(c)return{...c,viacep:dv};
-      await new Promise(r=>setTimeout(r,400));
-    }
+    // 4. Nominatim fallback por bairro + cidade (NÃO por rua — evita resultados errados)
+    try{
+      const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
+      const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
+      const rn2 = await fetch(nomUrl2, {headers:{'User-Agent':'Cortadinhos/1.0'}});
+      if(rn2.ok){
+        const dn2 = await rn2.json();
+        if(dn2[0]){
+          return {lat:parseFloat(dn2[0].lat), lng:parseFloat(dn2[0].lon), viacep:dv};
+        }
+      }
+    }catch(e4){}
+
     return null;
   }catch(e){return null}
 }
+
 
 // Calcular zona do cliente baseado na distância
 function calcularZona(distKm){
