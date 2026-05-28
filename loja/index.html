@@ -6574,7 +6574,11 @@ function co3CalSel(iso){
 // Usar Haversine * 1.3 como fator de correção urbana para RJ é mais preciso
 
 async function distanciaRota(lat1,lng1,lat2,lng2){
-  // Tentar ORS primeiro
+  // Usar Haversine * fator urbano (mais confiável para RJ)
+  // ORS frequentemente retorna rotas via vias expressas causando valores 2x maiores
+  const linhaReta = haversine(lat1,lng1,lat2,lng2);
+  
+  // Tentar ORS mas aceitar só se estiver dentro de 1.6x a linha reta
   try{
     const url='https://api.openrouteservice.org/v2/directions/driving-car';
     const body={coordinates:[[lng1,lat1],[lng2,lat2]],units:'km'};
@@ -6587,14 +6591,15 @@ async function distanciaRota(lat1,lng1,lat2,lng2){
     const data=await r.json();
     const km=data.routes?.[0]?.summary?.distance;
     if(!km||km<=0) throw new Error('sem rota');
-    // Limitar a 2x a distância em linha reta (evitar rotas absurdas)
-    const linhaReta = haversine(lat1,lng1,lat2,lng2);
-    return Math.min(km, linhaReta * 2.0);
+    // Aceitar ORS somente se plausível (≤ 1.6x linha reta)
+    if(km <= linhaReta * 1.6) return km;
+    // ORS retornou rota suspeita — usar Haversine calibrada
+    console.warn('ORS retornou '+km.toFixed(1)+'km vs '+linhaReta.toFixed(1)+'km linha reta — usando Haversine');
   }catch(e){
-    console.warn('ORS fallback para Haversine:', e.message);
-    // Fallback: linha reta * fator urbano 1.25
-    return haversine(lat1,lng1,lat2,lng2) * 1.25;
+    console.warn('ORS indisponível:', e.message);
   }
+  // Haversine * 1.35 (fator empírico para área urbana do RJ)
+  return linhaReta * 1.35;
 }
 
 init();
