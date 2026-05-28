@@ -730,10 +730,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="sum-row taxa hidden" id="c-taxa" style="display:none!important"></div>
       <div class="sum-row hidden" id="c-desc-row" style="color:var(--green-bright)"><span id="c-desc-label">Desconto</span><span id="c-desc-val" style="color:var(--green-bright)">- R$ 0,00</span></div>
       <div class="total-row"><span class="total-label">Total</span><span class="total-val" id="c-total">R$ 0,00</span></div>
-      <!-- campos hidden mantidos para compatibilidade -->
-      <input id="cart-cep" type="hidden"><div id="cart-frete-info" style="display:none"></div>
+      <!-- campos hidden para compatibilidade com updSums -->
+      <input id="cart-cep" type="hidden">
+      <div id="cart-frete-info" style="display:none"></div>
       <div id="cart-min-aviso" style="display:none"></div>
-      <input id="cart-cupom-input" type="hidden"><div id="cart-cupom-msg" style="display:none"></div>
+      <input id="cart-cupom-input" type="hidden">
+      <div id="cart-cupom-msg" style="display:none"></div>
+      <!-- span hidden para updSums não quebrar -->
+      <span id="c-taxa-val" style="display:none"></span>
+      <span id="c-desc-label" style="display:none"></span>
+      <span id="c-desc-val" style="display:none"></span>
+      <span id="c-promo-label" style="display:none"></span>
+      <span id="c-promo-val" style="display:none"></span>
+      <div id="cart-de" style="display:none"></div>
+      <div id="cart-dr" style="display:none"></div>
+      <div id="cart-cep-bloco" style="display:none"></div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px">
         <button class="big-btn" style="margin-top:0" id="cart-continuar-btn" onclick="irCheckout()">Continuar</button>
         <button type="button" style="padding:0 16px;border-radius:12px;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)" onclick="limparCarrinho()">Limpar</button>
@@ -2881,7 +2892,7 @@ function calcPromoAuto(sub){
   return null;
 }
 
-function updSums(){
+function updSums(){try{
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
   // Promo automatica acima de R$200
   const promo=calcPromoAuto(sub);
@@ -2892,8 +2903,8 @@ function updSums(){
   const descPromo=promo?.desconto||0;
   const descTotal=descCupom+descPromo;
   const qtd=cart.itens.reduce((s,i)=>s+i.qty,0);
-  document.getElementById('c-itens').textContent=qtd;
-  document.getElementById('c-sub').textContent='R$ '+fp(sub);
+  const _ci=document.getElementById('c-itens');if(_ci)_ci.textContent=qtd;
+  const _cs=document.getElementById('c-sub');if(_cs)_cs.textContent='R$ '+fp(sub);
   const taxaEl=document.getElementById('c-taxa');
   const taxaVal=document.getElementById('c-taxa-val');
   if(cart.entrega==='Entrega'&&!freteGratis){
@@ -2947,9 +2958,7 @@ function updSums(){
   document.getElementById('c-total').textContent='R$ '+fp(Math.max(0,sub+taxa-descTotal));
   // Atualiza botao Continuar
   atualizarBtnContinuar();
-}
-
-
+}catch(e){console.warn('updSums:',e);}}
 function limparCarrinho(){
   if(!cart.itens.length)return;
   popConfirm('🗑️','Esvaziar carrinho?','Todos os itens serão removidos.','Esvaziar','pbtn-danger',()=>{
