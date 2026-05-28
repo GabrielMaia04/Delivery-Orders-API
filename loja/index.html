@@ -3283,7 +3283,7 @@ function buildTextoWhatsApp(pedido,itens){
   let pagExtra = '';
   if(pagBruto.toLowerCase().includes('pix')){
     pagLabel = 'Pix';
-    const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+    const chavePix = '21976081746';
     pagExtra = 'Chave Pix: ' + chavePix;
   } else if(pagBruto.toLowerCase().includes('dinheiro')){
     pagLabel = 'Dinheiro';
@@ -3300,7 +3300,7 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template personalizado (se existir)
   if(WPP_MSG_TEMPLATE){
-    const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+    const chavePix = '21976081746';
     const trocoVal = pedido.troco||'';
     const trocoTxt = trocoVal && trocoVal!=='sem troco' ? 'R$ '+fp(parseFloat(trocoVal)) : 'Nao';
     return WPP_MSG_TEMPLATE
@@ -6401,7 +6401,7 @@ async function co3Finalizar(){
   const pagLabel = momento==='agora' ? 'Pix' :
     (document.getElementById('co3-pag-entrega-met')?.value||'Cartao') +
     (co3Troco&&co3Troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(co3Troco))+')':(co3Troco==='sem troco'?' (sem troco)':''));
-  const chavePix = window._WHATSAPP_NUM_DB || WHATSAPP_NUM;
+  const chavePix = '21976081746';
   const itensTxt = cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:'';}).filter(Boolean).join('\n');
 
   const partes=[];
