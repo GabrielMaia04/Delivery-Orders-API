@@ -6250,9 +6250,16 @@ function co3SetModalidade(v){
 // ── CO3: Abrir co3 chama RenderDatas ──
 
 function abrirCo3(){
-  _abrirCo3Orig();
-  co3RenderDatas();
-};
+  if(!perfil){window._coPend=true;abrirAuth();return}
+  co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
+  const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
+  if(n&&!n.value)n.value=perfil.nome||'';
+  if(t&&!t.value)t.value=perfil.telefone||'';
+  co3SetModalidade(co3Modalidade);
+  co3GoStep(1);co3RenderItems();co3UpdateResumo();co3RenderDatas();
+  const ov=document.getElementById('co3-ov');
+  document.body.appendChild(ov);ov.style.display='flex';ov.classList.add('open');ov.scrollTop=0;
+}
 
 function mostrarBalloon(msg){
   const b = document.getElementById('min-balloon');
