@@ -1603,6 +1603,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
         </div><!-- /admin-content -->
   </div><!-- /admin-body -->
+</div><!-- /screen-admin -->
 
 <!-- PERFIL CLIENTE SHEET -->
 <div class="sheet-overlay" id="perfil-ov" onclick="fecharPerfilOv(event)">
@@ -6313,37 +6314,9 @@ async function co3AutoBuscarCep(){
   if(cep.length===8) await co3CalcFrete();
 }
 
-// ── CO3: Sobrescrever co3CalcFrete para preencher campos p1 também ──
-const _co3CalcFreteOrig = co3CalcFrete;
-co3CalcFrete = async function(){
-  const cepEl=document.getElementById('co3-cep'),info=document.getElementById('co3-frete-info');
-  if(!cepEl||!info)return;
-  const cep=cepEl.value.replace(/\D/g,'');
-  if(cep.length!==8){info.style.display='block';info.style.color='var(--orange)';info.textContent='Digite um CEP valido.';return;}
-  info.style.display='block';info.textContent='Calculando...';info.style.color='var(--text2)';
-  const result=await geocodificarCEP(cep);
-  if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
-  window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
-  // Preencher campos de endereço do passo 1
-  const dv=result.viacep;
-  const rP1=document.getElementById('co3-rua-p1'),bP1=document.getElementById('co3-bairro-p1'),cP1=document.getElementById('co3-cidade-p1');
-  const r2=document.getElementById('co3-rua'),b2=document.getElementById('co3-bairro'),c2=document.getElementById('co3-cidade'),cep2=document.getElementById('co3-cep2');
-  if(rP1)rP1.value=dv.logradouro||'';if(bP1)bP1.value=dv.bairro||'';if(cP1)cP1.value=(dv.localidade||'')+' / '+(dv.uf||'');
-  if(r2)r2.value=dv.logradouro||'';if(b2)b2.value=dv.bairro||'';if(c2)c2.value=(dv.localidade||'')+' / '+(dv.uf||'');
-  if(cep2)cep2.value=cepEl.value;
-  document.getElementById('co3-end-full').value=(dv.logradouro||'')+', '+(dv.bairro||'')+' - '+(dv.localidade||'')+'/'+dv.uf;
-  document.getElementById('co3-end-p1')?.classList.remove('hidden');
-  document.getElementById('co3-end-fields')?.classList.remove('hidden');
-  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
-  const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
-  if(dist>RAIO_MAX){info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
-  const zona=calcularZona(dist);
-  if(zona){TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=dv.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
-  else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
-};
 
 // ── CO3: Atualizar co3SetModalidade para p1 ──
-const _co3SetModalidadeOrig = co3SetModalidade;
+
 co3SetModalidade = function(v){
   co3Modalidade=v;cart.entrega=v;
   const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
@@ -6362,29 +6335,9 @@ co3SetModalidade = function(v){
 };
 
 // ── CO3: Atualizar co3Passo2 para validar passo 1 ──
-const _co3Passo2Orig = co3Passo2;
-co3Passo2 = function(){
-  if(!cart.itens.length){toast('Carrinho vazio.','err');return;}
-  const data = document.getElementById('co3-data')?.value;
-  if(!data){toast('Selecione uma data de '+co3Modalidade.toLowerCase()+'.','err');return;}
-  if(co3Modalidade==='Entrega'){
-    if(!co3FreteCalculado){toast('Calcule o frete pelo CEP antes de continuar.','err');return;}
-    const num = document.getElementById('co3-num-p1')?.value;
-    if(!num){toast('Informe o numero do endereco.','err');return;}
-    // Atualizar end-full com numero
-    const endBase=document.getElementById('co3-end-full')?.value||'';
-    const comp=document.getElementById('co3-comp-p1')?.value||'';
-    document.getElementById('co3-end-full').value=endBase+(endBase.includes(',')?' - N.'+num:', '+num)+(comp?' - '+comp:'');
-  }
-  if(co3Modalidade==='Retirada'){
-    const local=document.getElementById('co3-ret-local')?.value;
-    if(!local){toast('Selecione uma data para ver o local de retirada.','err');return;}
-  }
-  co3GoStep(2);
-};
 
 // ── CO3: Abrir co3 chama RenderDatas ──
-const _abrirCo3Orig = abrirCo3;
+
 abrirCo3 = function(){
   _abrirCo3Orig();
   co3RenderDatas();
