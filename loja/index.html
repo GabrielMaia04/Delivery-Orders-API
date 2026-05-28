@@ -690,6 +690,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .co3-cal-dot{width:7px;height:7px;border-radius:50%;background:var(--green-bright);display:inline-block}
 .co3-cal-selected-label{text-align:center;padding:8px;font-size:13px;font-weight:700;color:var(--green-bright);border-top:1px solid var(--border);display:none}
 .co3-cal-selected-label.show{display:block}
+
+/* Quando resumo oculto, conteúdo ocupa tudo */
+.co3-body.sem-resumo{grid-template-columns:1fr;max-width:680px}
 </style>
 </head>
 <body>
@@ -6079,6 +6082,14 @@ function co3GoStep(n){
     else{d.textContent=i;}
   });
   ['co3-p1','co3-p2','co3-p3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=(i+1===n)?'block':'none';});
+  // Resumo só no passo 1
+  const _resumo=document.getElementById('co3-resumo-sidebar');
+  if(_resumo) _resumo.style.display = n===1 ? 'block' : 'none';
+  // Resumo: só no passo 1
+  const resumoEl=document.querySelector('.co3-resumo');
+  const bodyEl=document.querySelector('.co3-body');
+  if(resumoEl)resumoEl.style.display=n===1?'':'none';
+  if(bodyEl)bodyEl.classList.toggle('sem-resumo',n!==1);
   // Mostrar resumo endereço no passo 2
   if(n>=2){
     const resumoEl=document.getElementById('co3-end-resumo');
@@ -6249,6 +6260,12 @@ function co3SetModalidade(v){
   const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
   if(be)be.classList.toggle('active',v==='Entrega');
   if(br)br.classList.toggle('active',v==='Retirada');
+  // Resumo só aparece na modalidade Entrega
+  const resumoEl=document.querySelector('.co3-resumo');
+  const bodyEl=document.querySelector('.co3-body');
+  const showResumo = v==='Entrega' && co3Step===1;
+  if(resumoEl)resumoEl.style.display=showResumo?'':'none';
+  if(bodyEl)bodyEl.classList.toggle('sem-resumo',!showResumo);
   // Passo 1
   const cepBloco=document.getElementById('co3-cep-bloco'),retBloco=document.getElementById('co3-ret-bloco');
   if(cepBloco)cepBloco.classList.toggle('hidden',v==='Retirada');
@@ -6877,7 +6894,7 @@ refreshIcons();
     </div>
 
     <!-- RESUMO LATERAL -->
-    <div class="co3-resumo">
+    <div class="co3-resumo" id="co3-resumo-sidebar">
       <div class="co3-resumo-title">Resumo do pedido</div>
       <div id="co3-resumo-items" style="margin-bottom:12px"></div>
       <div class="co3-divider"></div>
