@@ -43,8 +43,18 @@ button,input,select,textarea{touch-action:manipulation}
 @media(max-width:420px){.topbar{padding:10px 16px}.brand-name{font-size:15px;max-width:180px}.brand-name span{font-size:10px}.topbar-right{gap:6px}.login-top{padding:8px 12px}.cart-fab{width:38px;height:38px}}
 
 /* HERO */
-.hero{background:linear-gradient(135deg,#2d8c4e,#1a5c30);padding:22px 16px 28px;color:#fff;position:relative;overflow:hidden}
-[data-theme="dark"] .hero{background:linear-gradient(135deg,#1a3d22,#0f2015)}
+.hero{
+  background:linear-gradient(135deg,#1a3d22,#0f2015);
+  padding:22px 16px 28px;color:#fff;position:relative;overflow:hidden;
+}
+.hero-bg-shop{
+  position:absolute;inset:0;
+  background:url('/hero-loja.png') center right / cover no-repeat;
+  opacity:0.25;
+  z-index:0;
+}
+.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,32,21,0.95) 0%,rgba(15,32,21,0.7) 60%,rgba(15,32,21,0.2) 100%);z-index:1}
+.hero>*{position:relative;z-index:2}
 .hero::after{content:'';position:absolute;right:-22px;bottom:-22px;width:110px;height:110px;border:2px solid rgba(255,255,255,.16);border-radius:28px;transform:rotate(18deg);opacity:.55}
 .hero-sub{font-size:13px;opacity:.85;margin-bottom:4px}
 .hero-title{font-size:20px;font-weight:800;line-height:1.2;margin-bottom:14px}
@@ -740,6 +750,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
   <div class="hero">
+  <div class="hero-bg-shop"></div>
     <div class="hero-sub" id="hero-msg">Bem-vindo!</div>
     <div class="hero-title ico-gap">Fresquinho e direto pra sua mesa <i data-lucide="utensils"></i></div>
     <div class="search-box"><input id="shop-search" type="text" placeholder="Buscar produtos..." oninput="renderShop()"></div>
