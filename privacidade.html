@@ -1,145 +1,151 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Termos e Privacidade — Cortadinhos com Carinho</title>
   <meta name="description" content="Termos de uso, política de privacidade e política de reembolso da Cortadinhos com Carinho."/>
   <meta name="robots" content="noindex"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="shortcut icon" href="/favicon.ico"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
     :root{
-      --green:#2E7D32;--green-mid:#4CAF50;--green-light:#81C26D;--green-pale:#F0F7EE;
-      --orange:#E07B00;
-      --cream:#FAFAF7;--white:#fff;
-      --text:#1A2E1A;--text2:#4A6A4A;--text3:#8A9E8A;
-      --border:rgba(46,125,50,0.12);
-      --shadow:0 2px 12px rgba(46,125,50,0.10);
+      --green:#2d8c4e;--green-h:#25763f;--green-light:#e8f5ee;--green-mid:#b8dfc7;
+      --bg:#0f1410;--bg2:#161d17;--bg3:#1c251e;--bg4:#222d24;
+      --border:#2a3a2c;--border2:#334535;
+      --text:#e8f0e9;--text2:#b8ccba;--text3:#7a9880;
+      --orange:#ffa726;--orange-soft:#2a1e0a;
+      --green-bright:#4ade80;
+      --shadow:0 2px 12px rgba(0,0,0,.4);--r:14px;--font:'DM Sans',sans-serif;
     }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html{scroll-behavior:smooth}
-    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:15px}
+    img{max-width:100%;display:block}
+    a{text-decoration:none;color:inherit}
 
     /* NAV */
     nav{
-      position:sticky;top:0;z-index:100;
-      background:rgba(250,250,247,0.96);backdrop-filter:blur(16px);
-      border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:300;
+      background:#161d17;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      box-shadow:0 2px 16px rgba(0,0,0,0.3);
       height:62px;padding:0 24px;
       display:flex;align-items:center;justify-content:space-between;
     }
-    .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-    .nav-logo-icon{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center}
-    .nav-logo-icon svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-    .nav-logo-text span{display:block;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--green);line-height:1.1}
-    .nav-logo-text small{font-size:10px;color:var(--orange);font-weight:600;letter-spacing:1px;text-transform:uppercase}
+    .nav-logo{display:flex;align-items:center;text-decoration:none}
+    .nav-logo img{height:44px;width:auto;object-fit:contain}
     .btn-back{
       display:inline-flex;align-items:center;gap:7px;
-      border:1.5px solid var(--green);color:var(--green);
+      border:1.5px solid rgba(255,255,255,0.2);color:rgba(200,230,201,0.85);
       padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;
-      text-decoration:none;transition:all .2s;
+      transition:all .2s;
     }
     .btn-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-    .btn-back:hover{background:var(--green);color:#fff}
+    .btn-back:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.35)}
 
     /* HERO */
     .hero{
-      background:linear-gradient(150deg,var(--green-pale) 0%,var(--cream) 100%);
-      padding:56px 24px 40px;
+      background:#161d17;
+      padding:52px 24px 40px;
       border-bottom:1px solid var(--border);
       text-align:center;
     }
     .hero-badge{
       display:inline-flex;align-items:center;gap:8px;
-      background:#fff;border:1.5px solid var(--border);
+      background:rgba(45,140,78,0.15);border:1px solid rgba(45,140,78,0.3);
+      color:var(--green-bright);
       padding:6px 14px;border-radius:50px;margin-bottom:18px;
-      font-size:12px;font-weight:600;color:var(--green);
+      font-size:12px;font-weight:600;
     }
-    .badge-dot{width:7px;height:7px;background:var(--green-mid);border-radius:50%}
-    .hero h1{
-      font-family:'Playfair Display',serif;
-      font-size:clamp(26px,4vw,42px);color:var(--text);margin-bottom:12px;line-height:1.15;
-    }
-    .hero p{font-size:14px;color:var(--text2);margin-bottom:4px}
+    .badge-dot{width:7px;height:7px;background:var(--green-bright);border-radius:50%}
+    .hero h1{font-size:clamp(24px,3.5vw,38px);font-weight:800;color:var(--text);margin-bottom:10px;line-height:1.2}
+    .hero p{font-size:14px;color:var(--text2);margin-bottom:4px;line-height:1.6}
     .hero .cnpj{font-size:13px;color:var(--text3);margin-top:8px}
 
-    /* TABS NAV */
-    .tabs-wrap{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:62px;z-index:90}
+    /* TABS */
+    .tabs-wrap{background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:62px;z-index:90}
     .tabs{max-width:860px;margin:0 auto;padding:0 24px;display:flex;gap:0}
     .tab-link{
       padding:14px 20px;font-size:13px;font-weight:600;color:var(--text3);
       text-decoration:none;border-bottom:2px solid transparent;
       transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;
     }
-    .tab-link:hover{color:var(--text);border-color:var(--border)}
-    .tab-link.active{color:var(--green);border-color:var(--green)}
+    .tab-link:hover{color:var(--text2);border-color:var(--border2)}
+    .tab-link.active{color:var(--green-bright);border-color:var(--green-bright)}
+    .tab-link svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
     /* CONTENT */
     .content{max-width:860px;margin:0 auto;padding:48px 24px 80px}
 
     /* SECTION */
-    .section{margin-bottom:56px;scroll-margin-top:120px}
-    .section-header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+    .section{margin-bottom:56px;scroll-margin-top:126px}
+    .section-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
     .section-icon{
-      width:44px;height:44px;border-radius:12px;background:var(--green-pale);
+      width:46px;height:46px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
       display:flex;align-items:center;justify-content:center;flex-shrink:0;
     }
-    .section-icon svg{width:22px;height:22px;stroke:var(--green);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    .section-header h2{font-family:'Playfair Display',serif;font-size:clamp(20px,2.5vw,28px);color:var(--text)}
-    .section-label{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--orange);text-transform:uppercase;margin-bottom:4px}
+    .section-icon svg{width:22px;height:22px;stroke:var(--green-bright);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .section-header h2{font-size:clamp(20px,2.5vw,26px);font-weight:800;color:var(--text)}
+    .section-label{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--green-bright);text-transform:uppercase;margin-bottom:4px;opacity:.8}
 
     /* CARD */
     .card{
-      background:#fff;border:1px solid var(--border);border-radius:16px;
-      padding:24px 28px;margin-bottom:16px;box-shadow:var(--shadow);
+      background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+      padding:24px 28px;margin-bottom:16px;
     }
-    .card p{font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:12px}
+    .card p{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:12px}
     .card p:last-child{margin-bottom:0}
-    .card ul{padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px;margin:12px 0}
+    .card strong{color:var(--text);font-weight:700}
+    .card ul{padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px;margin:12px 0}
     .card li{
       display:flex;align-items:flex-start;gap:10px;
-      font-size:14px;color:var(--text2);line-height:1.6;
+      font-size:14px;color:var(--text2);line-height:1.65;
     }
-    .card li::before{
-      content:'';width:20px;height:20px;flex-shrink:0;margin-top:1px;
-      background:var(--green-pale);border-radius:50%;
+    .li-dot{
+      width:20px;height:20px;flex-shrink:0;margin-top:2px;
+      border-radius:50%;background:rgba(74,222,128,0.12);
       display:flex;align-items:center;justify-content:center;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;background-position:center;background-size:12px;
     }
+    .li-dot svg{width:11px;height:11px;stroke:#4ade80;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
     .highlight{
-      background:var(--green-pale);border:1px solid rgba(46,125,50,0.2);
+      background:rgba(45,140,78,0.12);border:1px solid rgba(45,140,78,0.25);
       border-radius:10px;padding:14px 18px;margin-top:16px;
       display:flex;align-items:center;gap:10px;
     }
-    .highlight svg{width:18px;height:18px;stroke:var(--green);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-    .highlight span{font-size:13px;font-weight:600;color:var(--green)}
+    .highlight svg{width:18px;height:18px;stroke:#4ade80;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .highlight span{font-size:13px;font-weight:600;color:#4ade80}
     .alert{
-      background:#FFF8EE;border:1px solid rgba(224,123,0,0.25);
+      background:rgba(255,167,38,0.08);border:1px solid rgba(255,167,38,0.2);
       border-radius:10px;padding:14px 18px;margin-top:16px;
       display:flex;align-items:center;gap:10px;
     }
     .alert svg{width:18px;height:18px;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
     .alert span{font-size:13px;font-weight:600;color:var(--orange)}
-
-    /* SUBSECTION */
-    .sub-title{font-size:13px;font-weight:700;color:var(--text);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+    .sub-title{font-size:12px;font-weight:700;color:var(--text);margin:18px 0 10px;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
 
     /* FOOTER */
     .footer-doc{
-      background:var(--green);padding:32px 24px;text-align:center;color:#fff;
+      background:#0f1410;border-top:1px solid var(--border);
+      padding:36px 24px;text-align:center;
     }
-    .footer-doc p{font-size:13px;opacity:.75;margin-bottom:4px}
-    .footer-doc strong{font-size:14px;opacity:1}
-    .footer-doc a{color:#fff;text-decoration:underline;opacity:.75}
+    .footer-doc strong{font-size:15px;font-weight:800;color:var(--text);display:block;margin-bottom:6px}
+    .footer-doc p{font-size:13px;color:var(--text3);margin-bottom:4px;line-height:1.6}
+    .footer-doc a{color:var(--text2);text-decoration:underline;transition:color .15s}
+    .footer-doc a:hover{color:var(--text)}
 
     @media(max-width:600px){
-      .hero{padding:44px 16px 32px}
+      nav{padding:0 16px;height:56px}
+      .nav-logo img{height:38px}
+      .hero{padding:40px 16px 32px}
       .content{padding:32px 16px 80px}
       .card{padding:18px}
       .tabs{overflow-x:auto;scrollbar-width:none}
       .tabs::-webkit-scrollbar{display:none}
-      nav{padding:0 16px}
+      .tab-link{padding:12px 14px;font-size:12px}
     }
   </style>
 </head>
@@ -147,8 +153,8 @@
 
 <!-- NAV -->
 <nav>
-  <a href="/" class="nav-logo" style="display:flex;align-items:center;text-decoration:none">
-    <img src="/logo-unida.png" alt="Cortadinhos com Carinho" style="height:46px;width:auto;object-fit:contain">
+  <a href="/" class="nav-logo">
+    <img src="/logo-unida.png" alt="Cortadinhos com Carinho">
   </a>
   <a href="/" class="btn-back">
     <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
@@ -168,15 +174,15 @@
 <div class="tabs-wrap">
   <div class="tabs">
     <a href="#termos" class="tab-link active">
-      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Termos de Uso
     </a>
     <a href="#privacidade" class="tab-link">
-      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Privacidade (LGPD)
     </a>
     <a href="#reembolso" class="tab-link">
-      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Reembolso
     </a>
   </div>
@@ -188,24 +194,20 @@
   <!-- TERMOS -->
   <section class="section" id="termos">
     <div class="section-header">
-      <div class="section-icon">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      </div>
+      <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div>
         <div class="section-label">Legal</div>
         <h2>Termos de Uso</h2>
       </div>
     </div>
-
     <div class="card">
       <p>Ao utilizar nossos serviços, você concorda com as condições abaixo, estabelecidas em conformidade com o <strong>Código de Defesa do Consumidor (Lei nº 8.078/1990)</strong>.</p>
       <ul>
-        <li>Fornecer dados corretos, completos e atualizados no momento do cadastro e do pedido</li>
-        <li>Revisar cuidadosamente o pedido antes da finalização</li>
-        <li>Os pedidos estão sujeitos à confirmação de disponibilidade e pagamento</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Fornecer dados corretos, completos e atualizados no momento do cadastro e do pedido</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Revisar cuidadosamente o pedido antes da finalização</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Os pedidos estão sujeitos à confirmação de disponibilidade e pagamento</li>
       </ul>
     </div>
-
     <div class="card">
       <div class="sub-title">Sobre as entregas</div>
       <div class="highlight">
@@ -213,9 +215,9 @@
         <span>Entregas realizadas às terças e sextas, das 08h às 13h</span>
       </div>
       <ul style="margin-top:16px">
-        <li>O cliente deve estar disponível para receber o pedido no local indicado</li>
-        <li>Endereços incorretos ou incompletos podem impossibilitar a entrega</li>
-        <li>Em caso de ausência no momento da entrega, poderá ser cobrada nova taxa</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>O cliente deve estar disponível para receber o pedido no local indicado</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Endereços incorretos ou incompletos podem impossibilitar a entrega</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Em caso de ausência no momento da entrega, poderá ser cobrada nova taxa</li>
       </ul>
     </div>
   </section>
@@ -223,32 +225,28 @@
   <!-- PRIVACIDADE -->
   <section class="section" id="privacidade">
     <div class="section-header">
-      <div class="section-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
+      <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
       <div>
         <div class="section-label">LGPD</div>
         <h2>Política de Privacidade</h2>
       </div>
     </div>
-
     <div class="card">
       <p>Coletamos apenas os dados estritamente necessários para a prestação dos nossos serviços, em total conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD)</strong>.</p>
       <div class="sub-title">Dados coletados</div>
       <ul>
-        <li>Nome completo</li>
-        <li>Telefone para contato</li>
-        <li>Endereço de entrega</li>
-        <li>Histórico de pedidos</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Nome completo</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Telefone para contato</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Endereço de entrega</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Histórico de pedidos</li>
       </ul>
     </div>
-
     <div class="card">
       <div class="sub-title">Como usamos seus dados</div>
       <ul>
-        <li>Processamento e confirmação de pedidos</li>
-        <li>Realização e rastreamento de entregas</li>
-        <li>Comunicação sobre pedidos via WhatsApp e e-mail</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Processamento e confirmação de pedidos</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Realização e rastreamento de entregas</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Comunicação sobre pedidos via WhatsApp e e-mail</li>
       </ul>
       <p style="margin-top:16px">Os dados são armazenados pelo tempo necessário para o cumprimento dessas finalidades, podendo ser mantidos para cumprimento de obrigações legais.</p>
       <div class="highlight">
@@ -256,14 +254,13 @@
         <span>Seus dados nunca são vendidos, compartilhados ou utilizados para fins publicitários</span>
       </div>
     </div>
-
     <div class="card">
       <div class="sub-title">Seus direitos (LGPD Art. 18)</div>
       <ul>
-        <li>Solicitar acesso aos seus dados pessoais armazenados</li>
-        <li>Corrigir dados incompletos, inexatos ou desatualizados</li>
-        <li>Solicitar a exclusão dos dados (quando aplicável por lei)</li>
-        <li>Revogar o consentimento a qualquer momento</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Solicitar acesso aos seus dados pessoais armazenados</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Corrigir dados incompletos, inexatos ou desatualizados</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Solicitar a exclusão dos dados (quando aplicável por lei)</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Revogar o consentimento a qualquer momento</li>
       </ul>
       <p style="margin-top:16px">Para exercer qualquer um desses direitos, entre em contato pelo WhatsApp ou pelo e-mail <strong>contato@cortadinhos.com.br</strong>.</p>
     </div>
@@ -272,54 +269,48 @@
   <!-- REEMBOLSO -->
   <section class="section" id="reembolso">
     <div class="section-header">
-      <div class="section-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
+      <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       <div>
         <div class="section-label">Consumidor</div>
         <h2>Política de Reembolso</h2>
       </div>
     </div>
-
     <div class="card">
       <div class="sub-title">Cancelamento</div>
       <ul>
-        <li>Cancelamentos são aceitos enquanto o pedido ainda estiver com status <strong>Pendente</strong></li>
-        <li>Pedidos em preparo, saídos para entrega ou entregues não podem ser cancelados, dado o caráter perecível dos produtos</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Cancelamentos são aceitos enquanto o pedido ainda estiver com status <strong>Pendente</strong></li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Pedidos em preparo, saídos para entrega ou entregues não podem ser cancelados, dado o caráter perecível dos produtos</li>
       </ul>
       <div class="alert">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>Exceção: problemas comprovados na entrega ou produto com defeito</span>
       </div>
     </div>
-
     <div class="card">
       <div class="sub-title">Problemas com o pedido</div>
       <ul>
-        <li>Entrar em contato o mais breve possível após o recebimento</li>
-        <li>Cada caso será analisado individualmente com atenção</li>
-        <li>As soluções possíveis incluem reembolso, crédito em conta ou reenvio</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Entrar em contato o mais breve possível após o recebimento</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Cada caso será analisado individualmente com atenção</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>As soluções possíveis incluem reembolso, crédito em conta ou reenvio</li>
       </ul>
       <div class="highlight">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>Recomendamos reportar qualquer problema no mesmo dia do recebimento</span>
       </div>
     </div>
-
     <div class="card">
       <div class="sub-title">Ausência no momento da entrega</div>
       <ul>
-        <li>A não presença no local indicado poderá resultar na perda do pedido</li>
-        <li>Uma nova entrega poderá ser agendada mediante nova taxa</li>
-        <li>Perecíveis não podem ser mantidos aguardando reagendamento</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>A não presença no local indicado poderá resultar na perda do pedido</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Uma nova entrega poderá ser agendada mediante nova taxa</li>
+        <li><span class="li-dot"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Perecíveis não podem ser mantidos aguardando reagendamento</li>
       </ul>
     </div>
-  </section>
 
-  <!-- RODAPÉ LEGAL -->
-  <div class="card" style="text-align:center;padding:24px">
-    <p style="color:var(--text3);font-size:13px;margin:0">Este documento está em conformidade com o <strong style="color:var(--text2)">Código de Defesa do Consumidor</strong> e com a <strong style="color:var(--text2)">Lei Geral de Proteção de Dados (LGPD)</strong>.<br>Última atualização: maio de 2026.</p>
-  </div>
+    <div class="card" style="text-align:center;padding:24px">
+      <p style="color:var(--text3);font-size:13px;margin:0;line-height:1.8">Este documento está em conformidade com o <strong style="color:var(--text2)">Código de Defesa do Consumidor</strong> e com a <strong style="color:var(--text2)">Lei Geral de Proteção de Dados (LGPD)</strong>.<br>Última atualização: maio de 2026.</p>
+    </div>
+  </section>
 
 </div>
 
@@ -331,17 +322,13 @@
 </div>
 
 <script>
-  // Highlight tab ativo ao rolar
-  const sections = document.querySelectorAll('.section');
-  const tabs = document.querySelectorAll('.tab-link');
-  window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(s => { if(window.scrollY >= s.offsetTop - 150) current = s.id; });
-    tabs.forEach(t => {
-      t.classList.toggle('active', t.getAttribute('href') === '#' + current);
-    });
-  }, {passive: true});
+  const sections=document.querySelectorAll('.section');
+  const tabs=document.querySelectorAll('.tab-link');
+  window.addEventListener('scroll',()=>{
+    let cur='';
+    sections.forEach(s=>{if(window.scrollY>=s.offsetTop-150)cur=s.id;});
+    tabs.forEach(t=>{t.classList.toggle('active',t.getAttribute('href')==='#'+cur);});
+  },{passive:true});
 </script>
-
 </body>
 </html>
