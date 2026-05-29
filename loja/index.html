@@ -44,17 +44,13 @@ button,input,select,textarea{touch-action:manipulation}
 
 /* HERO */
 .hero{
-  background:linear-gradient(135deg,#1a3d22,#0f2015);
+  background:
+    linear-gradient(90deg,rgba(15,32,21,0.95) 0%,rgba(15,32,21,0.75) 55%,rgba(15,32,21,0.2) 100%),
+    url('/hero-loja.png') center right / cover no-repeat,
+    linear-gradient(135deg,#1a3d22,#0f2015);
   padding:22px 16px 28px;color:#fff;position:relative;overflow:hidden;
 }
-.hero-bg-shop{
-  position:absolute;inset:0;
-  background:url('/hero-loja.png') center right / cover no-repeat;
-  opacity:0.25;
-  z-index:0;
-}
-.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,32,21,0.95) 0%,rgba(15,32,21,0.7) 60%,rgba(15,32,21,0.2) 100%);z-index:1}
-.hero>*{position:relative;z-index:2}
+.hero-bg-shop{display:none}
 .hero::after{content:'';position:absolute;right:-22px;bottom:-22px;width:110px;height:110px;border:2px solid rgba(255,255,255,.16);border-radius:28px;transform:rotate(18deg);opacity:.55}
 .hero-sub{font-size:13px;opacity:.85;margin-bottom:4px}
 .hero-title{font-size:20px;font-weight:800;line-height:1.2;margin-bottom:14px}
