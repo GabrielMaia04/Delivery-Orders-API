@@ -75,7 +75,22 @@ nav{
 .hero{
   padding:0;background:#161d17;
   position:relative;overflow:hidden;
-  min-height:520px;display:flex;align-items:stretch;
+  min-height:540px;
+}
+.hero-bg-img{
+  position:absolute;inset:0;
+  background:url('/banner.png') center center / cover no-repeat;
+  z-index:0;
+}
+.hero-bg-img::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(
+    105deg,
+    rgba(22,29,23,1) 0%,
+    rgba(22,29,23,0.97) 30%,
+    rgba(22,29,23,0.75) 55%,
+    rgba(22,29,23,0.15) 100%
+  );
 }
 .hero::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:48px;
@@ -84,33 +99,19 @@ nav{
   z-index:3;
 }
 .hero-inner{
-  width:100%;max-width:1200px;margin:0 auto;
+  width:100%;max-width:1100px;margin:0 auto;
   display:grid;grid-template-columns:1fr 1fr;
-  align-items:stretch;position:relative;z-index:1;
+  align-items:center;position:relative;z-index:1;
+  min-height:540px;padding:0 24px;
 }
 .hero-left{
-  padding:72px 40px 88px 24px;
+  padding:80px 0 96px;
   display:flex;flex-direction:column;justify-content:center;
 }
 .hero-right{
-  position:relative;overflow:hidden;
-}
-.hero-right img{
-  width:100%;height:100%;
-  object-fit:cover;object-position:center center;
-  display:block;
-}
-.hero-right::before{
-  content:'';position:absolute;
-  left:0;top:0;bottom:0;width:120px;
-  background:linear-gradient(to right,#161d17,transparent);
-  z-index:1;
-}
-.hero-right::after{
-  content:'';position:absolute;
-  right:0;top:0;bottom:0;width:40px;
-  background:linear-gradient(to left,#161d17,transparent);
-  z-index:1;
+  position:relative;display:flex;flex-direction:column;
+  align-items:flex-end;justify-content:space-between;
+  padding:32px 0 80px;height:100%;
 }
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
@@ -163,17 +164,17 @@ nav{
 .hero-visual{display:none}
 .hero-img-wrap{display:none}
 .float-card{
-  position:absolute;
-  background:rgba(22,29,23,0.92);border-radius:14px;
+  background:rgba(22,29,23,0.88);border-radius:14px;
   padding:12px 16px;
   display:flex;align-items:center;gap:12px;
   border:1px solid rgba(255,255,255,0.1);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  z-index:2;min-width:190px;
+  min-width:190px;
   box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  align-self:flex-end;
 }
-.float-card.top{top:28px;right:24px}
-.float-card.bot{bottom:60px;left:0px}
+.float-card.top{align-self:flex-start}
+.float-card.bot{align-self:flex-end;margin-bottom:8px}
 .fc-icon{
   width:38px;height:38px;border-radius:10px;
   background:rgba(45,140,78,0.2);border:1px solid rgba(45,140,78,0.3);
@@ -404,12 +405,11 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
   .nav-links{display:none}
   .nav-logo img{height:40px}
   .hero{min-height:auto}
-  .hero-inner{grid-template-columns:1fr}
-  .hero-left{padding:52px 16px 32px}
-  .hero-right{height:260px}
-  .hero-right::before{width:60px}
-  .float-card.top{top:12px;right:12px;min-width:160px}
-  .float-card.bot{display:none}
+  .hero-bg-img::after{background:linear-gradient(180deg,rgba(22,29,23,0.97) 0%,rgba(22,29,23,0.85) 60%,rgba(22,29,23,0.6) 100%)}
+  .hero-inner{grid-template-columns:1fr;min-height:auto;padding:0 16px}
+  .hero-left{padding:52px 0 24px}
+  .hero-right{flex-direction:row;justify-content:flex-start;gap:10px;padding:0 0 52px}
+  .float-card{min-width:unset}
   .hero h1{font-size:28px}
   .hero-actions{flex-direction:column}
   .btn-primary,.btn-wpp{justify-content:center}
@@ -473,6 +473,7 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
 
 <!-- HERO -->
 <section class="hero">
+  <div class="hero-bg-img"></div>
   <div class="hero-inner">
     <div class="hero-left">
       <div class="hero-badge">
@@ -505,7 +506,6 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
       </div>
     </div>
     <div class="hero-right">
-      <img src="/banner.png" alt="Legumes frescos cortados — Cortadinhos com Carinho">
       <div class="float-card top">
         <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
         <div class="fc-text"><strong>Entrega rápida</strong><span>Terças e sextas</span></div>
