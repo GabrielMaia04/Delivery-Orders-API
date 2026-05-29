@@ -106,6 +106,7 @@ nav{
   position:relative;display:flex;flex-direction:column;
   align-items:flex-end;justify-content:space-between;
   padding:40px 0 80px;height:100%;min-height:540px;
+  overflow:visible;
 }
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
@@ -122,6 +123,7 @@ nav{
 .hero-checks{display:flex;flex-wrap:wrap;gap:10px 20px;margin-bottom:28px}
 .hc{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--nav-text);opacity:.9}
 .hc svg{width:16px;height:16px;stroke:#4ade80;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.hc-full{flex-basis:100%}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
 .btn-primary{
   background:#2d8c4e;color:#fff;
@@ -167,7 +169,7 @@ nav{
   box-shadow:0 8px 32px rgba(0,0,0,0.5);
 }
 .float-card.top{align-self:flex-end}
-.float-card.bot{align-self:flex-end}
+.float-card.bot{position:absolute;bottom:48px;left:-60%}
 .fc-icon{
   width:38px;height:38px;border-radius:10px;
   background:rgba(45,140,78,0.2);border:1px solid rgba(45,140,78,0.3);
@@ -472,14 +474,14 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
     <div class="hero-left">
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        <span id="lp-badge-txt">Entregas às terças e sextas</span>
+        <span id="lp-badge-txt">Terças e sextas</span>
       </div>
-      <h1 id="lp-h1">Mais tempo <em>pra você,</em> a gente <span class="ac">cuida do resto.</span></h1>
+      <h1 id="lp-h1">Mais tempo <em>pra</em><br><em>você,</em> a gente <span class="ac">cuida</span><br><span class="ac">do resto.</span></h1>
       <p class="hero-sub" id="lp-sub">Legumes frescos, higienizados e cortados com carinho para facilitar a sua rotina.</p>
       <div class="hero-checks">
         <div class="hc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>100% frescos e selecionados</div>
         <div class="hc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Higienizados com cuidado</div>
-        <div class="hc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Prontos para usar</div>
+        <div class="hc hc-full"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Prontos para usar</div>
       </div>
       <div class="hero-actions">
         <a href="/loja" class="btn-primary">
