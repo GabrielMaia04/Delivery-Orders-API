@@ -73,27 +73,45 @@ nav{
 
 /* ── HERO ── */
 .hero{
-  padding:80px 24px 88px;
-  background:#161d17;
+  padding:0;background:#161d17;
   position:relative;overflow:hidden;
-}
-.hero-bg{
-  position:absolute;inset:0;
-  background-image:url('/banner.png');
-  background-size:cover;background-position:center right;
-  opacity:0.35;
-}
-.hero-bg::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,rgba(22,29,23,0.98) 0%,rgba(22,29,23,0.85) 45%,rgba(22,29,23,0.4) 100%);
+  min-height:520px;display:flex;align-items:stretch;
 }
 .hero::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:48px;
   background:#0f1410;
   clip-path:ellipse(55% 100% at 50% 100%);
-  z-index:2;
+  z-index:3;
 }
-.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr;max-width:680px;position:relative;z-index:1}
+.hero-inner{
+  width:100%;max-width:1200px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;
+  align-items:stretch;position:relative;z-index:1;
+}
+.hero-left{
+  padding:72px 40px 88px 24px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.hero-right{
+  position:relative;overflow:hidden;
+}
+.hero-right img{
+  width:100%;height:100%;
+  object-fit:cover;object-position:center center;
+  display:block;
+}
+.hero-right::before{
+  content:'';position:absolute;
+  left:0;top:0;bottom:0;width:120px;
+  background:linear-gradient(to right,#161d17,transparent);
+  z-index:1;
+}
+.hero-right::after{
+  content:'';position:absolute;
+  right:0;top:0;bottom:0;width:40px;
+  background:linear-gradient(to left,#161d17,transparent);
+  z-index:1;
+}
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
   background:rgba(255,143,0,0.15);border:1px solid rgba(255,143,0,0.3);
@@ -144,26 +162,28 @@ nav{
 .stars-sm{color:#F59E0B;font-size:12px;letter-spacing:1px;margin-bottom:2px}
 .hero-visual{display:none}
 .hero-img-wrap{display:none}
-
 .float-card{
   position:absolute;
-  background:var(--bg2);border-radius:12px;
-  padding:10px 14px;
-  display:flex;align-items:center;gap:10px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.2);
-  border:1px solid var(--border);
-  min-width:160px;
+  background:rgba(22,29,23,0.92);border-radius:14px;
+  padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+  border:1px solid rgba(255,255,255,0.1);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  z-index:2;min-width:190px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
 }
-.float-card.top{top:16px;right:-20px}
-.float-card.bot{bottom:24px;left:-20px}
+.float-card.top{top:28px;right:24px}
+.float-card.bot{bottom:60px;left:0px}
 .fc-icon{
-  width:36px;height:36px;border-radius:9px;
-  background:var(--green-light);
+  width:38px;height:38px;border-radius:10px;
+  background:rgba(45,140,78,0.2);border:1px solid rgba(45,140,78,0.3);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
-.fc-icon svg{width:18px;height:18px;stroke:var(--green);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.fc-text strong{font-size:12px;font-weight:700;color:var(--text);display:block}
-.fc-text span{font-size:11px;color:var(--text2)}
+.fc-icon svg{width:18px;height:18px;stroke:#4ade80;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fc-text strong{font-size:13px;font-weight:700;color:#e8f0e9;display:block}
+.fc-text span{font-size:11px;color:#7a9880}
+
+
 
 /* ── STATS BAR ── */
 .stats-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px}
@@ -383,8 +403,14 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
   nav{padding:0 16px;height:58px}
   .nav-links{display:none}
   .nav-logo img{height:40px}
-  .hero{padding:56px 16px 64px}
-  .hero h1{font-size:30px}
+  .hero{min-height:auto}
+  .hero-inner{grid-template-columns:1fr}
+  .hero-left{padding:52px 16px 32px}
+  .hero-right{height:260px}
+  .hero-right::before{width:60px}
+  .float-card.top{top:12px;right:12px;min-width:160px}
+  .float-card.bot{display:none}
+  .hero h1{font-size:28px}
   .hero-actions{flex-direction:column}
   .btn-primary,.btn-wpp{justify-content:center}
   .stats-bar{display:none}
@@ -402,7 +428,6 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
   .footer-top{grid-template-columns:1fr}
   .footer-bottom{flex-direction:column;align-items:flex-start;gap:10px}
   .mobile-bar{display:block}
-  .float-card{display:none}
 }
 
 /* ── ANIMAÇÕES ── */
@@ -448,9 +473,8 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-bg"></div>
   <div class="hero-inner">
-    <div>
+    <div class="hero-left">
       <div class="hero-badge">
         <span class="badge-dot"></span>
         <span id="lp-badge-txt">Entregas às terças e sextas</span>
@@ -480,7 +504,17 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
         </div>
       </div>
     </div>
-
+    <div class="hero-right">
+      <img src="/banner.png" alt="Legumes frescos cortados — Cortadinhos com Carinho">
+      <div class="float-card top">
+        <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        <div class="fc-text"><strong>Entrega rápida</strong><span>Terças e sextas</span></div>
+      </div>
+      <div class="float-card bot">
+        <div class="fc-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="fc-text"><strong>Pedido confirmado</strong><span>Notificação no WhatsApp</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
