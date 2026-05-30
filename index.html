@@ -250,9 +250,9 @@ nav{
   position:absolute;top:12px;left:12px;
   font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px;
 }
-.pb-hot{background:#FFF3E0;color:#E65100}
-.pb-eco{background:#E8F5EE;color:#1B5E20}
-.pb-fav{background:#F3E5F5;color:#6A1B9A}
+.pb-hot{background:rgba(255,160,0,0.15);color:#FFA000;border:1px solid rgba(255,160,0,0.3)}
+.pb-eco{background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25)}
+.pb-fav{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
 .product-body{padding:16px;flex:1;display:flex;flex-direction:column}
 .product-body h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
 .product-body p{font-size:13px;color:var(--text2);line-height:1.5;flex:1;margin-bottom:12px}
@@ -606,17 +606,54 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
       </a>
     </div>
     <div class="products-grid" id="lp-products-grid">
+      <!-- DESTAQUES LANDING: editável via Admin → Landing Page → Produtos em Destaque -->
       <a href="/loja" class="product-card">
-        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-hot">Mais vendido</span></div>
-        <div class="product-body"><h3>Kit Sopa Completo</h3><p>Batata, cenoura, abobrinha, chuchu e batata-doce em cubos.</p><div class="product-features"><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Rende até 6 porções</div><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Ideal para sopas e caldos</div></div><div class="product-footer"><div class="product-price">R$ 24,90 <span>/ porção</span></div><button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>
+        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-hot">⭐ Mais vendido</span></div>
+        <div class="product-body">
+          <h3>Kit Inverno</h3>
+          <p>2x Batata Inglesa, 2x Cenoura, 1x Chuchu, 1x Abóbora e 1x Cebola — tudo em cubos.</p>
+          <div class="product-features">
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Rende até 8 porções</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Ideal para sopas e caldos</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Pronto para ir à panela</div>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">R$ 32,90 <span>/ kit</span></div>
+            <button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          </div>
+        </div>
       </a>
       <a href="/loja" class="product-card">
-        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-eco">Prático</span></div>
-        <div class="product-body"><h3>Kit Refogado</h3><p>Cebola, alho, pimentão, abobrinha, cenoura e tomate picados.</p><div class="product-features"><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Pronto para refogar</div><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Ideal para o dia a dia</div></div><div class="product-footer"><div class="product-price">R$ 19,90 <span>/ porção</span></div><button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>
+        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-eco">💚 Melhor custo-benefício</span></div>
+        <div class="product-body">
+          <h3>Kit Família</h3>
+          <p>3x Batata Inglesa, 2x Cenoura, 2x Chuchu e 1x Cebola — tudo em cubos.</p>
+          <div class="product-features">
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Excelente custo-benefício</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Ideal para toda a família</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Até 10 refeições acompanhadas</div>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">R$ 37,90 <span>/ kit</span></div>
+            <button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          </div>
+        </div>
       </a>
       <a href="/loja" class="product-card">
-        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-fav">Saudável</span></div>
-        <div class="product-body"><h3>Kit Salada Fresca</h3><p>Alface, rúcula, cenoura ralada, repolho, tomate e pepino.</p><div class="product-features"><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Pronto para consumir</div><div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Mais saúde na sua rotina</div></div><div class="product-footer"><div class="product-price">R$ 16,90 <span>/ porção</span></div><button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>
+        <div class="product-img"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span class="prod-badge pb-fav">🔥 Mais prático</span></div>
+        <div class="product-body">
+          <h3>Kit Air Fryer</h3>
+          <p>2x Batata Palito, 1x Batata-doce Temperada, 2x Abóbora Cabotiá Fatiada e 1x Batata-doce Chips.</p>
+          <div class="product-features">
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Pronto para Air Fryer ou forno</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Acompanhamentos em poucos minutos</div>
+            <div class="pf"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Sem descascar e sem cortar</div>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">R$ 28,90 <span>/ kit</span></div>
+            <button class="btn-add" onclick="window.location='/loja'" aria-label="Ver produto"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          </div>
+        </div>
       </a>
     </div>
   </div>
