@@ -1437,9 +1437,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <span class="page-title">Estoque</span>
       <span id="estoque-count" style="font-size:12px;color:var(--text3)"></span>
     </div>
-    <div class="acard-sm" style="max-width:680px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Todos os produtos — menor estoque primeiro</div>
-      <div id="estoque-list"></div>
+    <div class="full-grid-list" style="max-width:680px;max-height:calc(100vh - 140px)">
+      <div class="full-grid-list-header">
+        <span style="font-size:13px;font-weight:700;white-space:nowrap">Todos os produtos — menor estoque primeiro</span>
+        <input type="text" id="estoque-search" placeholder="Buscar produto..." oninput="filtrarEstoque()" style="flex:1;max-width:220px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+      </div>
+      <div class="full-grid-list-body"><div id="estoque-list"></div></div>
     </div>
   </div>
 
@@ -4646,6 +4649,43 @@ function renderEstoque(){
   }).join('');
   refreshIcons();
 }
+function filtrarEstoque(){
+  const q=(document.getElementById('estoque-search')?.value||'').toLowerCase().trim();
+  const el=document.getElementById('estoque-list');
+  if(!el)return;
+  if(!q){renderEstoque();return;}
+  const lista=[...prods]
+    .filter(p=>p.nome.toLowerCase().includes(q))
+    .sort((a,b)=>{
+      const ea=a.estoque!=null?a.estoque:Infinity;
+      const eb=b.estoque!=null?b.estoque:Infinity;
+      return ea-eb;
+    });
+  if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto encontrado.</div>';return;}
+  el.innerHTML=lista.map(p=>{
+    const est=p.estoque;
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">∞ ilimitado</span>'
+      :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
+      :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
+      :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
+    const bar=est!=null&&est>0
+      ?'<div style="height:4px;border-radius:2px;background:var(--bg4);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+(est<=5?'var(--orange)':'var(--green)')+';width:'+Math.min(100,Math.round(est/50*100))+'%"></div></div>'
+      :'';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'🔇 ')+(p.nome)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +bar
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+      +label
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque" style="padding:4px 8px"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+  refreshIcons();
+}
+
 async function rmProd(id){
   popConfirm('🗑️','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('produtos').delete().eq('id',id);
