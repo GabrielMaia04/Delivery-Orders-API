@@ -3803,6 +3803,8 @@ function popup(icon,title,msg,btns){
   });
   refreshIcons();
   const _gp=document.getElementById('g-popup');
+  _gp.removeAttribute('inert');
+  _gp.removeAttribute('aria-hidden');
   document.body.appendChild(_gp);
   _gp.style.display='flex';
   _gp.classList.add('open');
@@ -3813,7 +3815,7 @@ function closePopup(){
   _gp.classList.remove('open');
   _gp.style.display='none';
   _gp.setAttribute('inert','');
-  _gp.removeAttribute('aria-hidden');
+  _gp.setAttribute('aria-hidden','true');
 }
 function popAlert(icon,title,msg,cb){popup(icon,title,msg,[{label:'OK',cls:'pbtn-ok',cb}])}
 function popConfirm(icon,title,msg,labelOk,clsOk,cbOk){
@@ -4676,17 +4678,14 @@ async function addProd(){
   const estoqueVal=document.getElementById('p-estoque').value;
   const estoque=estoqueVal!==''?parseInt(estoqueVal):null;
 
-  // Loading state
   const saveBtn=document.querySelector('#ap-produtos .btn-g[onclick="addProd()"]');
   const origLabel=saveBtn?saveBtn.textContent:'';
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando…';}
 
   try{
-    // Upload imagem
     let imagem_url=null;
     const imgFile=document.getElementById('p-img-file')?.files[0];
     if(imgFile){
-      // Valida tamanho (máx 5 MB)
       if(imgFile.size>5*1024*1024){toast('Imagem muito grande. Máx 5 MB.','err');return}
       const ext=imgFile.name.split('.').pop().toLowerCase();
       const path='produtos/'+Date.now()+'.'+ext;
