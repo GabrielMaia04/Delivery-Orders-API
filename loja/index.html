@@ -4887,6 +4887,37 @@ function renderProdList(){
   }).join('');
 }
 
+function filtrarProdListInline(){
+  const q=(document.getElementById('p-busca-inline')?.value||'').toLowerCase().trim();
+  const el=document.getElementById('p-list');
+  if(!el)return;
+  if(!q){renderProdList();return;}
+  const base=fCatP?prods.filter(p=>p.cat_id===fCatP):prods;
+  const ps=base.filter(p=>
+    p.nome.toLowerCase().includes(q)||
+    (p.tags||'').toLowerCase().includes(q)||
+    (p.descricao||'').toLowerCase().includes(q)
+  );
+  if(!ps.length){el.innerHTML='<div class="empty">Nenhum produto encontrado.</div>';return;}
+  el.innerHTML=ps.map(p=>{
+    const cat=cats.find(c=>c.id===p.cat_id);
+    const estoq=p.estoque!=null
+      ?'<span style="color:'+(p.estoque<=5?'var(--red)':'var(--text2)')+'">' + 'Est: '+p.estoque+'</span>'
+      :'<span style="color:var(--text3)">Ilimitado</span>';
+    return '<div class="prod-row">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700">'+emoji(p)+' '+p.nome+' <span style="font-weight:400;color:var(--text2)">'+(p.peso?'('+p.peso+')':'')+'</span></div>'
+      +'<div style="font-size:10px;color:var(--text2)">'+(cat?cat.nome:'')+' &middot; R$ '+fp(p.preco)+' &middot; '+estoq+'</div>'
+      +'</div>'
+      +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
+      +'<button class="btn btn-o btn-sm" onclick="abrirEditProd('+p.id+')" title="Editar produto">&#9999;</button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'\u221e')+'</button>'
+      +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
+      +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
+      +'</div>';
+  }).join('');
+}
+
 /* USUARIOS */
 let uCache=[],uPage=1;
 const U_PER=15;
