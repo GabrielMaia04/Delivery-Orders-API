@@ -1024,6 +1024,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="aside-item" id="aside-produtos" onclick="showAPage('produtos',this)">
           <i data-lucide="package"></i> Produtos
         </button>
+        <button class="aside-item" id="aside-estoque" onclick="showAPage('estoque',this)">
+          <i data-lucide="warehouse"></i> Estoque
+        </button>
         <div class="aside-divider"></div>
         <div class="aside-section">Sistema</div>
         <button class="aside-item" id="aside-config" onclick="showAPage('config',this)">
@@ -1425,6 +1428,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
         <div class="full-grid-list-body"><div id="p-list"></div></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ESTOQUE -->
+  <div id="ap-estoque" class="apage">
+    <div class="page-header">
+      <span class="page-title">Estoque</span>
+      <span id="estoque-count" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+    <div class="acard-sm" style="max-width:680px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Todos os produtos — menor estoque primeiro</div>
+      <div id="estoque-list"></div>
     </div>
   </div>
 
@@ -2799,17 +2814,20 @@ function renderShop(){
   el.innerHTML=ps.map(p=>{
     const it=cart.itens.find(i=>i.prodId===p.id);
     const qty=it?it.qty:0;
-    const ctrl=qty>0
-      ?`<div class="prod-qty-ctrl">
-          <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">−</button>
-          <span class="cqn" style="min-width:20px;text-align:center;font-size:14px;font-weight:800">${qty}</span>
-          <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
-        </div>`
-      :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
+    const semEstoque=p.estoque!=null&&p.estoque<=0;
+    const ctrl=semEstoque
+      ?`<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-soft);padding:4px 10px;border-radius:20px;white-space:nowrap">Esgotado</span>`
+      :qty>0
+        ?`<div class="prod-qty-ctrl">
+            <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">−</button>
+            <span class="cqn" style="min-width:20px;text-align:center;font-size:14px;font-weight:800">${qty}</span>
+            <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
+          </div>`
+        :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
     const imgEl=p.imagem_url
       ?`<img src="${p.imagem_url}" alt="${p.nome}" loading="lazy">`
       :`<span class="ico-inline" style="font-size:44px;color:var(--green-bright)">${lucideIcon('sprout')}</span>`;
-    return `<div class="prod-card" onclick="abrirProdModal(${p.id})">
+    return `<div class="prod-card" onclick="abrirProdModal(${p.id})" style="${semEstoque?'opacity:.55;pointer-events:none':''}">
       <div class="prod-card-img">${imgEl}</div>
       <div class="prod-card-body">
         <div class="prod-card-name">${p.nome}</div>
@@ -2828,13 +2846,23 @@ function renderShop(){
 function addCart(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   const ex=cart.itens.find(i=>i.prodId===id);
+  const qAtual=ex?ex.qty:0;
+  if(p.estoque!=null&&qAtual>=p.estoque){
+    toast(p.estoque===0?'Produto esgotado.':'Quantidade máxima disponível: '+p.estoque+'.','err');
+    return;
+  }
   if(ex)ex.qty++;else cart.itens.push({prodId:id,qty:1});
   updCartBadge();
   renderShop();
   if(document.getElementById('cart-drawer').classList.contains('open'))renderCart();
 }
 function cQtyCard(id,d){
+  const p=prods.find(x=>x.id===id);
   const ex=cart.itens.find(i=>i.prodId===id);
+  if(d>0&&p&&p.estoque!=null){
+    const qAtual=ex?ex.qty:0;
+    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'Máximo disponível: '+p.estoque+'.','err');return;}
+  }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
   updCartBadge();renderShop();if(document.getElementById('cart-drawer').classList.contains('open'))renderCart();
@@ -3551,7 +3579,9 @@ async function enviarPedido(){
       if(!p||p.estoque==null)return Promise.resolve();
       const novo=Math.max(0,p.estoque-it.qty);
       p.estoque=novo;
-      return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
+      const upd8={estoque:novo};
+      if(novo<=0){upd8.ativo=false;p.ativo=false;}
+      return sb.from('produtos').update(upd8).eq('id',p.id);
     }));
     cupomAtivo=null;
     cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo();
@@ -3616,6 +3646,7 @@ function showAPage(p,tab){
   }
   if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills();}
   if(p==='categorias'){renderCatList();renderCatSel();}
+  if(p==='estoque')renderEstoque();
   if(p==='config')initConfig();
   if(p==='clientes')initClientes();
   if(p==='landing')initLanding();
@@ -3938,7 +3969,9 @@ async function aSalvar(){
       if(!p||p.estoque==null)return Promise.resolve();
       const novo=Math.max(0,p.estoque-it.qty);
       p.estoque=novo;
-      return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
+      const upd8={estoque:novo};
+      if(novo<=0){upd8.ativo=false;p.ativo=false;}
+      return sb.from('produtos').update(upd8).eq('id',p.id);
     }));
     toast('Pedido salvo!','ok');aLimpar();
   }catch(e){toast('Erro: '+e.message,'err')}
@@ -4574,6 +4607,45 @@ async function salvarEditProd(){
   renderProdList();renderAGrid();renderShop();
 }
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();renderShop()}
+
+function renderEstoque(){
+  const el=document.getElementById('estoque-list');
+  if(!el)return;
+  const lista=[...prods].sort((a,b)=>{
+    const ea=a.estoque!=null?a.estoque:Infinity;
+    const eb=b.estoque!=null?b.estoque:Infinity;
+    return ea-eb;
+  });
+  const countEl=document.getElementById('estoque-count');
+  if(countEl){
+    const zerados=prods.filter(p=>p.estoque!=null&&p.estoque<=0).length;
+    const semInfo=prods.filter(p=>p.estoque==null).length;
+    countEl.textContent=zerados>0?zerados+' esgotado'+(zerados>1?'s':''):'todos com estoque';
+  }
+  if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto.</div>';return}
+  el.innerHTML=lista.map(p=>{
+    const est=p.estoque;
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">∞ ilimitado</span>'
+      :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
+      :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
+      :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
+    const bar=est!=null&&est>0
+      ?'<div style="height:4px;border-radius:2px;background:var(--bg4);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+(est<=5?'var(--orange)':'var(--green)')+';width:'+Math.min(100,Math.round(est/50*100))+'%"></div></div>'
+      :'';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'🔇 ')+(p.nome)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +bar
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+      +label
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque" style="padding:4px 8px"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+  refreshIcons();
+}
 async function rmProd(id){
   popConfirm('🗑️','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('produtos').delete().eq('id',id);
@@ -4932,7 +5004,12 @@ function renderProdModalCtrl(id){
   }
 }
 function cQtyModal(id,d){
+  const p=prods.find(x=>x.id===id);
   const ex=cart.itens.find(i=>i.prodId===id);
+  if(d>0&&p&&p.estoque!=null){
+    const qAtual=ex?ex.qty:0;
+    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'Máximo disponível: '+p.estoque+'.','err');return;}
+  }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
   updCartBadge();renderShop();renderProdModalCtrl(id);
@@ -6067,7 +6144,8 @@ async function _finalizarPedido(dados){
       if(!p || p.estoque==null) return Promise.resolve();
       const novo = Math.max(0, p.estoque - it.qty);
       p.estoque = novo;
-      return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
+      const updSp={estoque:novo};if(novo<=0){updSp.ativo=false;p.ativo=false;}
+      return sb.from('produtos').update(updSp).eq('id',p.id);
     }));
     cupomAtivo = null;
     cart = {itens:[], entrega:'Entrega'};
