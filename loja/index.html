@@ -3736,11 +3736,8 @@ function renderCal(){
   // Datas disponíveis: lógica diferente por contexto
   const proximas=new Set();
   if(calCtx==='co'||calCtx==='co3'){
-    const d=new Date(hoje);d.setDate(d.getDate()+1);
-    while(proximas.size<3){
-      if(d.getDay()===2||d.getDay()===5)proximas.add(toISO(d));
-      d.setDate(d.getDate()+1);
-    }
+    // Usa corte de 20h (mesma regra de datasComCorte)
+    datasComCorte().forEach(dt=>proximas.add(toISO(dt)));
   }
 
   const primeiroDia=new Date(calAno,calMes,1).getDay();
@@ -6396,17 +6393,30 @@ function co3ConfirmarTroco(){const val=parseFloat(document.getElementById('co3-t
 function co3SemTroco(){co3Troco='sem troco';toast('Sem troco!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 
 // ── CO3: DATAS DISPONÍVEIS (próximas 3 terças e sextas) ──
+// Corte: Terça fecha na Segunda às 20h | Sexta fecha na Quinta às 20h
+function datasComCorte(){
+  const agora = new Date();
+  const hoje = new Date(agora); hoje.setHours(0,0,0,0);
+  const horaAgora = agora.getHours();
+  const diaSemana = agora.getDay();
+  const proximas = [];
+  const d = new Date(hoje); d.setDate(d.getDate()+1);
+  while(proximas.length < 3){
+    const dia = d.getDay();
+    if(dia===2 || dia===5){
+      const diaCorte = dia===2 ? 1 : 4;
+      const isAmanha = (d.getTime()-hoje.getTime())===86400000;
+      const passou = isAmanha && diaSemana===diaCorte && horaAgora>=20;
+      if(!passou) proximas.push(new Date(d));
+    }
+    d.setDate(d.getDate()+1);
+  }
+  return proximas;
+}
 function co3RenderDatas(){
   const el = document.getElementById('co3-datas-grid');
   if(!el) return;
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
-  const proximas = [];
-  const d = new Date(amanha);
-  while(proximas.length < 3){
-    if(d.getDay()===2 || d.getDay()===5) proximas.push(new Date(d));
-    d.setDate(d.getDate()+1);
-  }
+  const proximas = datasComCorte();
   const DIAS=['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
   const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const selVal = document.getElementById('co3-data')?.value;
@@ -6716,15 +6726,12 @@ function co3CalRender(){
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
 
-  // Calcular as 3 proximas datas disponíveis
-  const proximas = new Set();
-  const d = new Date(amanha);
-  while(proximas.size < 3){
-    if(d.getDay()===2 || d.getDay()===5) proximas.add(
-      d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
-    );
-    d.setDate(d.getDate()+1);
-  }
+  // Datas com corte de 20h (reutiliza datasComCorte)
+  const proximas = new Set(
+    datasComCorte().map(dt=>
+      dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')
+    )
+  );
 
   const selVal = document.getElementById('co3-data')?.value || '';
   const primeiroDia = new Date(_co3CalAno, _co3CalMes, 1).getDay();
