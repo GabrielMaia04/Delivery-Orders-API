@@ -588,7 +588,7 @@ async function fazerLogin(){
     await loadProfile(data.user.id,data.user);
     btn.disabled=false;btn.textContent='Entrar';
     fecharAuth();
-    if(window._coPend){window._coPend=false;abrirCo()}
+    if(window._coPend){window._coPend=false;abrirCo3()}
     else if(perfil?.role==='admin') window.location.href='/adm';
   }
 }
@@ -619,7 +619,7 @@ async function fazerCadastro(){
       perfil.telefone=tel;
     }
     fecharAuth();
-    if(window._coPend){window._coPend=false;abrirCo()}
+    if(window._coPend){window._coPend=false;abrirCo3()}
   }else{showMsg(msg,'Verifique seu email para confirmar.','success')}
 }
 
@@ -1014,6 +1014,8 @@ function irCheckout(){
   abrirCo();
 }
 function abrirCo(){
+  abrirCo3();
+  return;
   // Esconde barra mobile
   const bar=document.getElementById('mobile-cart-bar');
   if(bar)bar.classList.remove('show');
