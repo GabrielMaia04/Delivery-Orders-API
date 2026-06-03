@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cortadinhos com Carinho - Admin</title>
+  <link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/svg+xml" href="/public/favicon.svg">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+  <meta name="theme-color" content="#2E7D32">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/shared.css">
+  <link rel="stylesheet" href="/adm/adm.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/shared/config.js?v=20260602-final"></script>
+  <script src="/shared/supabase.js?v=20260602-final"></script>
+  <script src="/shared/utils.js?v=20260602-final"></script>
+  <script src="/shared/formatters.js?v=20260602-final"></script>
+  <script src="/shared/auth.js?v=20260602-final"></script>
+  <script src="/adm/adm.js?v=20260602-final" defer></script>
+</head>
+<body>
+<div id="screen-admin" class="screen active">
+  <!-- TOPBAR -->
+  <div class="admin-topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="admin-menu-btn" onclick="toggleSidebar()" title="Menu">&#9776;</button>
+      <div class="admin-brand" onclick="window.location.href='/loja'" style="cursor:pointer" title="Ir para a loja">
+        <div class="admin-logo"><i data-lucide="leaf"></i></div>
+        <div class="admin-name">Cortadinhos<span>com carinho</span></div>
+      </div>
+    </div>
+    <div class="admin-topbar-right">
+
+      <!-- SININHO -->
+      <div style="position:relative">
+        <button class="icon-btn" id="bell-btn" onclick="toggleBell()" title="Pedidos pendentes">
+          <i data-lucide="bell"></i>
+        </button>
+        <span id="bell-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2);pointer-events:none"></span>
+        <!-- Dropdown de notificações -->
+        <div id="bell-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:500;overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:13px;font-weight:700">Pedidos pendentes</span>
+            <button onclick="marcarTodosLidos()" style="font-size:11px;color:var(--green-bright);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Marcar todos como lido</button>
+          </div>
+          <div id="bell-list" style="max-height:360px;overflow-y:auto"></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border)">
+            <button onclick="fecharBell();showAPage('relatorio',document.getElementById('aside-relatorio'))" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Ver todos os pedidos</button>
+          </div>
+        </div>
+      </div>
+      <div class="ava" id="adm-ava">?</div>
+      <span id="adm-label" style="font-size:11px;color:var(--text2);font-weight:600;display:none"></span>
+      <button class="btn btn-o btn-sm" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+  <!-- OVERLAY MOBILE -->
+  <div class="admin-sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
+  <!-- BODY -->
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <nav class="admin-sidebar-menu">
+        <div class="aside-section">Dashboard</div>
+        <button class="aside-item active" id="aside-painel" onclick="showAPage('dashboard',this)">
+          <i data-lucide="layout-dashboard"></i> Painel
+        </button>
+        <button class="aside-item" id="aside-relatorio" onclick="showAPage('relatorio',this)">
+          <i data-lucide="bar-chart-2"></i> Relatório
+        </button>
+        <button class="aside-item" id="aside-financeiro" onclick="showAPage('financeiro',this)">
+          <i data-lucide="trending-up"></i> Financeiro
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Vendas</div>
+        <button class="aside-item" id="aside-pedido" onclick="showAPage('pedido',this)">
+          <i data-lucide="plus-circle"></i> Novo Pedido
+        </button>
+        <button class="aside-item" id="aside-pedidos" onclick="showAPage('pedidos',this)">
+          <i data-lucide="clipboard-list"></i> Pedidos
+        </button>
+        <button class="aside-item" id="aside-entregas" onclick="showAPage('entregas',this)">
+          <i data-lucide="truck"></i> Entregas
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Produtos</div>
+        <button class="aside-item" id="aside-categorias" onclick="showAPage('categorias',this)">
+          <i data-lucide="tag"></i> Categorias
+        </button>
+        <button class="aside-item" id="aside-produtos" onclick="showAPage('produtos',this)">
+          <i data-lucide="package"></i> Produtos
+        </button>
+        <button class="aside-item" id="aside-estoque" onclick="showAPage('estoque',this)">
+          <i data-lucide="warehouse"></i> Estoque
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Sistema</div>
+        <button class="aside-item" id="aside-config" onclick="showAPage('config',this)">
+          <i data-lucide="settings"></i> Configurações
+        </button>
+        <button class="aside-item" id="aside-clientes" onclick="showAPage('clientes',this)">
+          <i data-lucide="users"></i> Clientes
+        </button>
+        <div class="aside-divider"></div>
+        <div class="aside-section">Landing Page</div>
+        <button class="aside-item" id="aside-landing" onclick="showAPage('landing',this)">
+          <i data-lucide="layout"></i> Editor
+        </button>
+      </nav>
+      <div class="aside-footer">
+        <button class="aside-item" onclick="window.location.href='/loja'" style="width:100%">
+          <i data-lucide="store"></i> Ver loja
+        </button>
+      </div>
+    </aside>
+    <!-- CONTEÚDO -->
+    <div class="admin-content" id="admin-content">
+
+  <!-- PEDIDO 3COL -->
+<div id="ap-pedido" class="apage-3col">
+    <div class="col3">
+      <div class="acard">
+        <div class="acard-h"><span class="acard-title">Dados do cliente</span></div>
+        <div class="acard-body">
+          <div class="field"><label>Nome *</label><input id="a-nome" type="text" placeholder="Nome do cliente"></div>
+          <div class="field"><label>Contato</label><input id="a-tel" type="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+          <div class="field"><label>Data de entrega</label>
+            <button type="button" class="cal-trigger" id="a-data-btn" onclick="event.stopPropagation();abrirCal('adm')">Selecionar data de entrega</button>
+            <input type="hidden" id="a-data">
+          </div>
+          <div class="field"><label>CEP</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="a-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)" onblur="buscarCepAdmin()">
+              <div id="a-cep-spin" class="spin hidden" style="flex-shrink:0"></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Endereço</label><input id="a-end" type="text" placeholder="Rua, bairro"></div>
+            <div class="field"><label>Número</label><input id="a-num" type="text" placeholder="No"></div>
+          </div>
+          <div class="field"><label>Entrega</label>
+            <div class="dtog-wrap">
+              <button class="dtog active" id="a-de" onclick="setAE('Entrega')">Entrega</button>
+              <button class="dtog" id="a-dr" onclick="setAE('Retirada')">Retirada</button>
+            </div>
+            <div id="a-taxa" class="taxa-badge">Taxa: R$ <span id="a-taxa-val">2,50</span></div>
+          </div>
+          <div class="field"><label>Pagamento</label><select id="a-pag"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartao">Cartão</option></select></div>
+          <div class="field"><label>Observações</label><textarea id="a-obs" placeholder="Alguma observação..."></textarea></div>
+        </div>
+      </div>
+      <div class="acard">
+        <div class="acard-h"><span class="acard-title">Adicionar produtos</span></div>
+        <div class="acard-body" style="display:flex;flex-direction:column">
+          <div style="position:relative;margin-bottom:9px;flex-shrink:0">
+            
+            <input id="a-search" type="text" placeholder="Buscar..." style="padding-left:30px" oninput="renderAGrid()">
+          </div>
+          <div class="cpills" id="a-cpills"></div>
+          <div id="a-grid" style="flex:1;overflow-y:auto;min-height:0"></div>
+        </div>
+      </div>
+      <div class="acard">
+        <div class="acard-h"><span class="acard-title">Itens do pedido</span><span class="acard-badge" id="a-badge"></span></div>
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+          <div class="oheads"><span>Produto</span><span>Qtd.</span><span>Peso</span><span>Valor</span><span></span></div>
+          <div id="a-empty" class="empty">Nenhum item adicionado</div>
+          <div id="a-items" class="acard-body hidden" style="padding-top:4px"></div>
+          <div class="osum">
+            <div class="srow"><span>Itens</span><span id="a-si">0</span></div>
+            <div class="srow"><span>Peso</span><span id="a-sp">0,00 kg</span></div>
+            <div class="srow"><span>Subtotal</span><span id="a-ss">R$ 0,00</span></div>
+            <div class="srow taxa hidden" id="a-tr"><span>Entrega</span><span id="a-tr-val">+ R$ 2,50</span></div>
+            <div class="stotal"><span class="stotal-l">Total</span><span class="stotal-v" id="a-st">R$ 0,00</span></div>
+          </div>
+          <div class="abtns">
+          <button class="btn btn-g ico-gap" id="a-save-btn" onclick="aSalvar()"><i data-lucide="save"></i> Salvar pedido</button>
+            <div class="btns2">
+              <button class="btn btn-o ico-gap" onclick="aImprimir()"><i data-lucide="printer"></i> Imprimir</button>
+              <button class="btn btn-o" onclick="aCopiar()">Copiar</button>
+            </div>
+            <button class="btn btn-r ico-gap" onclick="aLimpar()"><i data-lucide="trash-2"></i> Limpar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- PAINEL (Dashboard) -->
+  <div id="ap-dashboard" class="apage">
+
+
+    <!-- MÉTRICAS TOPO -->
+    <div class="dash-metrics" id="dash-metrics">
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Pedidos hoje</div>
+        <div class="dash-metric-val" id="dm-pedidos">—</div>
+        <div class="dash-metric-sub" id="dm-pedidos-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Faturamento hoje</div>
+        <div class="dash-metric-val green" id="dm-fat">—</div>
+        <div class="dash-metric-sub" id="dm-fat-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total do mês</div>
+        <div class="dash-metric-val green" id="dm-mes">—</div>
+        <div class="dash-metric-sub" id="dm-mes-sub"></div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Ticket médio</div>
+        <div class="dash-metric-val" id="dm-ticket">—</div>
+        <div class="dash-metric-sub" id="dm-ticket-sub"></div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO + PEDIDOS RECENTES -->
+    <div class="dash-mid">
+      <div class="acard-sm dash-chart-card">
+        <div class="dash-section-header">
+          <span class="dash-section-title">Vendas — últimos 7 dias</span>
+          <div id="dm-chart-total" style="font-size:13px;font-weight:700;color:var(--green-bright)"></div>
+        </div>
+        <canvas id="dash-chart" height="180"></canvas>
+      </div>
+      <div class="acard-sm dash-recent-card">
+        <div class="dash-section-header">
+          <span class="dash-section-title">Pedidos recentes</span>
+          <button class="btn btn-o btn-sm" onclick="showAPage('relatorio',document.getElementById('aside-relatorio'))">Ver todos</button>
+        </div>
+        <div id="dm-recentes"></div>
+      </div>
+    </div>
+
+    <!-- TOP PRODUTOS + VENDAS POR CATEGORIA -->
+    <div class="dash-bottom">
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Top produtos</div>
+        <div id="dm-top-prods"></div>
+      </div>
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Vendas por categoria</div>
+        <canvas id="dash-pie" width="180" height="180" style="display:block;margin:0 auto 12px"></canvas>
+        <div id="dm-pie-legend"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- RELATÓRIO -->
+  <div id="ap-relatorio" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Relatório</span>
+      <button class="btn btn-o btn-sm" onclick="exportRel()">Exportar</button>
+    </div>
+<div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label>Cliente ou ID do pedido</label><input id="r-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderRel()"></div>
+        <div><label>Filtro</label><select id="r-tipo" style="width:150px" onchange="toggleRFiltro()"><option value="dia">Data unica</option><option value="periodo">Periodo</option></select></div>
+        <div id="r-fdia"><label>Data</label><input id="r-data" type="date" style="width:155px" onchange="renderRel()"></div>
+        <div id="r-fper" class="date-range hidden"><div><label>De</label><input id="r-de" type="date" style="width:145px" onchange="renderRel()"></div><div><label>Ate</label><input id="r-ate" type="date" style="width:145px" onchange="renderRel()"></div></div>
+      </div>
+    </div>
+    <div id="r-stats" class="stats"></div>
+    <div style="margin-bottom:12px">
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div class="r-scroll-box"><div id="r-peds"></div></div></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Histórico</div>
+      <div id="r-loading" class="loading"><div class="spin"></div> Carregando...</div>
+      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
+      <div class="pag" id="r-pag"></div>
+    </div>
+  </div>
+
+
+    <!-- FINANCEIRO -->
+  <div id="ap-financeiro" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Financeiro</div>
+    <!-- Filtro de data -->
+    <div class="acard-sm" style="margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div><label>Período</label>
+          <div style="display:flex;gap:8px">
+            <input id="fin-de" type="date" style="width:145px" onchange="renderFinanceiro()">
+            <input id="fin-ate" type="date" style="width:145px" onchange="renderFinanceiro()">
+          </div>
+        </div>
+        <button class="btn btn-g btn-sm" onclick="renderFinanceiro()">Filtrar</button>
+      </div>
+    </div>
+    <!-- Métricas -->
+    <div class="dash-metrics" style="margin-bottom:14px">
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total do período</div>
+        <div class="dash-metric-val green" id="fin-total">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Ticket médio</div>
+        <div class="dash-metric-val" id="fin-ticket">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Total de gastos</div>
+        <div class="dash-metric-val" style="color:var(--red)" id="fin-gastos-total">—</div>
+      </div>
+      <div class="dash-metric-card">
+        <div class="dash-metric-label">Resultado</div>
+        <div class="dash-metric-val" id="fin-resultado">—</div>
+      </div>
+    </div>
+    <!-- Gráfico vendas período -->
+    <div class="acard-sm" style="margin-bottom:14px">
+      <div class="dash-section-header">
+        <span class="dash-section-title">Vendas no período</span>
+        <span id="fin-chart-label" style="font-size:11px;color:var(--text3)"></span>
+      </div>
+      <canvas id="fin-chart" height="160"></canvas>
+    </div>
+    <!-- Gastos + Pizza -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Registrar gasto</div>
+        <div class="field">
+          <label>Criar nova categoria de gasto</label>
+          <div style="display:flex;gap:8px">
+            <input id="fin-cat-nome" type="text" placeholder="Ex: Embalagens, Transporte..." style="flex:1">
+            <button class="btn btn-g btn-sm" onclick="addCategGasto()">+ Criar</button>
+          </div>
+        </div>
+        <div class="field"><label>Categoria (selecione uma criada acima)</label>
+          <input type="hidden" id="fin-gasto-cat" value="">
+          <div id="fin-cat-custom" style="position:relative">
+            <button type="button" id="fin-cat-trigger" onclick="toggleCatDropdown()"
+              style="width:100%;text-align:left;padding:10px 36px 10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:var(--font);cursor:pointer;position:relative">
+              <span id="fin-cat-label" style="color:var(--text3)">— Selecione ou crie acima —</span>
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);opacity:.5">▾</span>
+            </button>
+            <div id="fin-cat-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;overflow:hidden;max-height:200px;overflow-y:auto">
+              <div id="fin-cat-opts"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field"><label>Descrição</label>
+          <input id="fin-gasto-desc" type="text" placeholder="Ex: Compra de sacolas">
+        </div>
+        <div class="row2">
+          <div class="field"><label>Valor (R$)</label>
+            <input id="fin-gasto-val" type="number" step="0.01" min="0" placeholder="0,00">
+          </div>
+          <div class="field"><label>Data</label>
+            <input id="fin-gasto-data" type="date">
+          </div>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="addGasto()">Registrar gasto</button>
+        <div style="margin-top:12px;max-height:200px;overflow-y:auto" id="fin-gastos-list"></div>
+      </div>
+      <div class="acard-sm">
+        <div class="dash-section-title" style="margin-bottom:12px">Gastos por categoria</div>
+        <canvas id="fin-pie" width="160" height="160" style="display:block;margin:0 auto 12px"></canvas>
+        <div id="fin-pie-legend"></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- PEDIDOS -->
+  <div id="ap-pedidos" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Pedidos</span>
+    </div>
+    <div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label>Cliente ou ID</label><input id="rp-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderPedidos()"></div>
+        <div><label>Filtro</label><select id="rp-tipo" style="width:150px" onchange="toggleRPFiltro()"><option value="dia">Data única</option><option value="periodo">Período</option></select></div>
+        <div id="rp-fdia"><label>Data</label><input id="rp-data" type="date" style="width:155px" onchange="renderPedidos()"></div>
+        <div id="rp-fper" class="date-range hidden"><div><label>De</label><input id="rp-de" type="date" style="width:145px" onchange="renderPedidos()"></div><div><label>Até</label><input id="rp-ate" type="date" style="width:145px" onchange="renderPedidos()"></div></div>
+      </div>
+    </div>
+    <div id="rp-stats" class="stats"></div>
+    <div style="margin-bottom:12px">
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do período</div><div class="r-scroll-box"><div id="rp-peds"></div></div></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Histórico de pedidos</div>
+      <div id="rp-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+      <div class="twrap"><table class="tbl hidden" id="rp-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="rp-tbody"></tbody></table></div>
+      <div class="pag" id="rp-pag"></div>
+    </div>
+  </div>
+
+
+  <!-- ENTREGAS PAGE -->
+  <!-- ENTREGAS PAGE -->
+  <div id="ap-entregas" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <span style="font-size:17px;font-weight:800">Entregas</span>
+      <button class="btn btn-o btn-sm" onclick="renderEntregas()">↻ Atualizar</button>
+    </div>
+    <!-- Filtro de data de entrega -->
+    <div class="acard-sm" style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <label>Data de entrega</label>
+          <button type="button" class="cal-trigger" id="e-data-btn" onclick="event.stopPropagation();abrirCal('entr')">Selecionar data de entrega</button>
+          <input type="hidden" id="e-data">
+        </div>
+      </div>
+    </div>
+    <!-- Resumo -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px">
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green-bright)" id="e-tot-ped">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Pedidos</div></div>
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:var(--orange)" id="e-tot-entr">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Entregas</div></div>
+      <div class="acard-sm" style="text-align:center"><div style="font-size:22px;font-weight:900;color:#3b82f6" id="e-tot-ret">-</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Retiradas</div></div>
+    </div>
+    <!-- Pedidos + Consolidado -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="acard-sm">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
+        </div>
+        <div class="r-scroll-box"><div id="e-pedidos"></div></div>
+      </div>
+      <div class="acard-sm">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700">Consolidado</span>
+          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirEntregas()"><i data-lucide="printer"></i> Imprimir</button>
+        </div>
+        <div class="r-scroll-box"><div id="e-cons"></div></div>
+      </div>
+    </div>
+  </div>
+
+    <!-- CATEGORIAS -->
+  <div id="ap-categorias" class="apage">
+    <div class="page-header"><span class="page-title">Categorias</span><span id="cat-count" style="font-size:12px;color:var(--text3)"></span></div>
+    <div class="full-grid">
+      <div class="full-grid-form">
+        <div class="acard-sm">
+          <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Nova categoria</div>
+          <div class="field"><label>Nome</label><input id="cat-nome" type="text" placeholder="Ex: Legumes"></div>
+          <div class="field"><label>Imagem (400x200px)</label>
+            <input id="cat-img-file" type="file" accept="image/*" style="display:none" onchange="previewCatImg(this)">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div id="cat-img-preview" style="width:56px;height:28px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden"><i data-lucide="leaf"></i></div>
+              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('cat-img-file').click()">Escolher foto</button>
+            </div>
+          </div>
+          <button class="btn btn-g" style="width:100%" onclick="addCat()"><i data-lucide="plus"></i> Adicionar categoria</button>
+        </div>
+      </div>
+      <div class="full-grid-list">
+        <div class="full-grid-list-header">
+          <span style="font-size:13px;font-weight:700">Categorias cadastradas</span>
+          <input type="text" placeholder="Buscar categoria..." id="cat-busca" oninput="filtrarCatList()" style="flex:1;max-width:240px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+        </div>
+        <div class="full-grid-list-body"><div id="cat-list"></div></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- PRODUTOS -->
+  <div id="ap-produtos" class="apage">
+    <div class="page-header"><span class="page-title">Produtos</span><span id="prod-count" style="font-size:12px;color:var(--text3)"></span></div>
+    <div class="full-grid">
+      <div class="full-grid-form">
+        <div class="acard-sm">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Novo produto</div>
+          <div class="field"><label>Categoria *</label><select id="p-cat"></select></div>
+          <div class="field"><label>Nome *</label><input id="p-nome" type="text" placeholder="Ex: Cenoura" autocomplete="off"></div>
+          <div class="field"><label>Descrição</label><input id="p-desc" type="text" placeholder="Opcional" autocomplete="off"></div>
+          <div class="row2">
+            <div class="field"><label>Peso</label><input id="p-peso" type="text" placeholder="350g"></div>
+            <div class="field"><label>Preço (R$) *</label><input id="p-preco" type="number" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="field"><label>Tags de busca</label><input id="p-tags" type="text" placeholder="Ex: refogado, sopa, legume, salada" autocomplete="off"><div style="font-size:10px;color:var(--text3);margin-top:3px">Separe por vírgula. Ajudam os clientes a encontrar o produto.</div></div>
+          <div class="field"><label>Imagem do produto (800x800px)</label>
+            <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="previewProdImg(this)">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div id="p-img-preview" style="width:56px;height:56px;border-radius:10px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden"><i data-lucide="sprout"></i></div>
+              <button type="button" class="btn btn-o btn-sm" onclick="document.getElementById('p-img-file').click()">Escolher foto</button>
+            </div>
+          </div>
+          <div class="field"><label>Estoque (deixe vazio = ilimitado)</label><input id="p-estoque" type="number" min="0" placeholder="Ex: 50"></div>
+          <button class="btn btn-g" style="width:100%;margin-top:4px" onclick="addProd()">Salvar produto</button>
+        </div>
+      </div>
+      <div class="full-grid-list">
+        <div class="full-grid-list-header">
+          <span style="font-size:13px;font-weight:700">Produtos cadastrados</span>
+          <input type="text" placeholder="Buscar produto..." id="p-busca-inline" oninput="filtrarProdListInline()" style="flex:1;max-width:200px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+          <div class="cpills" id="p-pills" style="margin:0"></div>
+        </div>
+        <div class="full-grid-list-body"><div id="p-list"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTOQUE -->
+  <div id="ap-estoque" class="apage">
+    <div class="page-header">
+      <span class="page-title">Estoque</span>
+      <span id="estoque-count" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+    <div class="full-grid-list" style="max-width:960px;max-height:calc(100vh - 140px)">
+      <div class="full-grid-list-header">
+        <span style="font-size:13px;font-weight:700;white-space:nowrap">Todos os produtos — menor estoque primeiro</span>
+        <input type="text" id="estoque-search" placeholder="Buscar produto..." oninput="filtrarEstoque()" style="flex:1;max-width:220px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)">
+      </div>
+      <div class="full-grid-list-body"><div id="estoque-list"></div></div>
+    </div>
+  </div>
+
+
+    <!-- CONFIGURAÇÃO -->
+  <div id="ap-config" class="apage">
+    <div style="font-size:17px;font-weight:800;margin-bottom:16px">Configurações</div>
+    <div class="config-grid">
+      <!-- Pedido Mínimo -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="circle-slash"></i> Pedido Mínimo (Entrega)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Valor mínimo para pedidos com entrega. Retirada não tem mínimo.</div>
+        <div class="field"><label>Valor mínimo (R$)</label>
+          <input id="dash-pedmin" type="number" step="0.01" min="0" placeholder="0.00 = sem mínimo">
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarPedidoMin()">Aplicar mínimo</button>
+        <div id="dash-pedmin-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Redes Sociais -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="share-2"></i> Redes Sociais</div>
+        <div class="field"><label>Número WhatsApp (com DDI+DDD)</label>
+          <input id="dash-wpp" type="text" placeholder="5521976081746">
+        </div>
+        <div class="field"><label>Link Instagram</label>
+          <input id="dash-ig" type="text" placeholder="https://instagram.com/seuperfil">
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarRedes()">Salvar redes</button>
+        <div id="dash-redes-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Mensagem WhatsApp -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="message-circle"></i> Mensagem de Pedido (WhatsApp)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:2">Variaveis: <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{contato}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{itens}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{subtotal}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{taxa}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{total}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{entrega}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{pagamento}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{endereco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{troco}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{chave_pix}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{obs}</code></div>
+        <textarea id="dash-wpp-msg" style="height:140px;font-family:monospace;font-size:12px" placeholder="Digite o template da mensagem..."></textarea>
+        <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="salvarMsgWpp()">Salvar mensagem</button>
+        <div id="dash-msg-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Mensagens de Status WhatsApp -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="bell"></i> Mensagens Automáticas de Status</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Enviadas automaticamente ao cliente quando você altera o status do pedido. Use <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{nome}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{codigo}</code> <code style="background:var(--bg4);padding:2px 5px;border-radius:4px">{data}</code></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span> Em preparo</label>
+            <textarea id="wpp-msg-preparo" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Em preparo..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span> Saiu para entrega</label>
+            <textarea id="wpp-msg-saiu" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Saiu para entrega..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--green-bright);display:inline-block"></span> Entregue</label>
+            <textarea id="wpp-msg-entregue" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Entregue..."></textarea>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block"></span> Cancelado</label>
+            <textarea id="wpp-msg-cancelado" style="height:90px;font-family:monospace;font-size:11px" placeholder="Mensagem ao marcar Cancelado..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-g" style="width:100%;margin-top:10px" onclick="salvarMsgsStatus()">Salvar mensagens de status</button>
+        <div id="wpp-status-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- Zonas de Entrega -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:4px"><i data-lucide="map-pin"></i> Zonas de Entrega (por distância)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Configure o endereço da loja e as taxas por distância. O cliente será bloqueado se estiver fora do raio máximo.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="field" style="grid-column:1/-1"><label>Endereço da loja (para calcular distância)</label>
+            <input id="dash-loja-end" type="text" placeholder="Ex: Rua Borda do Mato 53, Grajaú, Rio de Janeiro">
+          </div>
+          <div class="field"><label>Raio máximo de entrega (km)</label>
+            <input id="dash-raio" type="number" step="0.5" min="1" max="50" placeholder="5">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn btn-g" style="width:100%" onclick="salvarConfigLoja()">Salvar endereço</button>
+          </div>
+        </div>
+        <div id="dash-loja-msg" style="font-size:11px;margin-bottom:12px;text-align:center;color:var(--green-bright)"></div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Zonas cadastradas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:6px;margin-bottom:6px">
+          <div><label>Nome da zona</label><input id="z-nome" type="text" placeholder="Ex: Zona 1"></div>
+          <div><label>De (km)</label><input id="z-min" type="number" step="0.5" min="0" value="0"></div>
+          <div><label>Até (km)</label><input id="z-max" type="number" step="0.5" min="0.5" placeholder="5"></div>
+          <div><label>Taxa (R$)</label><input id="z-taxa" type="number" step="0.5" min="0" placeholder="5.00"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-g btn-sm" onclick="addZona()">+ Adicionar</button></div>
+        </div>
+        <div id="dash-zonas-list"></div>
+        <!-- Teste de zona -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="ico-gap" style="font-size:12px;font-weight:700;margin-bottom:8px"><i data-lucide="search"></i> Testar CEP</div>
+          <div style="display:flex;gap:8px">
+            <input id="test-cep" type="text" placeholder="00000-000" maxlength="9" style="flex:1" oninput="mascaraCep(this)">
+            <button class="btn btn-g btn-sm" onclick="testarCEP()">Testar</button>
+          </div>
+          <div id="test-cep-result" style="margin-top:8px;font-size:12px;display:none;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border)"></div>
+        </div>
+      </div>
+      <!-- Cupons de Desconto -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="ticket-percent"></i> Cupons de Desconto</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="field"><label>Desconto (%)</label><input id="dash-cup-pct" type="number" min="1" max="100" placeholder="10"></div>
+          <div class="field"><label>Quantidade</label><input id="dash-cup-qty" type="number" min="1" placeholder="50"></div>
+        </div>
+        <button class="btn btn-g" style="width:100%;margin-bottom:10px" onclick="criarCupom()">+ Criar cupom</button>
+        <div id="dash-cup-list"></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- CLIENTES -->
+  <div id="ap-clientes" class="apage">
+    <div class="page-header"><span class="page-title">Clientes</span></div>
+    <div class="clientes-grid">
+      <!-- Lista de clientes -->
+      <div class="clientes-left">
+        <div class="clientes-header">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Usuários</div>
+          <input id="u-busca" type="text" placeholder="Buscar por nome, e-mail ou telefone..." style="width:100%" oninput="filtrarUsers()">
+        </div>
+        <div class="clientes-body">
+          <div id="u-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+          <div id="u-lista"></div>
+          <div class="pag" id="u-pag" style="margin-top:8px"></div>
+        </div>
+      </div>
+      <!-- Histórico de pedidos -->
+      <div class="clientes-right">
+        <div class="clientes-header">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Histórico de pedidos</div>
+          <div style="display:flex;gap:8px">
+            <input id="ped-busca-cliente" type="text" placeholder="Nome do cliente ou código do pedido..." style="flex:1" oninput="buscarPedidosCliente()">
+            <button class="btn btn-g btn-sm" onclick="buscarPedidosCliente()">Buscar</button>
+          </div>
+        </div>
+        <div class="clientes-body">
+          <div id="ped-cliente-loading" class="loading hidden"><div class="spin"></div> Carregando...</div>
+          <div id="ped-cliente-lista" style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- LANDING PAGE EDITOR -->
+  <div id="ap-landing" class="apage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:17px;font-weight:800">Editor da Landing Page</span>
+      <a href="/" target="_blank" class="btn btn-o btn-sm ico-gap"><i data-lucide="external-link"></i> Ver landing</a>
+    </div>
+    <div class="landing-grid">
+
+      <!-- HERO -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="star"></i> Seção Hero</div>
+        <div class="row2">
+          <div class="field"><label>Linha 1 do título</label><input id="lp-titulo1" type="text" placeholder="Mais tempo"></div>
+          <div class="field"><label>Linha 2 (verde)</label><input id="lp-titulo2" type="text" placeholder="pra você,"></div>
+        </div>
+        <div class="field"><label>Linha 3 (laranja/destaque)</label><input id="lp-titulo3" type="text" placeholder="a gente cuida do resto."></div>
+        <div class="field"><label>Subtítulo</label><textarea id="lp-subtitulo" style="height:60px" placeholder="Legumes frescos, higienizados e cortados..."></textarea></div>
+        <div class="field"><label>Texto do badge (topo)</label><input id="lp-badge" type="text" placeholder="Entregas às terças e sextas"></div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingHero()">Salvar Hero</button>
+        <div id="lp-hero-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="bar-chart-2"></i> Estatísticas (faixa verde)</div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 1</label><input id="lp-s1v" type="text" placeholder="+500"></div>
+          <div class="field"><label>Label 1</label><input id="lp-s1l" type="text" placeholder="Clientes satisfeitos"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 2</label><input id="lp-s2v" type="text" placeholder="+10 mil"></div>
+          <div class="field"><label>Label 2</label><input id="lp-s2l" type="text" placeholder="Pedidos entregues"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 3</label><input id="lp-s3v" type="text" placeholder="98%"></div>
+          <div class="field"><label>Label 3</label><input id="lp-s3l" type="text" placeholder="Avaliações positivas"></div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="field"><label>Valor 4</label><input id="lp-s4v" type="text" placeholder="2×"></div>
+          <div class="field"><label>Label 4</label><input id="lp-s4l" type="text" placeholder="Entregas por semana"></div>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingStats()">Salvar Stats</button>
+        <div id="lp-stats-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- PRODUTOS EM DESTAQUE -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="package"></i> Produtos em Destaque</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Selecione até 3 produtos que aparecem na landing page.</div>
+        <div class="field"><label>Produto 1</label><select id="lp-prod1"></select></div>
+        <div class="field"><label>Produto 2</label><select id="lp-prod2"></select></div>
+        <div class="field"><label>Produto 3</label><select id="lp-prod3"></select></div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingDestaques()">Salvar Destaques</button>
+        <div id="lp-prods-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+      <!-- DEPOIMENTOS -->
+      <div class="acard-sm full-col">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="message-square"></i> Depoimentos</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px" id="lp-depoi-list"></div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px">+ Adicionar depoimento</div>
+          <div class="row2">
+            <div class="field"><label>Nome</label><input id="lp-dep-nome" type="text" placeholder="Ana Paula"></div>
+            <div class="field"><label>Bairro / Info</label><input id="lp-dep-local" type="text" placeholder="Barra da Tijuca"></div>
+          </div>
+          <div class="field"><label>Depoimento</label><textarea id="lp-dep-texto" style="height:70px" placeholder="Os legumes são super frescos..."></textarea></div>
+          <button class="btn btn-g" style="width:100%" onclick="adicionarDepoimento()">+ Adicionar</button>
+        </div>
+        <button class="btn btn-g" style="width:100%" onclick="salvarLandingDepoimentos()">Salvar Todos os Depoimentos</button>
+        <div id="lp-dep-msg" style="font-size:11px;margin-top:6px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+
+    </div>
+  </div>
+
+        </div><!-- /admin-content -->
+  </div><!-- /admin-body -->
+</div><!-- /screen-admin -->
+<!-- CALENDAR PICKER -->
+<div class="cal-ov" id="cal-ov" onclick="if(!event.target.closest('.cal-box'))fecharCal()">
+  <div class="cal-box">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="navCal(-1)">&#8592;</button>
+      <span class="cal-month-label" id="cal-month-label"></span>
+      <button class="cal-nav-btn" onclick="navCal(1)">&#8594;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-hint" id="cal-hint"><span class="cal-dot"></span> Terças e Sextas disponíveis</div>
+  </div>
+</div>
+
+<!-- ORDER SUCCESS POPUP -->
+<div class="success-ov" id="success-ov" aria-hidden="true" onclick="if(event.target===this)fecharSucesso()">
+  <div class="success-box">
+    <span class="success-emoji"><i data-lucide="circle-check-big"></i></span>
+    <div class="success-title">Pedido realizado com sucesso!</div>
+    <div class="success-sub">Obrigado pela sua compra!<br>Logo entraremos em contato.</div>
+    <button class="success-btn" onclick="fecharSucesso()">Continuar</button>
+  </div>
+</div>
+
+<!-- POPUP GLOBAL -->
+<div class="popup-ov" id="g-popup">
+  <div class="popup-box">
+    <div class="popup-icon" id="g-popup-icon"></div>
+    <div class="popup-title" id="g-popup-title"></div>
+    <div class="popup-msg" id="g-popup-msg"></div>
+    <div class="popup-btns" id="g-popup-btns"></div>
+  </div>
+</div>
+<div class="toast-wrap" id="toast-wrap"></div>
+<!-- MODAL DETALHE PEDIDO CLIENTE -->
+<div class="modal-ov" id="ped-det-modal" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
+  <div class="modal-box" style="width:380px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+      <div class="modal-title" id="ped-det-codigo">Pedido</div>
+      <button onclick="const _m=document.getElementById('ped-det-modal');_m.classList.remove('open');_m.style.display='none';" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div class="modal-sub" id="ped-det-status"></div>
+    <div id="ped-det-body" style="margin-bottom:14px"></div>
+    <div id="ped-det-btns"></div>
+  </div>
+</div>
+
+<!-- MODAL ESTOQUE -->
+<div class="modal-ov" id="est-modal" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
+  <div class="modal-box">
+    <div class="modal-title" id="est-modal-t">Editar Estoque</div>
+    <div class="modal-sub" id="est-modal-atual"></div>
+    <input type="hidden" id="est-produto-id">
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">Definir valor absoluto</label>
+      <input id="est-val" type="number" min="0" placeholder="Ex: 50 (vazio = ilimitado)" style="font-size:15px;text-align:center">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">Ou adicionar / subtrair</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="qty-big-btn" onclick="document.getElementById('est-delta').value=Math.max(-999,(parseInt(document.getElementById('est-delta').value)||0)-1)">-</button>
+        <input id="est-delta" type="number" placeholder="0" style="flex:1;font-size:20px;font-weight:800;text-align:center;padding:9px;border-radius:9px">
+        <button class="qty-big-btn" onclick="document.getElementById('est-delta').value=(parseInt(document.getElementById('est-delta').value)||0)+1">+</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:5px">Use negativo para subtrair. Ex: -5 remove 5 unidades.</div>
+    </div>
+    <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px" onclick="salvarEstoque()">&#10003; Salvar estoque</button>
+    <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('est-modal').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+
+<!-- MODAL EDITAR PRODUTO -->
+<div class="modal-ov" id="edit-prod-modal" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
+  <div class="modal-box" style="width:360px">
+    <div class="modal-title ico-gap"><i data-lucide="pencil"></i> Editar Produto</div>
+    <div class="modal-sub" id="edit-prod-sub"></div>
+    <input type="hidden" id="edit-prod-id">
+    <div class="field"><label>Nome *</label><input id="edit-p-nome" type="text" placeholder="Nome do produto"></div>
+    <div class="field"><label>Descrição</label><input id="edit-p-desc" type="text" placeholder="Opcional"></div>
+    <div class="row2">
+      <div class="field"><label>Peso</label><input id="edit-p-peso" type="text" placeholder="350g"></div>
+      <div class="field"><label>Preço (R$) *</label><input id="edit-p-preco" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="field"><label>Tags de busca</label><input id="edit-p-tags" type="text" placeholder="Ex: refogado, sopa, legume, salada" autocomplete="off"><div style="font-size:10px;color:var(--text3);margin-top:3px">Separe por vírgula.</div></div>
+    <div class="field"><label>Ícone opcional</label><input id="edit-p-emoji" type="text" placeholder="Ex: folha, legume ou deixe vazio" style="font-size:14px;text-align:center"></div>
+    <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px;margin-top:4px" onclick="salvarEditProd()">&#10003; Salvar alterações</button>
+    <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('edit-prod-modal').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="a-modal" onclick="fecharAModal(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="a-modal-t">Adicionar</div>
+    <div class="modal-sub" id="a-modal-s"></div>
+    <div class="qty-row">
+      <button class="qty-big-btn" onclick="ajQty(-1)">-</button>
+      <input id="a-qty" type="number" min="1" value="1" class="qty-big-in">
+      <button class="qty-big-btn" onclick="ajQty(1)">+</button>
+    </div>
+    <button class="btn btn-g" style="width:100%;padding:11px;font-size:13px" onclick="confQty()">+ Adicionar ao pedido</button>
+    <button class="btn btn-o" style="width:100%;margin-top:6px" onclick="document.getElementById('a-modal').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,6 +1,39 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/privacidade", "destination": "/privacidade.html" },
-    { "source": "/loja/(.*)", "destination": "/loja/index.html" }
+    {
+      "source": "/loja",
+      "destination": "/loja/index.html"
+    },
+    {
+      "source": "/adm",
+      "destination": "/adm/index.html"
+    },
+    {
+      "source": "/privacidade",
+      "destination": "/privacidade.html"
+    },
+    {
+      "source": "/termos",
+      "destination": "/termos.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/Loja",
+      "destination": "/loja",
+      "permanent": true
+    },
+    {
+      "source": "/ADM",
+      "destination": "/adm",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/adm",
+      "permanent": true
+    }
   ]
 }

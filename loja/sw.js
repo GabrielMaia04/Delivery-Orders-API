@@ -9,16 +9,16 @@ self.addEventListener('activate', e => {
   e.waitUntil(clients.claim());
 });
 
-// Recebe notificacao push
+// Recebe notificação push
 self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {};
+  const data = e.data ?e.data.json() : {};
   const title = data.title || 'Novo pedido!';
   const options = {
     body: data.body || 'Um novo pedido foi realizado.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     vibrate: [200, 100, 200],
-    data: { url: '/' },
+    data: { url: '/loja' },
     actions: [
       { action: 'ver', title: 'Ver pedido' }
     ]
@@ -26,13 +26,13 @@ self.addEventListener('push', e => {
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Clique na notificacao - abre o sistema
+// Clique na notificação - abre o sistema
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
     clients.matchAll({ type: 'window' }).then(list => {
       if (list.length > 0) return list[0].focus();
-      return clients.openWindow('/');
+      return clients.openWindow('/loja');
     })
   );
 });

@@ -2,9 +2,9 @@
   "name": "Hortifruti Pedidos",
   "short_name": "Hortifruti",
   "description": "Sistema de pedidos Hortifruti",
-  "start_url": "/",
+  "start_url": "/loja/",
+  "scope": "/loja/",
   "display": "standalone",
   "background_color": "#0f1410",
   "theme_color": "#2d8c4e"
 }
-
