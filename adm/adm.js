@@ -25,6 +25,7 @@ let rPage=1,rTotal=0,rCache=[];
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
 const fd=d=>d?d.split('-').reverse().join('/'):'';
 // Exibe "Terça, 20/mai" para datas de entrega
+const h=v=>window.escapeHTML?window.escapeHTML(v??''):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function fdLabel(iso){
   if(!iso)return'';
   const [y,m,d]=iso.split('-').map(Number);
@@ -322,7 +323,7 @@ function setAE(v){
 }
 function renderACpills(){
   document.getElementById('a-cpills').innerHTML=cats.map(c=>{
-    return '<button class="cpill'+(fCatAdm===c.id?' active':'')+'" onclick="fCatAdm='+c.id+';renderACpills()">'+c.nome+'</button>';
+    return '<button class="cpill'+(fCatAdm===c.id?' active':'')+'" onclick="fCatAdm='+c.id+';renderACpills()">'+h(c.nome)+'</button>';
   }).join('');
   renderAGrid();
 }
@@ -548,7 +549,7 @@ function renderAOrder(){
     if(n&&u==='g')tPeso+=n*it.qty/1000;
     else if(n&&u==='kg')tPeso+=n*it.qty;
     return`<div class="oitem">
-      <div><div class="oi-n">${emoji(p)} ${p.nome}</div><div class="oi-s">${p.peso||''}</div></div>
+      <div><div class="oi-n">${emoji(p)} ${h(p.nome)}</div><div class="oi-s">${h(p.peso||'')}</div></div>
       <div class="oi-q"><button class="qb" onclick="aChgQ(${i},-1)">-</button><span class="qn">${it.qty}</span><button class="qb" onclick="aChgQ(${i},1)">+</button></div>
       <div class="oi-p">R$ ${fp(p.preco)}</div>
       <div class="oi-v">R$ ${fp(sub)}</div>
@@ -692,11 +693,11 @@ async function renderEntregas(){
     return`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:12px">${p.cliente_nome}</div>
-          ${p.cliente_contato?`<div style="font-size:11px;color:var(--text2)">${p.cliente_contato}</div>`:''}
+          <div style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</div>
+          ${p.cliente_contato?`<div style="font-size:11px;color:var(--text2)">${h(p.cliente_contato)}</div>`:''}
           ${end?`<div style="font-size:11px;color:var(--text2)">${end}</div>`:''}
           <div style="font-size:11px;color:var(--text2);margin-top:3px">${its}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">Pgto: ${p.pagamento}${p.observacoes?' · '+p.observacoes:''}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Pgto: ${h(p.pagamento)}${p.observacoes?' · '+h(p.observacoes):''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-weight:800;font-size:13px;color:var(--green-bright)">R$ ${fp(p.total)}</div>
@@ -784,11 +785,11 @@ function imprimirTodosPedidos(){
     .obs{padding:3px 3px 5px;font-size:11px}
     .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000}</style></head><body>
     <div class="dt">${_dt}</div>
-    <div class="header"><div class="num">${p.codigo||'#'+p.id}</div></div>
+    <div class="header"><div class="num">${h(p.codigo||'#'+p.id)}</div></div>
     <hr class="sep">
     <div class="info-block">
-      <div class="ir"><span class="lbl">NOME: </span><span class="val">${p.cliente_nome}</span></div>
-      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${p.cliente_contato||'—'}</span></div>
+      <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
       <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
       ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
@@ -803,7 +804,7 @@ function imprimirTodosPedidos(){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
+    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
@@ -922,8 +923,8 @@ async function renderRel(){
       return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:12px">${p.cliente_nome}</span>
-            ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${p.codigo}</span>`:''}
+            <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
+            ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
             ${p.taxa_entrega>0?'<span class="badge bg-orange" style="font-size:9px">Taxa</span>':''}
           </div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
@@ -1011,7 +1012,7 @@ function verPed(id){
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;flex-direction:column;gap:3px">
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
       <div class="ico-gap">${lucideIcon('credit-card')} ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${p.observacoes}</div>`:''}
+      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}${taxa}${total}</div>`;
   document.getElementById('ped-det-btns').innerHTML=
@@ -1062,11 +1063,11 @@ function imprimirPedido(id){
     .obs{padding:3px 3px 5px;font-size:11px}
     .footer{text-align:center;font-size:10.5px;font-weight:700;padding:6px 2px;border-top:1px dashed #000}</style></head><body>
     <div class="dt">${_dt}</div>
-    <div class="header"><div class="num">${p.codigo||'#'+p.id}</div></div>
+    <div class="header"><div class="num">${h(p.codigo||'#'+p.id)}</div></div>
     <hr class="sep">
     <div class="info-block">
-      <div class="ir"><span class="lbl">NOME: </span><span class="val">${p.cliente_nome}</span></div>
-      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${p.cliente_contato||'—'}</span></div>
+      <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
       <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
       ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
@@ -1081,7 +1082,7 @@ function imprimirPedido(id){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${p.observacoes||''}</span></div>
+    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();}<\/script>
@@ -1202,8 +1203,8 @@ function renderRPage(){
   tbody.innerHTML=pagina.map(p=>{
     const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
     return '<tr>'
-      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
-      +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
+      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
+      +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
       +'<td><div style="font-size:11px">'+( p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div>'
       +(p.created_at?'<div style="font-size:10px;color:var(--text3)">'+new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</div>':'')
       +'</td>'
@@ -1378,11 +1379,11 @@ async function renderCatList(){
   const total = cats.length;
   const countEl = document.getElementById('cat-count');
   if(countEl) countEl.textContent = total + ' categoria' + (total!==1?'s':'');
-  el.innerHTML=cats.map(c=>'<div class="cat-list-item" data-nome="'+c.nome+'" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
+  el.innerHTML=cats.map(c=>'<div class="cat-list-item" data-nome="'+h(c.nome)+'" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
     +'<div style="display:flex;align-items:center;gap:8px">'
     +(c.imagem_url?'<img src="'+c.imagem_url+'" style="width:32px;height:18px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">':
       '<div style="width:32px;height:18px;border-radius:4px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center"><i data-lucide="leaf" style="width:10px;height:10px"></i></div>')
-    +'<span style="font-size:13px;font-weight:700">'+c.nome+'</span>'
+    +'<span style="font-size:13px;font-weight:700">'+h(c.nome)+'</span>'
     +'</div>'
     +'<button class="btn btn-r btn-sm" onclick="rmCat('+c.id+')">Remover</button>'
     +'</div>').join('');
@@ -1483,7 +1484,7 @@ async function rmCat(id){
 function renderCatSel(){
   const el=document.getElementById('p-cat');
   if(!el)return;
-  el.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
+  el.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+h(c.nome)+'</option>').join('');
 }
 
 async function addProd(){
@@ -1560,7 +1561,7 @@ function renderPPills(){
   const el=document.getElementById('p-pills');
   if(!el)return;
   el.innerHTML='<button class="cpill'+(fCatP===null?' active':'')+'" onclick="fCatP=null;renderPPills()">Todos</button>'
-    +cats.map(c=>'<button class="cpill'+(fCatP===c.id?' active':'')+'" onclick="fCatP='+c.id+';renderPPills()">'+c.nome+'</button>').join('');
+    +cats.map(c=>'<button class="cpill'+(fCatP===c.id?' active':'')+'" onclick="fCatP='+c.id+';renderPPills()">'+h(c.nome)+'</button>').join('');
   renderProdList();
 }
 
@@ -1659,7 +1660,7 @@ function renderUPagina(q){
     const peds=u._peds||[];
     const pedRows=peds.length
       ?peds.map(p=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${p.codigo||'#'+p.id}</span>
+          <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${h(p.codigo||'#'+p.id)}</span>
           <span style="font-size:11px;color:var(--text3)">${fd(p.data_pedido)}</span>
           <span style="font-size:11px;font-weight:700;color:var(--green-bright)">R$ ${fp(p.total)}</span>
         </div>`).join('')
@@ -1667,7 +1668,7 @@ function renderUPagina(q){
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div>
-          <div style="font-weight:700;font-size:13px">${u.nome}</div>
+          <div style="font-weight:700;font-size:13px">${h(u.nome)}</div>
           <div style="font-size:11px;color:var(--text2)">${u.telefone||'—'} · ${new Date(u.created_at).toLocaleDateString('pt-BR')}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -1682,7 +1683,7 @@ function renderUPagina(q){
       </div>
       <div id="u-dados-${u.id}" style="display:none;margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-          <div><span style="color:var(--text3)">Nome: </span><strong>${u.nome}</strong></div>
+          <div><span style="color:var(--text3)">Nome: </span><strong>${h(u.nome)}</strong></div>
           <div><span style="color:var(--text3)">Telefone: </span><strong>${u.telefone||'—'}</strong></div>
           <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
           <div><span style="color:var(--text3)">Perfil: </span><strong>${u.role==='admin'?'Admin':'Cliente'}</strong></div>
@@ -1785,8 +1786,8 @@ async function renderPedidos(){
     return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-weight:700;font-size:12px">${p.cliente_nome}</span>
-          ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${p.codigo}</span>`:''}
+          <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
+          ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
         </div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`📝 ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`🚚 ${fdLabel(p.data_pedido)}`:''}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
@@ -1811,8 +1812,8 @@ function renderRPPage(){
   tbody.innerHTML=pagina.map(p=>{
     const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
     return'<tr>'
-      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+(p.codigo||'-')+'</span></td>'
-      +'<td><div style="font-weight:700;font-size:12px">'+p.cliente_nome+'</div><div style="font-size:10px;color:var(--text2)">'+(p.cliente_contato||'')+'</div></td>'
+      +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
+      +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
       +'<td><div style="font-size:11px">'+(p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div></td>'
       +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
@@ -1901,7 +1902,7 @@ async function carregarGastos(){
   const sel=document.getElementById('fin-gasto-cat');
   if(sel){
     sel.innerHTML=catsData.length
-      ?catsData.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')
+      ?catsData.map(c=>'<option value="'+c.id+'">'+h(c.nome)+'</option>').join('')
       :'<option value="">— Crie uma categoria acima primeiro —</option>';
   }
   // Renderizar select customizado de categorias
@@ -1924,7 +1925,7 @@ function _renderCatDropdown(cats){
   cats.forEach(c=>{
     const div=document.createElement('div');
     div.className='fin-cat-opt'+(curVal===String(c.id)?' selected':'');
-    div.innerHTML='<span class="fin-cat-opt-nome">'+c.nome+'</span>'
+    div.innerHTML='<span class="fin-cat-opt-nome">'+h(c.nome)+'</span>'
       +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">×</button>';
     div.querySelector('.fin-cat-opt-nome').onclick=()=>{
       if(hiddenInput)hiddenInput.value=c.id;
@@ -2190,8 +2191,8 @@ async function loadDashRecentes(){
   if(!peds?.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum pedido ainda.</div>';return}
   el.innerHTML=peds.map(p=>`
     <div class="dash-recent-item">
-      <span class="dash-recent-code">${p.codigo||'#'+p.id}</span>
-      <span class="dash-recent-name">${p.cliente_nome}</span>
+      <span class="dash-recent-code">${h(p.codigo||'#'+p.id)}</span>
+      <span class="dash-recent-name">${h(p.cliente_nome)}</span>
       <span style="font-size:10px;font-weight:700;color:${statusColor[p.status]||'var(--text3)'};white-space:nowrap;margin-right:8px">${p.status||'Pendente'}</span>
       <span class="dash-recent-val">R$ ${fp(p.total)}</span>
     </div>`).join('');
@@ -2221,7 +2222,7 @@ async function loadDashTopProds(){
   el.innerHTML=top.map((p,i)=>`
     <div class="top-prod-row">
       <div class="top-prod-rank ${rankCls[i]}">${i+1}</div>
-      <div class="top-prod-name">${p.nome}</div>
+      <div class="top-prod-name">${h(p.nome)}</div>
       <div class="top-prod-qty">${p.qty} un</div>
       <div class="top-prod-val">R$ ${fp(p.total)}</div>
     </div>`).join('');
@@ -2364,11 +2365,11 @@ async function buscarPedidosCliente(){
       <div style="padding:11px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="min-width:0;flex:1">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${p.codigo||'#'+p.id}</span>
+            <span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">${h(p.codigo||'#'+p.id)}</span>
             <span class="badge bg-gray">${p.status||'--'}</span>
           </div>
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:3px">${p.cliente_nome||'Cliente'}</div>
-          <div style="font-size:11px;color:var(--text3)">${p.cliente_contato||'--'} - ${fd(p.data_pedido)}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:3px">${h(p.cliente_nome||'Cliente')}</div>
+          <div style="font-size:11px;color:var(--text3)">${h(p.cliente_contato||'--')} - ${fd(p.data_pedido)}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:12px;font-weight:800;color:var(--green-bright)">R$ ${fp(Number(p.total)||0)}</div>
@@ -2476,7 +2477,7 @@ function renderCupons(){
   const el=document.getElementById('dash-cup-list');if(!el)return;
   if(!cupons.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Nenhum cupom.</div>';return}
   el.innerHTML=cupons.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
-    <div><div style="font-size:12px;font-weight:800;font-family:monospace">${c.nome}</div>
+    <div><div style="font-size:12px;font-weight:800;font-family:monospace">${h(c.nome)}</div>
     <div style="font-size:11px;color:var(--text2)">${c.desconto}% · ${c.usos_restantes} uso(s)</div></div>
     <button class="btn btn-r btn-sm" onclick="rmCupom(${c.id})">x</button>
   </div>`).join('');
@@ -2614,7 +2615,7 @@ async function salvarNovaSenha(){
 let _lpDepoimentos = [];
 
 async function initLanding(){
-  const opt = '<option value="">— Nenhum —</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  const opt = '<option value="">— Nenhum —</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${h(p.nome)}</option>`).join('');
   ['lp-prod1','lp-prod2','lp-prod3'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerHTML = opt;
@@ -2722,7 +2723,7 @@ function renderLpDepoimentos(){
   el.innerHTML = _lpDepoimentos.map((d,i)=>`
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
       <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">×</button>
-      <div style="font-size:12px;font-weight:700;margin-bottom:4px">${d.nome}</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px">${h(d.nome)}</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:6px">${d.local||'—'}</div>
       <div style="font-size:11px;color:var(--text2);line-height:1.5">"${d.texto.slice(0,80)}${d.texto.length>80?'...':''}"</div>
     </div>`).join('');
@@ -2778,8 +2779,8 @@ function renderBellList(){
     return `<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''" onclick="fecharBell();verPed(${p.id})">
       <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700;color:var(--text)">${p.cliente_nome || 'Cliente'}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.codigo || '#'+p.id} · ${data} às ${hora}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${h(p.cliente_nome || 'Cliente')}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${h(p.codigo || '#'+p.id)} · ${data} às ${hora}</div>
       </div>
       <div style="font-size:12px;font-weight:800;color:var(--green-bright);white-space:nowrap">R$ ${fp(Number(p.total)||0)}</div>
     </div>`;

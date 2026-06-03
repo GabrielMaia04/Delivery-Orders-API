@@ -2337,10 +2337,19 @@ function co3SetPag(v){
 async function co3Finalizar(){
   const momento = document.getElementById('co3-pag-momento')?.value||'agora';
   const pag = document.getElementById('co3-pag')?.value||'Pix';
+  const btn = document.getElementById('co3-btn-finalizar');
+  if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
+
+  if(!perfil||!perfil.id){
+    mostrarBalloon('Entre ou crie uma conta para finalizar o pedido');
+    if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}
+    if(typeof abrirAuth==='function')abrirAuth();
+    return;
+  }
   
   if(momento==='entrega'){
     const met = document.getElementById('co3-pag-entrega-met')?.value||'Cartao';
-    if(met==='Dinheiro' && !co3Troco){ mostrarBalloon('Informe o valor para troco'); return; }
+    if(met==='Dinheiro' && !co3Troco){ mostrarBalloon('Informe o valor para troco'); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
   }
 
   const nome = document.getElementById('co3-nome')?.value.trim();
@@ -2355,7 +2364,7 @@ async function co3Finalizar(){
 
   const erros=[];
   if(!nome) erros.push('Nome');if(!tel) erros.push('Telefone');
-  if(erros.length){ popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', ')); return; }
+  if(erros.length){ popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', ')); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
 
   const {sub,taxa,descCupom,total} = co3UpdateResumo();
   const pagLabel = momento==='agora' ?'Pix' :
@@ -2383,8 +2392,6 @@ async function co3Finalizar(){
   partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
   const txtWpp = partes.join('\n');
 
-  const btn = document.getElementById('co3-btn-finalizar');
-  if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
   abrirWhatsApp(txtWpp);
   try{
     const codigo = await gerarCodigo(data);
