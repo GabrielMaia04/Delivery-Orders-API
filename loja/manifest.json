@@ -1,22 +1,10 @@
 {
-  "name": "Cortadinhos com Carinho",
-  "short_name": "Cortadinhos",
-  "description": "Sistema de pedidos Cortadinhos com Carinho",
-  "start_url": "/adm",
-  "scope": "/",
+  "name": "Hortifruti Pedidos",
+  "short_name": "Hortifruti",
+  "description": "Sistema de pedidos Hortifruti",
+  "start_url": "/loja/",
+  "scope": "/loja/",
   "display": "standalone",
   "background_color": "#0f1410",
-  "theme_color": "#2d8c4e",
-  "icons": [
-    {
-      "src": "/public/favicon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "/public/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    }
-  ]
+  "theme_color": "#2d8c4e"
 }

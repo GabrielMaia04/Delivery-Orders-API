@@ -1,5 +1,5 @@
-// Service Worker — Cortadinhos com Carinho
-const CACHE = 'cortadinhos-v1';
+// Service Worker - Hortifruti
+const CACHE = 'hortifruti-v1';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -11,31 +11,28 @@ self.addEventListener('activate', e => {
 
 // Recebe notificação push
 self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {};
-  const title = data.title || '🛎️ Novo pedido!';
+  const data = e.data ?e.data.json() : {};
+  const title = data.title || 'Novo pedido!';
   const options = {
     body: data.body || 'Um novo pedido foi realizado.',
-    icon: '/public/favicon-96x96.png',
-    badge: '/public/favicon-96x96.png',
-    vibrate: [200, 100, 200, 100, 200],
-    data: { url: '/adm' },
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    vibrate: [200, 100, 200],
+    data: { url: '/loja' },
     actions: [
-      { action: 'ver', title: '👀 Ver no admin' },
-      { action: 'fechar', title: 'Fechar' }
+      { action: 'ver', title: 'Ver pedido' }
     ]
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Clique na notificação — abre o admin
+// Clique na notificação - abre o sistema
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  if (e.action === 'fechar') return;
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      const adm = list.find(c => c.url.includes('/adm'));
-      if (adm) return adm.focus();
-      return clients.openWindow('/adm');
+    clients.matchAll({ type: 'window' }).then(list => {
+      if (list.length > 0) return list[0].focus();
+      return clients.openWindow('/loja');
     })
   );
 });

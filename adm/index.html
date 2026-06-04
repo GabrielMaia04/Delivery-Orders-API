@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260602-final" defer></script>
+  <script src="/adm/adm.js?v=20260604-push-manual" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -544,6 +544,13 @@
         </div>
         <button class="btn btn-g" style="width:100%" onclick="salvarRedes()">Salvar redes</button>
         <div id="dash-redes-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <!-- Notificacoes Push -->
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="bell-ring"></i> Ativar notificações</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Receba um aviso neste dispositivo quando um novo pedido entrar.</div>
+        <button class="btn btn-g ico-gap" id="push-admin-btn" style="width:100%" onclick="registrarPushAdmin()"><i data-lucide="bell"></i> Ativar notificações</button>
+        <div id="push-admin-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--text2)"></div>
       </div>
       <!-- Mensagem WhatsApp -->
       <div class="acard-sm full-col">

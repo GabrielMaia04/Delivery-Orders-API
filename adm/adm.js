@@ -54,33 +54,72 @@ function urlBase64ToUint8Array(base64String){
 }
 
 async function registrarPushAdmin(){
+  const log=(msg,data)=>data!==undefined?console.log('[PUSH ADMIN]',msg,data):console.log('[PUSH ADMIN]',msg);
+  const msgEl=document.getElementById('push-admin-msg');
+  const btn=document.getElementById('push-admin-btn');
+  const setMsg=(msg,type='info')=>{
+    if(!msgEl)return;
+    msgEl.textContent=msg;
+    msgEl.style.color=type==='ok'?'var(--green-bright)':type==='err'?'var(--red)':'var(--text2)';
+  };
   try{
-    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return;
-    const keyRes=await fetch('/api/push-public-key');
-    if(!keyRes.ok)return;
-    const {publicKey}=await keyRes.json();
-    if(!publicKey)return;
+    log('Inicio do registro manual');
+    if(btn){btn.disabled=true;btn.textContent='Ativando...';}
+    setMsg('Verificando suporte a notificações...');
 
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
+      log('Push nao suportado neste dispositivo/navegador');
+      setMsg('Este dispositivo/navegador não suporta push.','err');
+      return;
+    }
+
+    log('Buscando chave publica VAPID');
+    const keyRes=await fetch('/api/push-public-key');
+    if(!keyRes.ok)throw new Error('Falha ao buscar chave publica');
+    const {publicKey}=await keyRes.json();
+    if(!publicKey)throw new Error('Chave publica ausente');
+
+    log('Solicitando permissao de notificacao');
     let permission=Notification.permission;
     if(permission==='default')permission=await Notification.requestPermission();
-    if(permission!=='granted')return;
+    if(permission!=='granted'){
+      log('Permissao negada',permission);
+      setMsg('Permissão de notificação negada.','err');
+      return;
+    }
 
+    log('Registrando service worker /adm/sw.js');
     const reg=await navigator.serviceWorker.register('/adm/sw.js',{scope:'/adm/'});
+    await navigator.serviceWorker.ready;
+
+    log('Obtendo subscription atual');
     let sub=await reg.pushManager.getSubscription();
     if(!sub){
+      log('Criando nova subscription');
       sub=await reg.pushManager.subscribe({
         userVisibleOnly:true,
         applicationServerKey:urlBase64ToUint8Array(publicKey)
       });
     }
 
-    await fetch('/api/push-subscribe',{
+    log('Salvando subscription no servidor');
+    const saveRes=await fetch('/api/push-subscribe',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
     });
+    if(!saveRes.ok){
+      log('Erro ao salvar subscription',saveRes.status);
+      setMsg('Erro ao salvar inscrição push.','err');
+      return;
+    }
+    log('Subscription salva com sucesso');
+    setMsg('Notificações ativadas neste dispositivo.','ok');
   }catch(err){
-    console.warn('Push admin indisponivel:',err);
+    console.warn('[PUSH ADMIN] Erro ao registrar push:',err);
+    setMsg('Erro ao salvar inscrição push.','err');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="bell"></i> Ativar notificações';refreshIcons();}
   }
 }
 
@@ -2890,7 +2929,6 @@ async function iniciarAdmin(){
   refreshIcons();
   initDashboard();
   carregarPendentes();
-  registrarPushAdmin();
 }
 document.addEventListener('DOMContentLoaded', async () => {
   refreshIcons();
