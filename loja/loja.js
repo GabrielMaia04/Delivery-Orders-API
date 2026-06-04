@@ -1982,7 +1982,7 @@ async function _finalizarPedido(dados){
 // ══════════════════════════════════════
 // CHECKOUT 3 PASSOS
 // ══════════════════════════════════════
-let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='';
+let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='',co3EnderecoForaRaio=false;
 
 function fecharCo3(){
   const ov=document.getElementById('co3-ov');
@@ -2080,6 +2080,7 @@ async function co3CalcFrete(){
   if(!cepEl||!info)return;
   const cep=cepEl.value.replace(/\D/g,'');
   if(cep.length!==8){info.style.display='block';info.style.color='var(--orange)';info.textContent='Digite um CEP valido.';return;}
+  co3EnderecoForaRaio=false;
   info.style.display='block';info.textContent='Calculando...';info.style.color='var(--text2)';
   const result=await geocodificarCEP(cep);
   if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
@@ -2087,9 +2088,9 @@ async function co3CalcFrete(){
   const c2=document.getElementById('co3-cep2');if(c2)c2.value=cepEl.value;
   if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
   const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
-  if(dist>RAIO_MAX){info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
+  if(dist>RAIO_MAX){co3EnderecoForaRaio=true;co3FreteCalculado=false;_freteCalculado=false;info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
   const zona=calcularZona(dist);
-  if(zona){TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
+  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
   else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
 }
 
@@ -2188,7 +2189,7 @@ function co3SetModalidade(v){
   const endBloco=document.getElementById('co3-end-bloco'),retBloco2=document.getElementById('co3-ret-bloco');
   // label data
   const lbl=document.getElementById('co3-data-lbl-wrap');if(lbl)lbl.textContent='Data de '+(v==='Entrega'?'entrega':'retirada');
-  if(v==='Retirada'){co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
+  if(v==='Retirada'){co3EnderecoForaRaio=false;co3FreteCalculado=false;TAXA=0;_zonaAtiva=null;}
   co3UpdateResumo();co3RenderRetOpts();
 };
 
@@ -2198,7 +2199,7 @@ function co3SetModalidade(v){
 
 function abrirCo3(){
   if(!perfil){window._coPend=true;abrirAuth();return}
-  co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
+  co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3EnderecoForaRaio=false;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
   const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
   if(n&&!n.value)n.value=perfil.nome||'';
   if(t&&!t.value)t.value=perfil.telefone||'';
@@ -2268,6 +2269,7 @@ async function co3AutoBuscarCep(){
   if(!cepEl) return;
   const cep = cepEl.value.replace(/\D/g,'');
   if(cep.length === 8){
+    co3EnderecoForaRaio=false;
     const info = document.getElementById('co3-frete-info');
     if(info){ info.style.display='block'; info.textContent='Buscando...'; info.style.color='var(--text2)'; }
     try{
@@ -2288,14 +2290,14 @@ async function co3AutoBuscarCep(){
           if(result){
             window._cartCoords = {lat:result.lat, lng:result.lng};
             const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-            if(dist > RAIO_MAX){ if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; } return; }
+            if(dist > RAIO_MAX){ co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; } return; }
             const zona = calcularZona(dist);
-            if(zona){ TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true;
+            if(zona){ co3EnderecoForaRaio=false; TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true;
               if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); }
               co3UpdateResumo();
             }
           }
-        } else { co3FreteCalculado=true; _freteCalculado=true; co3UpdateResumo(); }
+        } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; co3UpdateResumo(); }
       } else {
         if(info){ info.textContent='CEP nao encontrado.'; info.style.color='var(--red)'; }
       }
@@ -2307,9 +2309,10 @@ async function co3AutoBuscarCep(){
 function co3Passo2(){
   if(!cart.itens.length){ toast('Carrinho vazio.','err'); return; }
   const data = document.getElementById('co3-data')?.value;
-  if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
   if(co3Modalidade==='Entrega'){
+    if(co3EnderecoForaRaio){ mostrarBalloon('Endereço fora da área de entrega.'); return; }
     if(!co3FreteCalculado){ mostrarBalloon('Informe o CEP para calcular o frete'); return; }
+    if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
     const num = document.getElementById('co3-num-p1')?.value;
     if(!num){ mostrarBalloon('Informe o numero do endereco'); return; }
     const endBase = document.getElementById('co3-end-full')?.value||'';
@@ -2319,6 +2322,7 @@ function co3Passo2(){
     document.getElementById('co3-end-full').value = endBase + numStr + compStr;
   }
   if(co3Modalidade==='Retirada'){
+    if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
     const local = document.getElementById('co3-ret-local')?.value;
     if(!local){ mostrarBalloon('Selecione uma data para ver o local de retirada'); return; }
   }
@@ -2551,6 +2555,7 @@ async function co3CalcFreteComNum(){
   const cep = cepEl.value.replace(/\D/g,'');
   if(cep.length !== 8 || !window._cartCepData) return;
 
+  co3EnderecoForaRaio=false;
   if(info){ info.style.display='block'; info.textContent='Calculando frete...'; info.style.color='var(--text2)'; }
 
   // Atualizar end-full com número
@@ -2560,6 +2565,7 @@ async function co3CalcFreteComNum(){
 
   if(!LOJA_LAT || !LOJA_LNG){
     TAXA = zonas[0]?.taxa || TAXA;
+    co3EnderecoForaRaio = false;
     co3FreteCalculado = true; _freteCalculado = true;
     if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
     co3UpdateResumo(); return;
@@ -2571,11 +2577,14 @@ async function co3CalcFreteComNum(){
     window._cartCoords = {lat:result.lat, lng:result.lng};
     const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
     if(dist > RAIO_MAX){
+      co3EnderecoForaRaio = true;
+      co3FreteCalculado = false; _freteCalculado = false;
       if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; }
       return;
     }
     const zona = calcularZona(dist);
     if(zona){
+      co3EnderecoForaRaio = false;
       TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true;
       if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
       co3UpdateResumo();
