@@ -46,6 +46,44 @@ const emoji=p=>p.emoji||'\u{1F966}';
 const lucideIcon=(name,cls='')=>`<i data-lucide="${name}"${cls?` class="${cls}"`:''}></i>`;
 function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
 
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
+async function registrarPushAdmin(){
+  try{
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return;
+    const keyRes=await fetch('/api/push-public-key');
+    if(!keyRes.ok)return;
+    const {publicKey}=await keyRes.json();
+    if(!publicKey)return;
+
+    let permission=Notification.permission;
+    if(permission==='default')permission=await Notification.requestPermission();
+    if(permission!=='granted')return;
+
+    const reg=await navigator.serviceWorker.register('/adm/sw.js',{scope:'/adm/'});
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(publicKey)
+      });
+    }
+
+    await fetch('/api/push-subscribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
+    });
+  }catch(err){
+    console.warn('Push admin indisponivel:',err);
+  }
+}
+
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371;
   const dLat=(lat2-lat1)*Math.PI/180;
@@ -2852,6 +2890,7 @@ async function iniciarAdmin(){
   refreshIcons();
   initDashboard();
   carregarPendentes();
+  registrarPushAdmin();
 }
 document.addEventListener('DOMContentLoaded', async () => {
   refreshIcons();
