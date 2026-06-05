@@ -11,6 +11,7 @@ let LOJA_LNG=null; // Longitude da loja
 let LOJA_ENDERECO=''; // Endereço da loja para geocoding
 let RAIO_MAX=5; // Raio máximo de entrega em km
 let zonas=[];
+let datasBloqueadasAdm=[];
 let INSTAGRAM_URL='https://instagram.com';
 let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
@@ -407,6 +408,7 @@ function showAPage(p,tab){
     if(eb){eb.textContent='Selecionar data de entrega';eb.classList.remove('selected');}
     renderEntregas();
   }
+  if(p==='datas-bloqueadas')carregarDatasBloqueadasAdm();
   if(p==='produtos'){renderCatList();renderProdList();renderCatSel();renderPPills();}
   if(p==='categorias'){renderCatList();renderCatSel();}
   if(p==='estoque')renderEstoque();
@@ -415,6 +417,86 @@ function showAPage(p,tab){
   if(p==='landing')initLanding();
 }
 function showAEl(id){document.querySelectorAll('.apage,.apage-3col').forEach(el=>el.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+function labelTipoBloqueio(tipo){
+  return tipo==='entrega'?'Entrega':tipo==='retirada'?'Retirada':'Entrega e retirada';
+}
+
+async function carregarDatasBloqueadasAdm(){
+  const list=document.getElementById('db-list');
+  const count=document.getElementById('db-count');
+  if(list)list.innerHTML='<div class="loading"><div class="spin"></div> Carregando...</div>';
+  try{
+    const {data,error}=await sb.from('datas_bloqueadas')
+      .select('id,data,tipo,motivo,ativo,criado_em')
+      .eq('ativo',true)
+      .order('data',{ascending:true});
+    if(error)throw error;
+    datasBloqueadasAdm=data||[];
+    if(count)count.textContent=datasBloqueadasAdm.length+' data'+(datasBloqueadasAdm.length!==1?'s':'');
+    renderDatasBloqueadasAdm();
+  }catch(e){
+    datasBloqueadasAdm=[];
+    if(count)count.textContent='';
+    if(list)list.innerHTML='<div class="empty">Não foi possível carregar as datas bloqueadas.</div>';
+    toast('Erro ao carregar datas bloqueadas.','err');
+  }
+}
+
+function renderDatasBloqueadasAdm(){
+  const list=document.getElementById('db-list');
+  if(!list)return;
+  if(!datasBloqueadasAdm.length){
+    list.innerHTML='<div class="empty">Nenhuma data bloqueada ativa.</div>';
+    return;
+  }
+  list.innerHTML=datasBloqueadasAdm.map(d=>{
+    const tipo=d.tipo||'ambos';
+    const motivo=d.motivo?'<div style="font-size:11px;color:var(--text3);margin-top:4px">'+h(d.motivo)+'</div>':'';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${fdLabel(d.data)}</div>
+        <div style="font-size:11px;color:var(--green-bright);font-weight:700;margin-top:3px">${h(labelTipoBloqueio(tipo))}</div>
+        ${motivo}
+      </div>
+      <button class="btn btn-r btn-sm ico-gap" onclick="desativarDataBloqueada('${h(d.id)}')"><i data-lucide="trash-2"></i> Remover</button>
+    </div>`;
+  }).join('');
+  refreshIcons();
+}
+
+async function salvarDataBloqueada(){
+  const data=document.getElementById('db-data')?.value;
+  const tipo=document.getElementById('db-tipo')?.value||'ambos';
+  const motivo=document.getElementById('db-motivo')?.value.trim()||null;
+  const msg=document.getElementById('db-msg');
+  if(!data){toast('Selecione uma data.','err');return}
+  if(!['entrega','retirada','ambos'].includes(tipo)){toast('Tipo de bloqueio inválido.','err');return}
+  if(msg){msg.style.color='var(--text2)';msg.textContent='Salvando...';}
+  try{
+    const payload={data,tipo,motivo,ativo:true,criado_por:perfil?.id||null};
+    const {error}=await sb.from('datas_bloqueadas').insert(payload);
+    if(error)throw error;
+    if(document.getElementById('db-data'))document.getElementById('db-data').value='';
+    if(document.getElementById('db-motivo'))document.getElementById('db-motivo').value='';
+    if(msg){msg.style.color='var(--green-bright)';msg.textContent='Data bloqueada salva.';}
+    toast('Data bloqueada salva.','ok');
+    await carregarDatasBloqueadasAdm();
+  }catch(e){
+    if(msg){msg.style.color='var(--red)';msg.textContent='Erro ao salvar data.';}
+    toast('Erro ao salvar data bloqueada.','err');
+  }
+}
+
+async function desativarDataBloqueada(id){
+  if(!id)return;
+  popConfirm('📅','Remover data bloqueada?','A data voltará a ficar disponível se as regras normais permitirem.','Remover','pbtn-danger',async()=>{
+    const {error}=await sb.from('datas_bloqueadas').update({ativo:false}).eq('id',id);
+    if(error){toast('Erro ao remover data.','err');return}
+    toast('Data liberada.','ok');
+    await carregarDatasBloqueadasAdm();
+  });
+}
 
 function setAE(v){
   ap.entrega=v;

@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260604-push-manual-v2" defer></script>
+  <script src="/adm/adm.js?v=20260605-datas-bloqueadas" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -87,6 +87,9 @@
         </button>
         <button class="aside-item" id="aside-entregas" onclick="showAPage('entregas',this)">
           <i data-lucide="truck"></i> Entregas
+        </button>
+        <button class="aside-item" id="aside-datas-bloqueadas" onclick="showAPage('datas-bloqueadas',this)">
+          <i data-lucide="calendar-x"></i> Datas bloqueadas
         </button>
         <div class="aside-divider"></div>
         <div class="aside-section">Produtos</div>
@@ -437,7 +440,40 @@
     </div>
   </div>
 
-    <!-- CATEGORIAS -->
+  <!-- DATAS BLOQUEADAS -->
+  <div id="ap-datas-bloqueadas" class="apage">
+    <div class="page-header">
+      <span class="page-title">Datas bloqueadas</span>
+      <button class="btn btn-o btn-sm ico-gap" onclick="carregarDatasBloqueadasAdm()"><i data-lucide="refresh-cw"></i> Atualizar</button>
+    </div>
+    <div class="config-grid">
+      <div class="acard-sm">
+        <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="calendar-x"></i> Nova data bloqueada</div>
+        <div class="field"><label>Data</label><input id="db-data" type="date"></div>
+        <div class="field"><label>Tipo de bloqueio</label>
+          <select id="db-tipo">
+            <option value="ambos">Entrega e retirada</option>
+            <option value="entrega">Somente entrega</option>
+            <option value="retirada">Somente retirada</option>
+          </select>
+        </div>
+        <div class="field"><label>Motivo opcional</label><textarea id="db-motivo" placeholder="Ex: feriado, feira suspensa, manutenção..."></textarea></div>
+        <button class="btn btn-g ico-gap" style="width:100%" onclick="salvarDataBloqueada()"><i data-lucide="save"></i> Salvar data</button>
+        <div id="db-msg" style="font-size:11px;margin-top:8px;text-align:center;color:var(--green-bright)"></div>
+      </div>
+      <div class="acard-sm full-col">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+          <div class="ico-gap" style="font-size:13px;font-weight:800"><i data-lucide="list"></i> Datas ativas</div>
+          <span id="db-count" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+        <div id="db-list">
+          <div class="empty">Carregando datas bloqueadas...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORIAS -->
   <div id="ap-categorias" class="apage">
     <div class="page-header"><span class="page-title">Categorias</span><span id="cat-count" style="font-size:12px;color:var(--text3)"></span></div>
     <div class="full-grid">

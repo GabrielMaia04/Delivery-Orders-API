@@ -14,6 +14,7 @@ let LOJA_LNG=null; // Longitude da loja
 let LOJA_ENDERECO=''; // Endereço da loja para geocoding
 let RAIO_MAX=5; // Raio máximo de entrega em km
 let zonas=[];
+let datasBloqueadas=[];
 let INSTAGRAM_URL='https://instagram.com';
 let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
@@ -387,6 +388,29 @@ async function carregarZonas(){
   zonas=data||[];
 }
 
+async function carregarDatasBloqueadas(){
+  try{
+    const {data,error}=await sb.from('datas_bloqueadas')
+      .select('data,tipo,motivo')
+      .eq('ativo',true);
+    if(error)throw error;
+    datasBloqueadas=(data||[]).map(d=>({
+      data:String(d.data||'').slice(0,10),
+      tipo:(d.tipo||'ambos').toLowerCase(),
+      motivo:d.motivo||''
+    })).filter(d=>d.data);
+  }catch(e){
+    console.warn('Datas bloqueadas indisponiveis:',e?.message||e);
+    datasBloqueadas=[];
+  }
+}
+
+function dataBloqueada(iso,modalidade){
+  if(!iso)return null;
+  const tipo=(modalidade==='Retirada'||modalidade==='retirada')?'retirada':'entrega';
+  return datasBloqueadas.find(d=>d.data===iso&&(d.tipo==='ambos'||d.tipo===tipo))||null;
+}
+
 // Verificar distância e aplicar taxa no checkout
 let _clienteLat=null,_clienteLng=null,_zonaAtiva=null;
 
@@ -472,6 +496,7 @@ async function carregarTaxaRemota(){
 async function init(){
   carregarTaxaRemota();
   carregarZonas();
+  await carregarDatasBloqueadas();
   // r-data intencionalmente em branco — relatório começa sem filtro de data
 
   // Verifica sessao primeiro, depois carrega catalogo
@@ -1369,6 +1394,12 @@ async function enviarPedido(){
     }
   }
   if(!document.getElementById('co-data').value){popAlert('📅','Data obrigatória','Selecione uma data.');return}
+  const dataPedCheckout=document.getElementById('co-data').value;
+  await carregarDatasBloqueadas();
+  if(dataBloqueada(dataPedCheckout,cart.entrega)){
+    toast('Essa data não está disponível. Escolha outra data.','err',3000);
+    return;
+  }
   if(!cart.itens.length){toast('Carrinho vazio.','err');return}
   const btn=document.getElementById('co-btn');
   btn.disabled=true;btn.textContent='Enviando...';
@@ -1504,7 +1535,7 @@ function renderCal(){
   document.getElementById('cal-month-label').textContent=MESES_LONG[calMes]+' '+calAno;
 
   const hoje=new Date();hoje.setHours(0,0,0,0);
-  const selVal=document.getElementById(calCtx==='co'?'co-data':calCtx==='adm'?'a-data':'e-data').value;
+  const selVal=document.getElementById(calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data').value;
 
   // Datas disponíveis: lógica diferente por contexto
   const proximas=new Set();
@@ -1529,6 +1560,9 @@ function renderCal(){
     if(calCtx==='adm') isDisponivel=true;
     else if(calCtx==='entr') isDisponivel=(dow===2||dow===5);
     else isDisponivel=proximas.has(iso);
+    if((calCtx==='co'||calCtx==='co3')&&dataBloqueada(iso,calCtx==='co3'?co3Modalidade:cart.entrega)){
+      isDisponivel=false;
+    }
     const isSelected=iso===selVal;
 
     let cls='cal-day';
@@ -1549,6 +1583,11 @@ function renderCal(){
 }
 
 function selecionarData(iso){
+  if((calCtx==='co'||calCtx==='co3')&&dataBloqueada(iso,calCtx==='co3'?co3Modalidade:cart.entrega)){
+    fecharCal();
+    toast('Essa data não está disponível. Escolha outra data.','err',3000);
+    return;
+  }
   const idInput=calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data';
   const idBtn=calCtx==='co'?'co-data-btn':calCtx==='adm'?'a-data-btn':calCtx==='co3'?'co3-data-btn':'e-data-btn';
   document.getElementById(idInput).value=iso;
@@ -1919,6 +1958,11 @@ async function confirmarPagamentoPix(){
 // ── FINALIZAR PEDIDO APÓS PIX ──
 async function _finalizarPedido(dados){
   const {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed, pagLabel, pag} = dados;
+  await carregarDatasBloqueadas();
+  if(dataBloqueada(dataPed,isRetirada?'Retirada':'Entrega')){
+    toast('Essa data não está disponível. Escolha outra data.','err',3000);
+    return;
+  }
   fecharCo();
   abrirWhatsApp(txtWpp);
   try{
@@ -2311,6 +2355,7 @@ function co3Passo2(){
     if(co3EnderecoForaRaio){ mostrarBalloon('Endereço fora da área de entrega.'); return; }
     if(!co3FreteCalculado){ mostrarBalloon('Informe o CEP para calcular o frete'); return; }
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
+    if(dataBloqueada(data,'Entrega')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
     const num = document.getElementById('co3-num-p1')?.value.trim();
     if(!num){ mostrarBalloon('Informe o numero do endereco'); return; }
     const rua = document.getElementById('co3-rua-p1')?.value.trim()||'';
@@ -2324,6 +2369,7 @@ function co3Passo2(){
   }
   if(co3Modalidade==='Retirada'){
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
+    if(dataBloqueada(data,'Retirada')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
     const local = document.getElementById('co3-ret-local')?.value;
     if(!local){ mostrarBalloon('Selecione uma data para ver o local de retirada'); return; }
   }
@@ -2372,6 +2418,14 @@ async function co3Finalizar(){
   const erros=[];
   if(!nome) erros.push('Nome');if(!tel) erros.push('Telefone');
   if(erros.length){ popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', ')); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
+
+  if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
+  await carregarDatasBloqueadas();
+  if(dataBloqueada(data,co3Modalidade)){
+    mostrarBalloon('Essa data não está disponível. Escolha outra data.');
+    if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}
+    return;
+  }
 
   const {sub,taxa,descCupom,total} = co3UpdateResumo();
   const pagLabel = momento==='agora' ?'Pix' :
@@ -2480,7 +2534,8 @@ function co3CalRender(){
     const dt = new Date(_co3CalAno, _co3CalMes, dia);
     const iso = _co3CalAno+'-'+String(_co3CalMes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
     const isHoje = dt.getTime() === hoje.getTime();
-    const isDisp = proximas.has(iso);
+    const bloqueada = dataBloqueada(iso,co3Modalidade);
+    const isDisp = proximas.has(iso) && !bloqueada;
     const isSel = iso === selVal;
     let cls = 'co3-cal-day';
     if(isDisp) cls += ' available';
@@ -2497,6 +2552,10 @@ function co3CalRender(){
 }
 
 function co3CalSel(iso){
+  if(dataBloqueada(iso,co3Modalidade)){
+    mostrarBalloon('Essa data não está disponível. Escolha outra data.');
+    return;
+  }
   document.getElementById('co3-data').value = iso;
   const [y,m,d] = iso.split('-').map(Number);
   const dt = new Date(y,m-1,d);
