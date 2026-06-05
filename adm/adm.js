@@ -57,6 +57,11 @@ async function registrarPushAdmin(){
   const log=(msg,data)=>data!==undefined?console.log('[PUSH ADMIN]',msg,data):console.log('[PUSH ADMIN]',msg);
   const msgEl=document.getElementById('push-admin-msg');
   const btn=document.getElementById('push-admin-btn');
+  const STEP_TIMEOUT=15000;
+  const withTimeout=(promise,step)=>Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error(step+' demorou demais')),STEP_TIMEOUT))
+  ]);
   const setMsg=(msg,type='info')=>{
     if(!msgEl)return;
     msgEl.textContent=msg;
@@ -65,7 +70,7 @@ async function registrarPushAdmin(){
   try{
     log('Inicio do registro manual');
     if(btn){btn.disabled=true;btn.textContent='Ativando...';}
-    setMsg('Verificando suporte a notificações...');
+    setMsg('Verificando suporte...');
 
     if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
       log('Push nao suportado neste dispositivo/navegador');
@@ -73,41 +78,64 @@ async function registrarPushAdmin(){
       return;
     }
 
-    log('Buscando chave publica VAPID');
-    const keyRes=await fetch('/api/push-public-key');
+    log('Registrando service worker...');
+    setMsg('Registrando service worker...');
+    const reg=await withTimeout(
+      navigator.serviceWorker.register('/adm/sw.js',{scope:'/adm/'}),
+      'Registro do service worker'
+    );
+    if(!reg.active){
+      log('Service worker instalado, mas ainda nao ativo',reg);
+      setMsg('Service worker instalado. Feche e abra o app novamente e clique em Ativar notificações.','err');
+      return;
+    }
+    if(!reg.pushManager){
+      log('PushManager indisponivel no service worker');
+      setMsg('Este dispositivo/navegador não suporta push.','err');
+      return;
+    }
+
+    log('Buscando chave pública...');
+    setMsg('Buscando chave pública...');
+    const keyRes=await withTimeout(fetch('/api/push-public-key'),'Busca da chave pública');
     if(!keyRes.ok)throw new Error('Falha ao buscar chave publica');
-    const {publicKey}=await keyRes.json();
+    const {publicKey}=await withTimeout(keyRes.json(),'Leitura da chave pública');
     if(!publicKey)throw new Error('Chave publica ausente');
 
-    log('Solicitando permissao de notificacao');
+    log('Solicitando permissão...');
+    setMsg('Solicitando permissão...');
     let permission=Notification.permission;
-    if(permission==='default')permission=await Notification.requestPermission();
+    if(permission==='default')permission=await withTimeout(Notification.requestPermission(),'Permissão de notificação');
     if(permission!=='granted'){
       log('Permissao negada',permission);
       setMsg('Permissão de notificação negada.','err');
       return;
     }
 
-    log('Registrando service worker /adm/sw.js');
-    const reg=await navigator.serviceWorker.register('/adm/sw.js',{scope:'/adm/'});
-    await navigator.serviceWorker.ready;
-
-    log('Obtendo subscription atual');
-    let sub=await reg.pushManager.getSubscription();
+    log('Criando inscrição push...');
+    setMsg('Criando inscrição push...');
+    let sub=await withTimeout(reg.pushManager.getSubscription(),'Busca da inscrição push');
     if(!sub){
       log('Criando nova subscription');
-      sub=await reg.pushManager.subscribe({
-        userVisibleOnly:true,
-        applicationServerKey:urlBase64ToUint8Array(publicKey)
-      });
+      sub=await withTimeout(
+        reg.pushManager.subscribe({
+          userVisibleOnly:true,
+          applicationServerKey:urlBase64ToUint8Array(publicKey)
+        }),
+        'Criação da inscrição push'
+      );
     }
 
-    log('Salvando subscription no servidor');
-    const saveRes=await fetch('/api/push-subscribe',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
-    });
+    log('Salvando inscrição...');
+    setMsg('Salvando inscrição...');
+    const saveRes=await withTimeout(
+      fetch('/api/push-subscribe',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
+      }),
+      'Salvamento da inscrição push'
+    );
     if(!saveRes.ok){
       log('Erro ao salvar subscription',saveRes.status);
       setMsg('Erro ao salvar inscrição push.','err');
@@ -117,7 +145,7 @@ async function registrarPushAdmin(){
     setMsg('Notificações ativadas neste dispositivo.','ok');
   }catch(err){
     console.warn('[PUSH ADMIN] Erro ao registrar push:',err);
-    setMsg('Erro ao salvar inscrição push.','err');
+    setMsg('Erro ao salvar inscrição push: '+(err?.message||'falha desconhecida')+'.','err');
   }finally{
     if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="bell"></i> Ativar notificações';refreshIcons();}
   }
