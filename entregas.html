@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Entregas — Cortadinhos com Carinho</title>
+<meta name="description" content="Saiba tudo sobre as entregas da Cortadinhos com Carinho: regiões atendidas, dias e horários, taxas de entrega e como retirar nas feiras."/>
+<meta name="robots" content="index, follow"/>
+<link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96"/>
+<link rel="icon" type="image/svg+xml" href="/public/favicon.svg"/>
+<link rel="shortcut icon" href="/public/favicon.ico"/>
+<link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png"/>
+<meta name="theme-color" content="#2E7D32"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/shared/shared.css">
+<link rel="stylesheet" href="/landing.css">
+<style>
+/* ── ENTREGAS PAGE ── */
+.ent-hero{
+  background:var(--nav-bg);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  padding:56px 24px 48px;
+  text-align:center;
+}
+.ent-hero-label{
+  font-size:12px;font-weight:700;color:var(--green-bright);
+  text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;
+}
+.ent-hero h1{
+  font-size:clamp(28px,4vw,44px);font-weight:800;color:#fff;
+  line-height:1.15;margin-bottom:14px;
+}
+.ent-hero p{
+  font-size:16px;color:rgba(255,255,255,.65);
+  max-width:520px;margin:0 auto 28px;line-height:1.7;
+}
+.ent-hero-actions{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+}
+.ent-body{
+  max-width:900px;margin:0 auto;padding:56px 24px 80px;
+}
+/* ── CARDS ── */
+.ent-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.ent-card-header{
+  display:flex;align-items:center;gap:14px;
+  padding:20px 24px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.ent-card-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:var(--green-light);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ent-card-icon svg{
+  width:22px;height:22px;
+  stroke:var(--green-bright);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+.ent-card-header h2{
+  font-size:17px;font-weight:800;color:var(--text);margin-bottom:2px;
+}
+.ent-card-header p{
+  font-size:13px;color:var(--text2);
+}
+.ent-card-body{
+  padding:24px;
+}
+/* ── DIAS GRID ── */
+.dias-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+.dia-item{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;padding:18px;
+}
+.dia-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 12px;border-radius:50px;
+  font-size:12px;font-weight:700;margin-bottom:12px;
+}
+.dia-badge-terca{background:rgba(45,140,78,.15);color:#4ade80}
+.dia-badge-sexta{background:rgba(45,110,140,.15);color:#60b8d4}
+.dia-item h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px}
+.dia-info-row{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:13px;color:var(--text2);margin-bottom:6px;line-height:1.45;
+}
+.dia-info-row svg{
+  width:14px;height:14px;
+  stroke:var(--green-bright);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  flex-shrink:0;margin-top:2px;
+}
+.dia-corte{
+  margin-top:10px;padding:8px 10px;
+  background:rgba(255,167,38,.08);
+  border:1px solid rgba(255,167,38,.2);
+  border-radius:8px;
+  font-size:11px;color:var(--orange);font-weight:600;
+  display:flex;align-items:center;gap:6px;
+}
+.dia-corte svg{
+  width:13px;height:13px;
+  stroke:var(--orange);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;
+}
+/* ── ZONAS ── */
+.zonas-intro{
+  font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:18px;
+}
+.zonas-list{
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:20px;
+}
+.zona-row{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;
+}
+.zona-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.zona-dot-verde{background:#4ade80}
+.zona-dot-azul{background:#60b8d4}
+.zona-dot-amarelo{background:#fbbf24}
+.zona-nome{font-size:14px;font-weight:700;color:var(--text);flex:1}
+.zona-bairros{font-size:12px;color:var(--text2);line-height:1.5}
+.zona-taxa{
+  font-size:14px;font-weight:800;color:var(--green-bright);
+  white-space:nowrap;
+}
+.zona-raio-aviso{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:14px 16px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;
+  font-size:13px;color:var(--text2);line-height:1.6;
+}
+.zona-raio-aviso svg{
+  width:16px;height:16px;
+  stroke:var(--text3);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;margin-top:2px;
+}
+/* ── MAPA ── */
+.mapa-wrap{
+  position:relative;border-radius:14px;overflow:hidden;
+  border:1px solid var(--border);margin-top:4px;
+}
+.mapa-wrap iframe{
+  width:100%;height:340px;border:none;display:block;
+  filter:grayscale(20%) invert(5%);
+}
+.mapa-overlay-btn{
+  position:absolute;bottom:14px;right:14px;
+  display:flex;align-items:center;gap:7px;
+  background:var(--nav-bg);color:#fff;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:50px;padding:9px 18px;
+  font-size:13px;font-weight:700;
+  text-decoration:none;
+  backdrop-filter:blur(8px);
+  transition:background .2s;
+}
+.mapa-overlay-btn:hover{background:var(--green)}
+.mapa-overlay-btn svg{
+  width:14px;height:14px;
+  stroke:currentColor;fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+}
+/* ── RETIRADA ── */
+.ret-cards{display:flex;flex-direction:column;gap:14px}
+.ret-card{
+  display:flex;align-items:center;gap:16px;
+  padding:18px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:14px;
+}
+.ret-dia-badge{
+  padding:8px 14px;border-radius:8px;
+  font-size:13px;font-weight:800;white-space:nowrap;text-align:center;
+  min-width:90px;
+}
+.ret-badge-terca{background:rgba(45,140,78,.15);color:#4ade80}
+.ret-badge-sexta{background:rgba(45,110,140,.15);color:#60b8d4}
+.ret-info{flex:1}
+.ret-rua{font-size:15px;font-weight:700;color:var(--text)}
+.ret-ref{font-size:12px;color:var(--green-bright);margin-top:2px;font-weight:600}
+.ret-cidade{font-size:12px;color:var(--text2);margin-top:1px}
+.ret-maps-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 16px;
+  background:var(--bg4);border:1.5px solid var(--border2);
+  border-radius:50px;font-size:12px;font-weight:700;color:var(--text2);
+  text-decoration:none;white-space:nowrap;
+  transition:background .2s,border-color .2s,color .2s;
+  flex-shrink:0;
+}
+.ret-maps-btn svg{
+  width:14px;height:14px;
+  stroke:var(--green-bright);fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+}
+.ret-maps-btn:hover{background:var(--green);border-color:var(--green);color:#fff}
+.ret-maps-btn:hover svg{stroke:#fff}
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:10px}
+.faq-item{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.faq-q{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;cursor:pointer;
+  font-size:14px;font-weight:700;color:var(--text);
+  user-select:none;gap:12px;
+}
+.faq-q svg{
+  width:16px;height:16px;stroke:var(--text3);fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+  flex-shrink:0;transition:transform .25s;
+}
+.faq-item.open .faq-q svg{transform:rotate(180deg);stroke:var(--green-bright)}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height .3s ease,padding .3s;
+  font-size:13px;color:var(--text2);line-height:1.7;
+  padding:0 18px;
+}
+.faq-item.open .faq-a{max-height:200px;padding:0 18px 16px}
+/* ── CTA BOTTOM ── */
+.ent-cta{
+  text-align:center;margin-top:40px;
+  padding:36px 24px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+}
+.ent-cta h2{font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px}
+.ent-cta p{font-size:14px;color:var(--text2);margin-bottom:22px;line-height:1.6}
+.ent-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .ent-hero{padding:40px 16px 36px}
+  .ent-body{padding:36px 16px 80px}
+  .ent-hero-actions{flex-direction:column}
+  .ent-hero-actions a{justify-content:center}
+  .dias-grid{grid-template-columns:1fr}
+  .ret-card{flex-wrap:wrap;gap:12px}
+  .ret-maps-btn{width:100%;justify-content:center}
+  .ent-card-body{padding:18px}
+  .ent-cta-btns{flex-direction:column}
+  .ent-cta-btns a{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">
+    <img src="/public/logo-unida.png" alt="Cortadinhos com Carinho" style="height:48px;width:auto;object-fit:contain">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Início</a></li>
+    <li><a href="/#como-funciona">Como funciona</a></li>
+    <li><a href="/#feiras">Feiras</a></li>
+    <li><a href="/entregas" style="color:var(--green-bright)">Entregas</a></li>
+    <li><a href="/#depoimentos">Depoimentos</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="/loja" class="btn-nav">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      Pedir agora
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="ent-hero">
+  <p class="ent-hero-label">Logística</p>
+  <h1>Entrega e Retirada</h1>
+  <p>Tudo que você precisa saber sobre como seu pedido chega até você — dias, horários, regiões e taxas.</p>
+  <div class="ent-hero-actions">
+    <a href="/loja" class="btn-primary">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      Fazer meu pedido
+    </a>
+    <a href="https://wa.me/5521976081746?text=Oi%2C+gostaria+de+saber+mais+sobre+entregas!" class="btn-wpp" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" style="fill:#25d366;stroke:none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg>
+      Falar no WhatsApp
+    </a>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="ent-body">
+
+  <!-- 1. DIAS E HORÁRIOS -->
+  <div class="ent-card">
+    <div class="ent-card-header">
+      <div class="ent-card-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <h2>Dias e horários de entrega</h2>
+        <p>Realizamos entregas duas vezes por semana</p>
+      </div>
+    </div>
+    <div class="ent-card-body">
+      <div class="dias-grid">
+
+        <div class="dia-item">
+          <span class="dia-badge dia-badge-terca">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Terça-feira
+          </span>
+          <div class="dia-info-row">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Manhã e tarde (horário combinado)
+          </div>
+          <div class="dia-info-row">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Avisamos pelo WhatsApp no dia
+          </div>
+          <div class="dia-corte">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Prazo de pedido: Segunda até as 20h
+          </div>
+        </div>
+
+        <div class="dia-item">
+          <span class="dia-badge dia-badge-sexta">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Sexta-feira
+          </span>
+          <div class="dia-info-row">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Manhã e tarde (horário combinado)
+          </div>
+          <div class="dia-info-row">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Avisamos pelo WhatsApp no dia
+          </div>
+          <div class="dia-corte">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Prazo de pedido: Quinta até as 20h
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ONDE ENTREGAMOS + MAPA -->
+  <div class="ent-card">
+    <div class="ent-card-header">
+      <div class="ent-card-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <h2>Onde entregamos</h2>
+        <p>Regiões atendidas no Rio de Janeiro</p>
+      </div>
+    </div>
+    <div class="ent-card-body">
+      <p class="zonas-intro">Atendemos regiões próximas ao Grajaú, conforme validação automática pelo CEP no checkout.</p>
+
+      <div class="zonas-list">
+        <div class="zona-row">
+          <div class="zona-dot zona-dot-verde"></div>
+          <div style="flex:1">
+            <div class="zona-nome">Zona próxima</div>
+            <div class="zona-bairros">Parte de Grajaú, Andaraí, Vila Isabel, Tijuca, Maracanã e regiões próximas.</div>
+          </div>
+          <div class="zona-taxa">Calculada no checkout</div>
+        </div>
+        <div class="zona-row">
+          <div class="zona-dot zona-dot-azul"></div>
+          <div style="flex:1">
+            <div class="zona-nome">Zona intermediária</div>
+            <div class="zona-bairros">Regiões próximas validadas automaticamente pelo CEP.</div>
+          </div>
+          <div class="zona-taxa">Calculada no checkout</div>
+        </div>
+        <div class="zona-row">
+          <div class="zona-dot zona-dot-amarelo"></div>
+          <div style="flex:1">
+            <div class="zona-nome">Zona distante</div>
+            <div class="zona-bairros">Endereços aprovados pela validação automática do checkout.</div>
+          </div>
+          <div class="zona-taxa">Calculada no checkout</div>
+        </div>
+        <div class="zona-raio-aviso">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>As taxas exatas são calculadas automaticamente pelo sistema no momento do pedido, com base no CEP informado. Em caso de dúvida, entre em contato pelo WhatsApp antes de finalizar.</span>
+        </div>
+      </div>
+
+      <!-- MAPA GRAJAÚ -->
+      <div class="mapa-wrap">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d14140.12!2d-43.264!3d-22.927!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1spt!2sbr!4v1"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Região de entrega — Grajaú, Rio de Janeiro">
+        </iframe>
+        <a class="mapa-overlay-btn"
+           href="https://www.google.com/maps/place/Grajaú,+Rio+de+Janeiro"
+           target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir no Google Maps
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. TAXA DE ENTREGA -->
+  <div class="ent-card">
+    <div class="ent-card-header">
+      <div class="ent-card-icon">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <h2>Taxa de entrega</h2>
+        <p>Como o frete é calculado</p>
+      </div>
+    </div>
+    <div class="ent-card-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green-bright);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Cálculo por distância</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">A taxa é calculada pela distância real entre nossa base em Grajaú e o seu endereço, usando um fator de rota. O valor é exibido automaticamente no checkout ao digitar seu CEP.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(45,110,140,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#60b8d4;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Transparência total</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">Você vê a taxa antes de confirmar o pedido. Não existe cobrança surpresa — o que aparece no checkout é exatamente o que você paga.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,167,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Opção sem taxa — Retirada nas feiras</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">Retire gratuitamente nas nossas feiras semanais em Grajaú. Terças na Rua Borda do Mato e Sextas na Av. Júlio Furtado.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. LOCAIS DE RETIRADA -->
+  <div class="ent-card">
+    <div class="ent-card-header">
+      <div class="ent-card-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <h2>Locais de retirada</h2>
+        <p>Retire gratuitamente nas nossas feiras semanais</p>
+      </div>
+    </div>
+    <div class="ent-card-body">
+      <div class="ret-cards">
+
+        <div class="ret-card">
+          <div class="ret-dia-badge ret-badge-terca">Terça<br>feira</div>
+          <div class="ret-info">
+            <div class="ret-rua">Rua Borda do Mato</div>
+            <div class="ret-ref">Em frente à Academia Borda 90</div>
+            <div class="ret-cidade">Grajaú, Rio de Janeiro</div>
+          </div>
+          <a class="ret-maps-btn"
+             href="https://www.google.com/maps/place/Rua+Borda+do+Mato+%E2%80%94+Em+frente+%C3%A0+Academia+Borda+90/data=!4m2!3m1!1s0x997d175199971d:0xe044114a4a92fac5?sa=X&ved=1t:242&ictx=111"
+             target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Como chegar
+          </a>
+        </div>
+
+        <div class="ret-card">
+          <div class="ret-dia-badge ret-badge-sexta">Sexta<br>feira</div>
+          <div class="ret-info">
+            <div class="ret-rua">Av. Júlio Furtado</div>
+            <div class="ret-ref">Em frente ao StudioGama115</div>
+            <div class="ret-cidade">Grajaú, Rio de Janeiro</div>
+          </div>
+          <a class="ret-maps-btn"
+             href="https://www.google.com/maps/place/Av.+J%C3%BAlio+Furtado+%E2%80%94+Em+frente+ao+StudioGama115/data=!4m2!3m1!1s0x997d89752a1b97:0x76b53304b5fa72a1?sa=X&ved=1t:242&ictx=111"
+             target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Como chegar
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. FAQ -->
+  <div class="ent-card">
+    <div class="ent-card-header">
+      <div class="ent-card-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <h2>Perguntas frequentes</h2>
+        <p>Dúvidas sobre entrega e retirada</p>
+      </div>
+    </div>
+    <div class="ent-card-body">
+      <div class="faq-list">
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">
+            Posso escolher o horário exato da entrega?
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-a">
+            Ainda não oferecemos janela horária fixa. Avisamos pelo WhatsApp no próprio dia da entrega com uma estimativa. Se tiver alguma restrição de horário, basta informar na observação do pedido ou pelo WhatsApp e faremos o possível para atender.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">
+            Meu bairro é atendido?
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-a">
+            A forma mais fácil de verificar é tentar fazer um pedido na loja e digitar seu CEP no checkout. O sistema calcula a distância automaticamente e informa se o endereço está dentro do raio de entrega. Você também pode nos perguntar pelo WhatsApp.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">
+            O que acontece se eu não estiver em casa na entrega?
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-a">
+            Entramos em contato pelo WhatsApp antes de chegar. Se não conseguirmos realizar a entrega, combinamos uma nova data ou ponto de retirada. Não há custo adicional para a primeira remarcação.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">
+            Posso retirar na feira sem ter feito o pedido online?
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-a">
+            Sim! Você pode nos encontrar diretamente nas feiras de terça e sexta em Grajaú. No entanto, para garantir a disponibilidade do seu produto preferido, recomendamos fazer o pedido online com antecedência escolhendo a opção "Retirada".
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">
+            Até quando posso fazer o pedido para a entrega da semana?
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-a">
+            Para entrega na terça-feira, o prazo é segunda-feira até as 20h. Para a sexta-feira, o prazo é quinta-feira até as 20h. Pedidos fora desse prazo são agendados para a próxima data disponível.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="ent-cta">
+    <h2>Pronto para pedir?</h2>
+    <p>Acesse a loja, escolha seus produtos e finalize com entrega ou retirada. É rápido e fácil.</p>
+    <div class="ent-cta-btns">
+      <a href="/loja" class="btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Ir para a loja
+      </a>
+      <a href="https://wa.me/5521976081746?text=Oi%2C+gostaria+de+saber+se+entregam+no+meu+bairro!" class="btn-wpp" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" style="fill:#25d366;stroke:none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.842L.057 23.57a.5.5 0 0 0 .608.625l5.945-1.56A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 0 1-5.03-1.373l-.36-.214-3.532.927.942-3.444-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg>
+        Meu bairro é atendido?
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- MOBILE BAR -->
+<div class="mobile-bar">
+  <a href="/loja">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    Fazer meu pedido agora
+  </a>
+</div>
+
+</body>
+</html>

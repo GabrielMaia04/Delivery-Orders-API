@@ -2,6 +2,9 @@ const CONFIG = window.CONFIG;
 const IMG_BASE = CONFIG.IMG_BASE;
 const WHATSAPP_NUM = CONFIG.WHATSAPP_NUMBER;
 const sb = window.sb;
+const PIX_CHAVE = CONFIG.PIX_CHAVE || '';
+const PIX_NOME = CONFIG.PIX_NOME || '';
+const PIX_CIDADE = CONFIG.PIX_CIDADE || '';
 
 let TAXA=2.50;
 let PEDIDO_MIN=0;
@@ -1193,8 +1196,7 @@ function buildTextoWhatsApp(pedido,itens){
   let pagExtra = '';
   if(pagBruto.toLowerCase().includes('pix')){
     pagLabel = 'Pix';
-    const chavePix = '21976081746';
-    pagExtra = 'Chave Pix: ' + chavePix;
+    pagExtra = 'Chave Pix: ' + PIX_CHAVE;
   } else if(pagBruto.toLowerCase().includes('dinheiro')){
     pagLabel = 'Dinheiro';
     // Troco
@@ -1210,7 +1212,6 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template personalizado (se existir)
   if(WPP_MSG_TEMPLATE){
-    const chavePix = '21976081746';
     const trocoVal = pedido.troco||'';
     const trocoTxt = trocoVal && trocoVal!=='sem troco' ?'R$ '+fp(parseFloat(trocoVal)) : 'Nao';
     return WPP_MSG_TEMPLATE
@@ -1226,7 +1227,7 @@ function buildTextoWhatsApp(pedido,itens){
       .replace(/{endereco}/g, endFull||'')
       .replace(/{obs}/g, pedido.obs||'')
       .replace(/{troco}/g, trocoTxt)
-      .replace(/{chave_pix}/g, pagLabel==='Pix' ?chavePix : '');
+      .replace(/{chave_pix}/g, pagLabel==='Pix' ?PIX_CHAVE : '');
   }
 
   // Template padrao formatado
@@ -1829,9 +1830,6 @@ async function salvarNovaSenha(){
 // LANDING PAGE EDITOR
 // ══════════════════════════════════════
 
-const PIX_CHAVE = '+5521976081746';
-const PIX_NOME  = 'Gabriel Rodrigues Maia';
-const PIX_CIDADE = 'Rio de Janeiro';
 let _pixPedidoData = null; // guarda dados do pedido para confirmar depois
 
 function _pixCampo(id, val){
@@ -2313,10 +2311,13 @@ function co3Passo2(){
     if(co3EnderecoForaRaio){ mostrarBalloon('Endereço fora da área de entrega.'); return; }
     if(!co3FreteCalculado){ mostrarBalloon('Informe o CEP para calcular o frete'); return; }
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
-    const num = document.getElementById('co3-num-p1')?.value;
+    const num = document.getElementById('co3-num-p1')?.value.trim();
     if(!num){ mostrarBalloon('Informe o numero do endereco'); return; }
-    const endBase = document.getElementById('co3-end-full')?.value||'';
-    const comp = document.getElementById('co3-comp-p1')?.value||'';
+    const rua = document.getElementById('co3-rua-p1')?.value.trim()||'';
+    const bairro = document.getElementById('co3-bairro-p1')?.value.trim()||'';
+    const cidade = document.getElementById('co3-cidade-p1')?.value.trim()||'';
+    const endBase = [rua,bairro].filter(Boolean).join(', ') + (cidade?' - '+cidade:'');
+    const comp = document.getElementById('co3-comp-p1')?.value.trim()||'';
     const numStr = num ?' - N.'+num : '';
     const compStr = comp ?' - '+comp : '';
     document.getElementById('co3-end-full').value = endBase + numStr + compStr;
@@ -2376,7 +2377,6 @@ async function co3Finalizar(){
   const pagLabel = momento==='agora' ?'Pix' :
     (document.getElementById('co3-pag-entrega-met')?.value||'Cartao') +
     (co3Troco&&co3Troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(co3Troco))+')':(co3Troco==='sem troco'?' (sem troco)':''));
-  const chavePix = '21976081746';
   const itensTxt = cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:'';}).filter(Boolean).join('\n');
 
   const partes=[];
@@ -2393,7 +2393,7 @@ async function co3Finalizar(){
   partes.push('-- Pagamento --');
   partes.push('Momento: '+(momento==='agora'?'Pagamento antecipado (Pix)':'Pagamento na entrega'));
   partes.push('Total a pagar: R$ '+fp(total));partes.push('Forma de pagamento: '+pagLabel);
-  if(momento==='agora')partes.push('Chave Pix: '+chavePix);
+  if(momento==='agora')partes.push('Chave Pix: '+PIX_CHAVE);
   if(obs){partes.push('');partes.push('-- Observacoes --');partes.push(obs);}
   partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
   const txtWpp = partes.join('\n');
@@ -2622,10 +2622,6 @@ function co3FinalizarReady(){
   if(!cbtn || !cbtn.classList.contains('ready')) return;
   co3Finalizar();
 }
-
-init();
-verificarResetSenha();
-
 
 function registrarPWA() {
   if (!('serviceWorker' in navigator)) return;

@@ -426,3 +426,143 @@ footer{background:#0f1410;border-top:1px solid rgba(255,255,255,0.06);padding:48
   .testi-text{font-size:13px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 }
 @keyframes testi-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── FEIRAS / ONDE NOS ENCONTRAR ── */
+.feiras-section{
+  padding:72px 24px;
+  background:var(--bg2);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.feiras-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-top:40px;
+  margin-bottom:28px;
+}
+.feira-card{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  transition:box-shadow .2s,transform .2s;
+}
+.feira-card:hover{
+  box-shadow:0 8px 32px rgba(45,140,78,.15);
+  transform:translateY(-3px);
+}
+.feira-dia-badge{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 20px;
+  font-size:15px;font-weight:800;
+  letter-spacing:.3px;
+}
+.feira-dia-badge svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  flex-shrink:0;
+}
+.feira-terca{
+  background:linear-gradient(135deg,#1a4a28,#2d8c4e);
+  color:#fff;
+}
+.feira-sexta{
+  background:linear-gradient(135deg,#1a3a4a,#2d6e8c);
+  color:#fff;
+}
+.feira-body{
+  padding:20px 20px 16px;
+  display:flex;flex-direction:column;gap:16px;
+  flex:1;
+}
+.feira-info-row{
+  display:flex;align-items:flex-start;gap:12px;
+}
+.feira-info-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--green-light);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.feira-info-icon svg{
+  width:17px;height:17px;
+  stroke:var(--green-bright);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+.feira-rua{font-size:15px;font-weight:700;color:var(--text);line-height:1.3}
+.feira-cidade{font-size:12px;color:var(--text2);margin-top:2px}
+.feira-ref{
+  font-size:12px;color:var(--green-bright);
+  margin-top:4px;font-weight:600;
+}
+.feira-horario-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.feira-horario{font-size:14px;font-weight:600;color:var(--text);margin-top:2px}
+.feira-btn-maps{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:0 20px 20px;
+  padding:13px;
+  background:var(--bg4);
+  border:1.5px solid var(--border2);
+  border-radius:12px;
+  font-size:14px;font-weight:700;color:var(--text);
+  transition:background .2s,border-color .2s,color .2s,transform .15s;
+  text-decoration:none;
+}
+.feira-btn-maps svg{
+  width:16px;height:16px;
+  stroke:var(--green-bright);fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;
+}
+.feira-btn-maps:hover{
+  background:var(--green);
+  border-color:var(--green);
+  color:#fff;
+  transform:translateY(-1px);
+}
+.feira-btn-maps:hover svg{stroke:#fff}
+.feiras-cta{
+  display:flex;align-items:center;gap:14px;
+  flex-wrap:wrap;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 22px;
+  margin-top:8px;
+}
+.feiras-cta p{
+  flex:1;min-width:200px;
+  font-size:14px;color:var(--text2);
+  line-height:1.5;
+}
+.feiras-cta p strong{color:var(--text)}
+.btn-entregas-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;
+  border:1.5px solid var(--border2);
+  border-radius:50px;
+  font-size:13px;font-weight:700;color:var(--text2);
+  transition:border-color .2s,color .2s;
+  white-space:nowrap;
+}
+.btn-entregas-link svg{
+  width:15px;height:15px;
+  stroke:currentColor;fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;
+}
+.btn-entregas-link:hover{border-color:var(--green);color:var(--green-bright)}
+@media(max-width:900px){
+  .feiras-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .feiras-section{padding:48px 16px}
+  .feiras-cta{flex-direction:column;align-items:flex-start;gap:12px}
+  .btn-entregas-link{width:100%;justify-content:center}
+  .feiras-cta .btn-outline{width:100%;justify-content:center}
+}
+
+/* ── ADICIONAR /entregas AO NAV ── */
+/* (o link é adicionado via HTML) */
