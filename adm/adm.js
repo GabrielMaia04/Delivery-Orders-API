@@ -1101,7 +1101,8 @@ async function renderRel(){
   else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
-  rCache=lista;rTotal=lista.length;rPage=1;
+  const listaVisivel=lista.filter(p=>!isPedidoCancelado(p));
+  rCache=listaVisivel;rTotal=listaVisivel.length;rPage=1;
 
   // Stats: sem filtro = todos os pedidos; com filtro = só os filtrados
   let statsAtivos;
@@ -1119,7 +1120,7 @@ async function renderRel(){
     +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
     +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
   const pedEl=document.getElementById('r-peds');
-  const listaHistorico=lista;
+  const listaHistorico=listaVisivel;
   if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>'}
   else{
     pedEl.innerHTML=listaHistorico.map(p=>{
@@ -1979,7 +1980,8 @@ async function renderPedidos(){
   else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
-  rpCache=lista;rpTotal=lista.length;rpPage=1;
+  const listaVisivel=lista.filter(p=>!isPedidoCancelado(p));
+  rpCache=listaVisivel;rpTotal=listaVisivel.length;rpPage=1;
 
   const statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
   const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
@@ -1992,7 +1994,7 @@ async function renderPedidos(){
 
   const pedEl=document.getElementById('rp-peds');
   if(!pedEl)return;
-  const listaHistorico=lista;
+  const listaHistorico=listaVisivel;
   if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>';renderRPPage();return}
   pedEl.innerHTML=listaHistorico.map(p=>{
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
