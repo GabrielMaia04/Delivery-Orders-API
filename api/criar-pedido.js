@@ -48,6 +48,28 @@ function hasOnlyKeys(value, allowed) {
     Object.keys(value).every(key => allowed.has(key));
 }
 
+function friendlyRpcError(message) {
+  const text = String(message || '');
+  const known = new Map([
+    ['Cupom invalido ou nao encontrado', 'Cupom inválido ou não encontrado.'],
+    ['Cupom esgotado', 'Este cupom está esgotado.'],
+    ['Cupom ja utilizado por este cliente', 'Você já utilizou este cupom.'],
+    ['Produto nao encontrado', 'Um produto do carrinho não foi encontrado.'],
+    ['Produto inativo', 'Um produto do carrinho não está mais disponível.'],
+    ['Estoque insuficiente', 'Estoque insuficiente para um produto do carrinho.'],
+    ['Essa data nao esta disponivel', 'Essa data não está disponível. Escolha outra data.'],
+    ['Pedido minimo para entrega', 'O pedido não atingiu o valor mínimo para entrega.'],
+    ['Endereco fora da area de entrega', 'Endereço fora da área de entrega.'],
+    ['Endereco fora das zonas de entrega', 'Endereço fora das zonas de entrega.'],
+    ['Carrinho vazio', 'Carrinho vazio.'],
+    ['Dados do cliente incompletos', 'Preencha os dados do cliente.']
+  ]);
+  for (const [internal, friendly] of known) {
+    if (text.includes(internal)) return friendly;
+  }
+  return 'Não foi possível finalizar o pedido. Tente novamente.';
+}
+
 function haversine(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -229,7 +251,10 @@ module.exports = async function handler(req, res) {
   };
 
   const { data, error } = await supabase.rpc('criar_pedido_seguro', rpcArgs);
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    console.error('[CRIAR PEDIDO] RPC error:', error);
+    return res.status(400).json({ error: friendlyRpcError(error.message) });
+  }
 
   return res.status(200).json(data);
 };

@@ -2703,7 +2703,7 @@ function abrirRastrearPedido(){
     const codigo=val.trim().toUpperCase();
     if(!codigo){toast('Digite o código do pedido.','err');return}
     const {data,error}=await sb.from('pedidos')
-      .select('codigo,id,status,total,created_at,cliente_nome,tipo_entrega,data_pedido')
+      .select('codigo,id,status,total,created_at,cliente_nome,entrega,data_pedido')
       .or('codigo.eq.'+codigo+',id.eq.'+(parseInt(codigo)||0))
       .single();
     if(error||!data){toast('Pedido não encontrado. Verifique o código.','err');return}
@@ -2712,9 +2712,9 @@ function abrirRastrearPedido(){
     };
     const st=data.status||'Pendente';
     const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'—';
-    popAlert(
+    popTrackAlert(
       (statusEmoji[st]||'📦')+' Pedido '+data.codigo,
-      'Cliente: '+data.cliente_nome+'\n'+'Data: '+dt+'\nModalidade: '+(data.tipo_entrega||'—')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
+      'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'—')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
     );
   });
 }
@@ -2738,12 +2738,12 @@ function popInput(icon,title,msg,placeholder,btnLabel,onConfirm){
   ov.querySelector('#_popbtn').addEventListener('click',()=>{ov.remove();onConfirm(inp.value)});
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});
 }
-function popAlert(title,msg){
+function popTrackAlert(title,msg){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
-    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--text)">${title}</div>
-    <div style="font-size:13px;color:var(--text2);text-align:center;line-height:1.7;margin-bottom:18px;white-space:pre-line">${msg}</div>
+    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--text)">${h(title)}</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;line-height:1.7;margin-bottom:18px;white-space:pre-line">${h(msg)}</div>
     <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">OK</button>
   </div>`;
   document.body.appendChild(ov);

@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/loja/loja.js?v=20260605-secure-order-fix" defer></script>
+  <script src="/loja/loja.js?v=20260606-secure-order-bugfix-v1" defer></script>
 </head>
 <body>
 <!-- LOJA PUBLICA -->
@@ -655,6 +655,14 @@
     <div class="co3-resumo" id="co3-resumo-sidebar">
       <div class="co3-resumo-title">Resumo do pedido</div>
       <div id="co3-resumo-items" style="margin-bottom:12px"></div>
+      <div style="margin-bottom:12px">
+        <label for="co3-cupom" style="display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Cupom de desconto</label>
+        <div style="display:flex;gap:7px">
+          <input id="co3-cupom" type="text" placeholder="Digite o código" style="min-width:0;flex:1;text-transform:uppercase">
+          <button type="button" class="btn btn-o btn-sm" onclick="co3AplicarCupom()">Aplicar</button>
+        </div>
+        <div id="co3-cupom-msg" style="display:none;font-size:11px;margin-top:6px"></div>
+      </div>
       <div class="co3-divider"></div>
       <div class="co3-row"><span>Subtotal</span><span id="co3-r-sub">R$ 0,00</span></div>
       <div class="co3-row taxa" id="co3-r-frete-row" style="display:none"><span>Frete</span><span id="co3-r-frete">R$ 0,00</span></div>
