@@ -60,6 +60,51 @@ const emoji=p=>p.emoji||'\u{1F966}';
 const lucideIcon=(name,cls='')=>`<i data-lucide="${name}"${cls?` class="${cls}"`:''}></i>`;
 function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
 
+function nomePerfilCompleto(nome){
+  const partes=String(nome||'').trim().split(/\s+/).filter(Boolean);
+  return partes.length>=2&&partes.join(' ').length>=5;
+}
+function telefonePerfilCompleto(telefone){
+  const digitos=String(telefone||'').replace(/\D/g,'');
+  return digitos.length>=10&&digitos.length<=13;
+}
+function perfilClienteCompleto(){
+  return !!perfil&&nomePerfilCompleto(perfil.nome)&&telefonePerfilCompleto(perfil.telefone);
+}
+function abrirPerfilObrigatorio(){
+  if(!perfil||perfil.role==='admin'||perfilClienteCompleto())return false;
+  const modal=document.getElementById('complete-profile-modal');
+  if(!modal)return false;
+  document.getElementById('complete-profile-name').value=nomePerfilCompleto(perfil.nome)?perfil.nome:'';
+  document.getElementById('complete-profile-phone').value=perfil.telefone||'';
+  showMsg(document.getElementById('complete-profile-msg'),'','');
+  document.body.appendChild(modal);
+  modal.style.display='flex';
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  return true;
+}
+async function salvarPerfilObrigatorio(){
+  const nome=document.getElementById('complete-profile-name')?.value.trim()||'';
+  const telefone=document.getElementById('complete-profile-phone')?.value.trim()||'';
+  const msg=document.getElementById('complete-profile-msg');
+  const btn=document.getElementById('complete-profile-save');
+  if(!nomePerfilCompleto(nome)){showMsg(msg,'Informe seu nome completo.','error');return;}
+  if(!telefonePerfilCompleto(telefone)){showMsg(msg,'Informe um WhatsApp válido.','error');return;}
+  if(!perfil?.id){showMsg(msg,'Entre novamente para salvar seus dados.','error');return;}
+  btn.disabled=true;btn.textContent='Salvando...';
+  const {data,error}=await sb.from('profiles').update({nome,telefone}).eq('id',perfil.id).select().single();
+  btn.disabled=false;btn.textContent='Salvar e continuar';
+  if(error){console.error('[PERFIL] Falha ao completar cadastro:',error);showMsg(msg,'Não foi possível salvar. Tente novamente.','error');return;}
+  perfil=data||{...perfil,nome,telefone};
+  const modal=document.getElementById('complete-profile-modal');
+  modal.classList.remove('open');modal.style.display='none';modal.setAttribute('aria-hidden','true');
+  const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
+  if(n)n.value=perfil.nome;if(t)t.value=perfil.telefone;
+  toast('Cadastro atualizado!','ok');
+  if(window._coPend){window._coPend=false;abrirCo3();}
+}
+
 function mascaraCep(el){
   let v=el.value.replace(/\D/g,'');
   if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5,8);
@@ -124,7 +169,7 @@ function abrirPerfil(){
   document.getElementById('p-cidade-edit').value=perfil.cidade||'';
   document.getElementById('p-num-edit').value=perfil.endereco_num||'';
   if(perfil.endereco)document.getElementById('p-end-fields').classList.remove('hidden');
-  document.getElementById('perfil-title').textContent=perfil.nome.split(' ')[0];
+  document.getElementById('perfil-title').textContent=String(perfil.nome||'Minha conta').split(' ')[0];
   switchPerfilTab('dados');
   setOverlayState('perfil-ov', true);
 }
@@ -197,7 +242,7 @@ async function carregarHistoricoCliente(){
         <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <div style="font-size:14px;font-weight:800;color:var(--green-bright)">R$ ${fp(p.total)}</div>
           <div style="font-size:11px;font-weight:700;color:${statusColor}">${h(p.status||'Pendente')}</div>
-          <button class="btn btn-o btn-sm" onclick="verPedCliente(${p.id})">Ver</button>
+          <div style="display:flex;gap:5px"><button class="btn btn-o btn-sm" onclick="verPedCliente(${p.id})">Ver</button>${p.tracking_token?`<button class="btn btn-o btn-sm" onclick="acompanharPedidoToken('${h(p.tracking_token)}')">Acompanhar pedido</button>`:''}</div>
         </div>
       </div>
     </div>`;
@@ -275,7 +320,7 @@ function verPedCliente(id){
     </div>`).join('');
   const taxa=p.taxa_entrega>0?`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(p.taxa_entrega)}</span></div>`:'';
   const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:2px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(p.total)}</span></div>`;
-  document.getElementById('ped-det-codigo').textContent='Pedido '+(p.codigo||'#'+p.id);
+  document.getElementById('ped-det-codigo').textContent='Pedido #'+(p.codigo||p.id);
   document.getElementById('ped-det-status').innerHTML=
     buildTimelineHtml(status,p.entrega)
     +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">${modalidadePedidoLabel(p.entrega)}: ${fdLabel(p.data_pedido)}</div>`;
@@ -520,6 +565,8 @@ async function init(){
 
   await loadCatalog();
   renderShopCats();renderShop();
+  const token=new URLSearchParams(window.location.search).get('token');
+  if(token)acompanharPedidoToken(token,true);
 }
 
 async function loadCatalog(){
@@ -553,19 +600,20 @@ async function loadProfile(uid,user){
   try{
     let {data}=await sb.from('profiles').select('*').eq('id',uid).single();
     if(!data){
-      const nome=user?.user_metadata?.nome||user?.email?.split('@')[0]||'Usuario';
+      const nome=user?.user_metadata?.nome||user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email?.split('@')[0]||'Usuario';
       const {data:n,error}=await sb.from('profiles').insert({id:uid,nome,role:'cliente'}).select().single();
       if(error)throw error;
       data=n;
     }
     perfil=data;
-    const pn=perfil.nome.split(' ')[0];
+    const pn=String(perfil.nome||'Cliente').split(' ')[0];
     document.getElementById('topbar-login').classList.add('logged');
     const ddL=document.getElementById('dd-logado');if(ddL)ddL.style.display='block';
     const ddD=document.getElementById('dd-deslogado');if(ddD)ddD.style.display='none';
     document.getElementById('hero-msg').textContent='Ola, '+pn+'!';
     const ddAdmin=document.getElementById('dd-admin');
     if(ddAdmin) ddAdmin.style.display=perfil.role==='admin'?'flex':'none';
+    if(perfil.role!=='admin'&&!perfilClienteCompleto())setTimeout(abrirPerfilObrigatorio,0);
 
   }catch(e){console.error('loadProfile:',e)}
 }
@@ -1643,24 +1691,26 @@ function updMobileCartBar(){
 let cupons=[];
 
 function abrirRastrearPedido(){
-  popInput('📦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
-    const codigo=val.trim().toUpperCase();
-    if(!codigo){toast('Digite o código do pedido.','err');return}
-    const {data,error}=await sb.from('pedidos')
-      .select('codigo,id,status,total,created_at,cliente_nome,entrega,data_pedido')
-      .or('codigo.eq.'+codigo+',id.eq.'+(parseInt(codigo)||0))
-      .single();
-    if(error||!data){toast('Pedido não encontrado. Verifique o código.','err');return}
-    const statusEmoji={
-      'Pendente':'⏳','Em preparo':'👨‍🍳','Saiu para entrega':'🛵','Entregue':'✅','Cancelado':'❌'
-    };
-    const st=data.status||'Pendente';
+  if(perfil){abrirPerfilTab('historico');return;}
+  toast('Abra o link de acompanhamento recebido após o pedido.','err');
+}
+async function acompanharPedidoToken(token,limparUrl=false){
+  const seguro=String(token||'').trim().toUpperCase();
+  if(!/^CTD-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(seguro)){toast('Link de acompanhamento inválido.','err');return;}
+  try{
+    const resp=await fetch('/api/acompanhar-pedido?token='+encodeURIComponent(seguro),{headers:{Accept:'application/json'}});
+    const result=await resp.json();
+    if(!resp.ok)throw new Error(result?.error||'Pedido não encontrado.');
+    const data=result.pedido||{},st=data.status||'Pendente';
+    const statusEmoji={'Pendente':'⏳','Em preparo':'👨‍🍳','Saiu para entrega':'🛵','Pronto para retirar':'🏪','Retirado':'✅','Entregue':'✅','Cancelado':'❌'};
     const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'—';
-    popTrackAlert(
-      (statusEmoji[st]||'📦')+' Pedido '+data.codigo,
-      'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'—')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
-    );
-  });
+    popTrackAlert((statusEmoji[st]||'📦')+' Pedido #'+(data.codigo||''),'Data: '+dt+'\nModalidade: '+(data.entrega||'—')+'\n\nStatus atual:\n'+st);
+  }catch(e){toast(e.message||'Não foi possível acompanhar o pedido.','err');}
+  finally{
+    if(limparUrl&&history.replaceState){
+      const url=new URL(window.location.href);url.searchParams.delete('token');history.replaceState({},'',url.pathname+url.search+url.hash);
+    }
+  }
 }
 function popInput(icon,title,msg,placeholder,btnLabel,onConfirm){
   const ov=document.createElement('div');
@@ -1695,7 +1745,7 @@ function popTrackAlert(title,msg){
 }
 
 async function loginGoogle(){
-  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/loja/'}});
   if(error)toast('Erro ao conectar com Google.','err');
 }
 function abrirEsqueceuSenha(){
@@ -2105,6 +2155,7 @@ function co3SetModalidade(v){
 
 function abrirCo3(){
   if(!perfil){window._coPend=true;abrirAuth();return}
+  if(!perfilClienteCompleto()){window._coPend=true;abrirPerfilObrigatorio();return}
   co3Step=1;co3Modalidade=cart.entrega||'Entrega';co3FreteCalculado=_freteCalculado;co3EnderecoForaRaio=false;co3CupomAtivo=cupomAtivo;co3PagMetodo='Pix';co3Troco='';
   const n=document.getElementById('co3-nome'),t=document.getElementById('co3-tel');
   if(n&&!n.value)n.value=perfil.nome||'';
@@ -2311,7 +2362,7 @@ function montarWhatsAppPedidoSeguro(resultado){
   const pagamento=resultado?.pagamento||{};
   const isRetirada=pedido.entrega==='Retirada';
   const partes=[];
-  partes.push('Pedido: '+(pedido.codigo||pedido.id||''));
+  partes.push('Pedido #'+(pedido.codigo||pedido.id||''));
   partes.push('Tipo de servico: '+(pedido.entrega||''));partes.push('');
   partes.push('Nome: '+(pedido.cliente_nome||''));partes.push('Telefone: '+(pedido.cliente_contato||''));
   partes.push((isRetirada?'Local de retirada: ':'Endereco: ')+(pedido.cliente_endereco||''));
@@ -2328,6 +2379,7 @@ function montarWhatsAppPedidoSeguro(resultado){
   partes.push('Total a pagar: R$ '+fp(Number(totais.total||0)));
   if(String(pagamento.metodo||pagamento.label||pedido.pagamento||'').toLowerCase().includes('pix'))partes.push('Chave Pix: '+PIX_CHAVE);
   if(pedido.observacoes){partes.push('');partes.push('-- Observacoes --');partes.push(pedido.observacoes);}
+  if(pedido.tracking_token){partes.push('');partes.push('Acompanhe seu pedido: '+window.location.origin+'/loja/?token='+encodeURIComponent(pedido.tracking_token));}
   partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
   return partes.join('\n');
 }
@@ -2350,6 +2402,12 @@ async function co3FinalizarSeguro(){
     mostrarBalloon('Entre ou crie uma conta para finalizar o pedido');
     resetBtn();
     if(typeof abrirAuth==='function')abrirAuth();
+    return;
+  }
+  if(!perfilClienteCompleto()){
+    window._coPend=true;
+    abrirPerfilObrigatorio();
+    resetBtn();
     return;
   }
   if(!cart.itens.length){toast('Carrinho vazio.','err');resetBtn();return;}

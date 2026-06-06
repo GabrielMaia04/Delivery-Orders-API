@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/loja/loja.js?v=20260606-secure-checkout-urgent-fixes" defer></script>
+  <script src="/loja/loja.js?v=20260606-profile-secure-tracking" defer></script>
 </head>
 <body>
 <!-- LOJA PUBLICA -->
@@ -150,6 +150,18 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- REQUIRED PROFILE COMPLETION -->
+<div class="modal-ov" id="complete-profile-modal" aria-hidden="true">
+  <div class="modal-box" style="width:380px">
+    <div class="modal-title">Complete seu cadastro</div>
+    <div class="modal-sub" style="margin-bottom:14px">Para continuar, informe seu nome e WhatsApp.</div>
+    <div id="complete-profile-msg" class="auth-msg"></div>
+    <div class="field"><label>Nome completo <span class="required-mark">*</span></label><input id="complete-profile-name" type="text" autocomplete="name" placeholder="Seu nome completo"></div>
+    <div class="field"><label>WhatsApp <span class="required-mark">*</span></label><input id="complete-profile-phone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+    <button class="big-btn" id="complete-profile-save" onclick="salvarPerfilObrigatorio()">Salvar e continuar</button>
   </div>
 </div>
 

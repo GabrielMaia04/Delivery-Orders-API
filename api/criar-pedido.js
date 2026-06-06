@@ -51,6 +51,12 @@ function hasOnlyKeys(value, allowed) {
     Object.keys(value).every(key => allowed.has(key));
 }
 
+function perfilCompleto(profile) {
+  const nome = String(profile?.nome || '').trim().split(/\s+/).filter(Boolean);
+  const telefone = String(profile?.telefone || '').replace(/\D/g, '');
+  return nome.length >= 2 && nome.join(' ').length >= 5 && telefone.length >= 10 && telefone.length <= 13;
+}
+
 function friendlyRpcError(message) {
   const text = String(message || '');
   const known = new Map([
@@ -152,6 +158,18 @@ module.exports = async function handler(req, res) {
   const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
   const { data: authData, error: authError } = await supabase.auth.getUser(token);
   if (authError || !authData?.user?.id) return res.status(401).json({ error: 'Sessao invalida' });
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('nome,telefone')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+  if (profileError) {
+    console.error('[CRIAR PEDIDO] Profile validation error:', profileError);
+    return res.status(500).json({ error: 'Nao foi possivel validar o cadastro' });
+  }
+  if (!perfilCompleto(profile)) {
+    return res.status(400).json({ error: 'Complete seu cadastro com nome e WhatsApp antes de finalizar.' });
+  }
 
   const body = getBody(req);
   const forbidden = hasForbiddenFinancialField(body);
