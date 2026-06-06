@@ -9,14 +9,15 @@ const PIX_CIDADE = CONFIG.PIX_CIDADE || '';
 let TAXA=2.50;
 let PEDIDO_MIN=0;
 let LOJA_LAT=null;
-let _freteCalculado=false; // true somente após calcular CEP no carrinho // Latitude da loja (configurado no painel)
+let _freteCalculado=false; // true somente apÃ³s calcular CEP no carrinho // Latitude da loja (configurado no painel)
 let LOJA_LNG=null; // Longitude da loja
-let LOJA_ENDERECO=''; // Endereço da loja para geocoding
-let RAIO_MAX=5; // Raio máximo de entrega em km
+let LOJA_ENDERECO=''; // EndereÃ§o da loja para geocoding
+let RAIO_MAX=5; // Raio mÃ¡ximo de entrega em km
 let zonas=[];
 let datasBloqueadas=[];
+let _freteEstimado=false;
 let INSTAGRAM_URL='https://instagram.com';
-let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
+let WPP_MSG_TEMPLATE=''; // vazio = usa padrÃ£o do cÃ³digo
 const PER=15;
 
 
@@ -29,18 +30,27 @@ let rPage=1,rTotal=0,rCache=[];
 
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
 const fd=d=>d?d.split('-').reverse().join('/'):'';
-// Exibe "Terça, 20/mai" para datas de entrega
+const h = v => window.escapeHTML
+  ? window.escapeHTML(v ?? '')
+  : String(v ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    }[c]));
+// Exibe "TerÃ§a, 20/mai" para datas de entrega
 function fdLabel(iso){
   if(!iso)return'';
   const [y,m,d]=iso.split('-').map(Number);
   const dt=new Date(y,m-1,d);
   return DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
 }
-/* ── DATAS DE ENTREGA ──
-   Produção: Segunda(1), Quinta(4), Sexta(5)
-   Entrega:  Terça(2) → Segunda | Sábado(6) → Quinta+Sexta
+/* â”€â”€ DATAS DE ENTREGA â”€â”€
+   ProduÃ§Ã£o: Segunda(1), Quinta(4), Sexta(5)
+   Entrega:  TerÃ§a(2) â†’ Segunda | SÃ¡bado(6) â†’ Quinta+Sexta
    Regras: sem entrega no mesmo dia, sem datas passadas           */
-const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DIAS_NOME_LONG=['Domingo','Segunda','TerÃ§a','Quarta','Quinta','Sexta','SÃ¡bado'];
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
 function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
@@ -71,14 +81,14 @@ async function buscarCep(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP nÃ£o encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('co-rua').value=d.logradouro||'';
     document.getElementById('co-bairro').value=d.bairro||'';
     document.getElementById('co-cidade').value=(d.localidade||'')+' / '+(d.uf||'');
     document.getElementById('co-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
     document.getElementById('co-end-fields').classList.remove('hidden');
     document.getElementById('co-num').focus();
-    // Verificar zona de entrega automaticamente após preencher CEP
+    // Verificar zona de entrega automaticamente apÃ³s preencher CEP
     setTimeout(verificarZonaEntrega, 500);
   }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
@@ -92,7 +102,7 @@ async function buscarCepPerfil(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP nÃ£o encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('p-rua-edit').value=d.logradouro||'';
     document.getElementById('p-bairro-edit').value=d.bairro||'';
     document.getElementById('p-cidade-edit').value=(d.localidade||'')+' / '+(d.uf||'');
@@ -132,7 +142,7 @@ function cancelarAlterarTel(){
 }
 async function salvarTelefone(){
   const tel=document.getElementById('p-tel-edit').value.trim();
-  if(tel.length<14){toast('Informe um telefone válido.','err');return}
+  if(tel.length<14){toast('Informe um telefone vÃ¡lido.','err');return}
   const {error}=await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
   if(error){toast('Erro: '+error.message,'err');return}
   perfil.telefone=tel;
@@ -171,7 +181,7 @@ async function carregarHistoricoCliente(){
   const lista=peds||[];
   if(!lista.length){el.innerHTML='<div class="empty">Nenhum pedido ainda.</div>';return}
   el.innerHTML=lista.map(p=>{
-    const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(', ');
+    const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+h(it.nome_produto)).join(', ');
     const statusColor={'Pendente':'var(--orange)','Em preparo':'#3b82f6','Saiu para entrega':'#8b5cf6','Entregue':'var(--green-bright)','Cancelado':'var(--red)'}[p.status]||'var(--text2)';
     return`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -182,7 +192,7 @@ async function carregarHistoricoCliente(){
         </div>
         <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <div style="font-size:14px;font-weight:800;color:var(--green-bright)">R$ ${fp(p.total)}</div>
-          <div style="font-size:11px;font-weight:700;color:${statusColor}">${p.status||'Pendente'}</div>
+          <div style="font-size:11px;font-weight:700;color:${statusColor}">${h(p.status||'Pendente')}</div>
           <button class="btn btn-o btn-sm" onclick="verPedCliente(${p.id})">Ver</button>
         </div>
       </div>
@@ -192,8 +202,8 @@ async function carregarHistoricoCliente(){
   window._histCache=lista;
 }
 
-// ── TIMELINE DE STATUS ──
-// Versão correta da timeline com linhas de progresso
+// â”€â”€ TIMELINE DE STATUS â”€â”€
+// VersÃ£o correta da timeline com linhas de progresso
 function buildTimelineHtml(status){
   const STEPS=[
     {key:'Pendente',         label:'Confirmado',        icon:'clock'},
@@ -250,7 +260,7 @@ function verPedCliente(id){
   // Monta corpo
   const its=(p.itens_pedido||[]).map(it=>`
     <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span>${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span>
+      <span>${it.quantidade}x ${h(it.nome_produto)}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span>
       <span style="font-weight:700;color:var(--green-bright)">R$ ${fp(it.subtotal)}</span>
     </div>`).join('');
   const taxa=p.taxa_entrega>0?`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(p.taxa_entrega)}</span></div>`:'';
@@ -261,12 +271,12 @@ function verPedCliente(id){
     +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">Entrega: ${fdLabel(p.data_pedido)}</div>`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
-      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
-      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${p.observacoes}</div>`:''}
+      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento)} Â· ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+      ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}${taxa}${total}</div>`;
-  // Botões conforme status
+  // BotÃµes conforme status
   const btns=document.getElementById('ped-det-btns');
   if(status==='Pendente'){
     btns.innerHTML=`<button class="btn btn-r" style="width:100%;padding:11px" onclick="cancelarPedidoCliente(${id})">Cancelar pedido</button>`;
@@ -284,7 +294,7 @@ function verPedCliente(id){
 }
 
 async function cancelarPedidoCliente(id){
-  popConfirm('❌','Cancelar pedido?','Tem certeza que deseja cancelar este pedido?','Sim, cancelar','pbtn-danger',async()=>{
+  popConfirm('âŒ','Cancelar pedido?','Tem certeza que deseja cancelar este pedido?','Sim, cancelar','pbtn-danger',async()=>{
     const {error}=await sb.from('pedidos').update({status:'Cancelado'}).eq('id',id);
     if(error){toast('Erro ao cancelar.','err');return}
     document.getElementById('ped-det-modal').classList.remove('open');
@@ -295,12 +305,12 @@ async function cancelarPedidoCliente(id){
 
 function solicitarCancelamento(id,codigo){
   const num=codigo||('#'+id);
-  const msg=`Olá! Tudo bem?\n\nGostaria de solicitar o cancelamento do meu pedido, por favor.\nNúmero do pedido: ${num}.`;
+  const msg=`OlÃ¡! Tudo bem?\n\nGostaria de solicitar o cancelamento do meu pedido, por favor.\nNÃºmero do pedido: ${num}.`;
   window.open('https://wa.me/'+WHATSAPP_NUM+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 
-// ── NOTIFICACOES REALTIME ──
+// â”€â”€ NOTIFICACOES REALTIME â”€â”€
 
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371;
@@ -312,7 +322,7 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Geocodificar endereço via Nominatim (OpenStreetMap) — gratuito, sem API key
+// Geocodificar endereÃ§o via Nominatim (OpenStreetMap) â€” gratuito, sem API key
 async function geocodificar(endereco){
   try{
     // Tenta busca direta
@@ -320,7 +330,7 @@ async function geocodificar(endereco){
     const r=await fetch(url,{headers:{'Accept-Language':'pt-BR','User-Agent':'HortifrutiApp/1.0'}});
     const d=await r.json();
     if(!d.length)return null;
-    // Prefere resultado com maior importância
+    // Prefere resultado com maior importÃ¢ncia
     d.sort((a,b)=>(b.importance||0)-(a.importance||0));
     return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
   }catch(e){return null}
@@ -329,12 +339,12 @@ async function geocodificar(endereco){
 async function geocodificarCEP(cep){
   const cepLimpo = cep.replace(/\D/g,'');
   try{
-    // 1. ViaCEP para dados do endereço (nome da rua, bairro, cidade)
+    // 1. ViaCEP para dados do endereÃ§o (nome da rua, bairro, cidade)
     const rv = await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
     const dv = await rv.json();
     if(dv.erro) return null;
 
-    // 2. BrasilAPI v2 — retorna centroide do polígono do CEP (mais preciso)
+    // 2. BrasilAPI v2 â€” retorna centroide do polÃ­gono do CEP (mais preciso)
     try{
       const rb = await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
       if(rb.ok){
@@ -357,7 +367,7 @@ async function geocodificarCEP(cep){
       }
     }catch(e3){}
 
-    // 4. Nominatim fallback por bairro + cidade (NÃO por rua — evita resultados errados)
+    // 4. Nominatim fallback por bairro + cidade (NÃƒO por rua â€” evita resultados errados)
     try{
       const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
       const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
@@ -375,7 +385,7 @@ async function geocodificarCEP(cep){
 }
 
 
-// Calcular zona do cliente baseado na distância
+// Calcular zona do cliente baseado na distÃ¢ncia
 function calcularZona(distKm){
   if(!zonas.length)return null;
   const ativos=zonas.filter(z=>z.ativo);
@@ -411,7 +421,7 @@ function dataBloqueada(iso,modalidade){
   return datasBloqueadas.find(d=>d.data===iso&&(d.tipo==='ambos'||d.tipo===tipo))||null;
 }
 
-// Verificar distância e aplicar taxa no checkout
+// Verificar distÃ¢ncia e aplicar taxa no checkout
 let _clienteLat=null,_clienteLng=null,_zonaAtiva=null;
 
 async function verificarZonaEntrega(){
@@ -426,13 +436,13 @@ async function verificarZonaEntrega(){
   const numCliente=document.getElementById('co-num').value.trim();
   if(!endCliente){el.style.display='none';return}
 
-  el.innerHTML='<div style="color:var(--text2);font-size:12px">📍 Calculando distância...</div>';
+  el.innerHTML='<div style="color:var(--text2);font-size:12px">ðŸ“ Calculando distÃ¢ncia...</div>';
   el.style.display='block';
 
   const endFull=endCliente+(numCliente?', '+numCliente:'')+', Rio de Janeiro';
   const coords=await geocodificar(endFull);
   if(!coords){
-    el.innerHTML='<div style="color:var(--orange);font-size:12px">⚠️ Não foi possível calcular a distância. Prossiga normalmente.</div>';
+    el.innerHTML='<div style="color:var(--orange);font-size:12px">âš ï¸ NÃ£o foi possÃ­vel calcular a distÃ¢ncia. Prossiga normalmente.</div>';
     _zonaAtiva=null;
     return;
   }
@@ -442,8 +452,8 @@ async function verificarZonaEntrega(){
 
   if(dist>RAIO_MAX){
     el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--red-soft);border:1px solid var(--red);color:var(--red);font-size:12px;font-weight:700">'
-      +'🚫 Fora do raio de entrega ('+dist.toFixed(1)+'km). Máximo: '+RAIO_MAX+'km.<br>'
-      +'<span style="font-weight:400">Escolha Retirada ou adicione um endereço mais próximo.</span></div>';
+      +'ðŸš« Fora do raio de entrega ('+dist.toFixed(1)+'km). MÃ¡ximo: '+RAIO_MAX+'km.<br>'
+      +'<span style="font-weight:400">Escolha Retirada ou adicione um endereÃ§o mais prÃ³ximo.</span></div>';
     _zonaAtiva=null;
     updCoResumo();
     return;
@@ -453,17 +463,17 @@ async function verificarZonaEntrega(){
     TAXA=zona.taxa;
     _zonaAtiva=zona;
     el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px">'
-      +'<div style="font-weight:700;color:var(--green-bright)">✅ '+zona.nome+'</div>'
-      +'<div style="color:var(--text2);margin-top:2px">Distância: '+dist.toFixed(1)+'km · Taxa de entrega: R$ '+fp(zona.taxa)+'</div></div>';
+      +'<div style="font-weight:700;color:var(--green-bright)">âœ… '+zona.nome+'</div>'
+      +'<div style="color:var(--text2);margin-top:2px">DistÃ¢ncia: '+dist.toFixed(1)+'km Â· Taxa de entrega: R$ '+fp(zona.taxa)+'</div></div>';
   }else{
     el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:700">'
-      +'⚠️ '+dist.toFixed(1)+'km — fora das zonas configuradas. Verifique com o admin.</div>';
+      +'âš ï¸ '+dist.toFixed(1)+'km â€” fora das zonas configuradas. Verifique com o admin.</div>';
     _zonaAtiva=null;
   }
   updCoResumo();
 }
 
-// Salvar endereço da loja
+// Salvar endereÃ§o da loja
 
 async function carregarConfigLoja(configs){
   configs.forEach(r=>{
@@ -497,7 +507,7 @@ async function init(){
   carregarTaxaRemota();
   carregarZonas();
   await carregarDatasBloqueadas();
-  // r-data intencionalmente em branco — relatório começa sem filtro de data
+  // r-data intencionalmente em branco â€” relatÃ³rio comeÃ§a sem filtro de data
 
   // Verifica sessao primeiro, depois carrega catalogo
   const {data:{session}}=await sb.auth.getSession();
@@ -556,7 +566,7 @@ async function loadProfile(uid,user){
 }
 
 
-// ── DROPDOWN MENU ──
+// â”€â”€ DROPDOWN MENU â”€â”€
 function toggleDropdown(){
   if(!perfil){abrirAuth();return}
   const dd=document.getElementById('user-dropdown');
@@ -630,7 +640,7 @@ async function fazerCadastro(){
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
   const aceitou=document.getElementById('aceito-termos')?.checked;
-  if(!aceitou){showMsg(msg,'Você precisa aceitar os Termos de Uso para criar uma conta.','error');return}
+  if(!aceitou){showMsg(msg,'VocÃª precisa aceitar os Termos de Uso para criar uma conta.','error');return}
   if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
   if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
@@ -664,19 +674,27 @@ async function fazerLogout(){
   pararRealtime();
 }
 
+function pararRealtime(){
+  if(window._realtimeChannel&&sb?.removeChannel){
+    try{sb.removeChannel(window._realtimeChannel)}catch(e){}
+    window._realtimeChannel=null;
+  }
+}
+function paraRealtime(){pararRealtime()}
+
 /* LOJA */
 function renderShopCats(){
   const imgMap={
     'Alhos':'alhos.png','Bandejas':'bandejas.png','Bolos':'bolos.png',
     'Massas':'massas.png','Verduras':'verduras.png','Macarroes':'massas.png',
-    'Macarrões':'massas.png'
+    'MacarrÃµes':'massas.png'
   };
   const iconMap={
     'Alhos':'badge-plus','Bandejas':'package','Bolos':'cake-slice',
     'Cogumelo':'sprout','Doces':'cake-slice','Kits':'boxes',
-    'Legumes Misturados':'salad','Legumes Puros':'carrot','Macarrões':'wheat',
+    'Legumes Misturados':'salad','Legumes Puros':'carrot','MacarrÃµes':'wheat',
     'Massas':'wheat','Molhos':'cup-soda','Outros':'package','Ralados':'chef-hat',
-    'Sopões':'soup','Temperos':'leaf','Verduras':'leafy-green','Yakisoba':'utensils'
+    'SopÃµes':'soup','Temperos':'leaf','Verduras':'leafy-green','Yakisoba':'utensils'
   };
   const todosChip='<div class="cat-chip'+(fCatShop===null?' active':'')+'" onclick="setCatShop(null)"><div class="cat-icon">'+lucideIcon('shopping-cart')+'</div><div class="cat-label">Todos</div></div>';
   document.getElementById('shop-cats').innerHTML=todosChip+cats.map(c=>{
@@ -715,19 +733,19 @@ function renderShop(){
       ?`<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-soft);padding:4px 10px;border-radius:20px;white-space:nowrap">Esgotado</span>`
       :qty>0
         ?`<div class="prod-qty-ctrl">
-            <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">−</button>
+            <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">âˆ’</button>
             <span class="cqn" style="min-width:20px;text-align:center;font-size:14px;font-weight:800">${qty}</span>
             <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
           </div>`
         :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
     const imgEl=p.imagem_url
-      ?`<img src="${p.imagem_url}" alt="${p.nome}" loading="lazy">`
+      ?`<img src="${h(p.imagem_url)}" alt="${h(p.nome)}" loading="lazy">`
       :`<span class="ico-inline" style="font-size:44px;color:var(--green-bright)">${lucideIcon('sprout')}</span>`;
     return `<div class="prod-card" onclick="abrirProdModal(${p.id})" style="${semEstoque?'opacity:.55;pointer-events:none':''}">
       <div class="prod-card-img">${imgEl}</div>
       <div class="prod-card-body">
-        <div class="prod-card-name">${p.nome}</div>
-        <div class="prod-card-peso">${p.peso||''}</div>
+        <div class="prod-card-name">${h(p.nome)}</div>
+        <div class="prod-card-peso">${h(p.peso||'')}</div>
         <div class="prod-card-footer">
           <div class="prod-price">R$ ${fp(p.preco)}</div>
           ${ctrl}
@@ -744,7 +762,7 @@ function addCart(id){
   const ex=cart.itens.find(i=>i.prodId===id);
   const qAtual=ex?ex.qty:0;
   if(p.estoque!=null&&qAtual>=p.estoque){
-    toast(p.estoque===0?'Produto esgotado.':'Quantidade máxima disponível: '+p.estoque+'.','err');
+    toast(p.estoque===0?'Produto esgotado.':'Quantidade mÃ¡xima disponÃ­vel: '+p.estoque+'.','err');
     return;
   }
   if(ex)ex.qty++;else cart.itens.push({prodId:id,qty:1});
@@ -757,7 +775,7 @@ function cQtyCard(id,d){
   const ex=cart.itens.find(i=>i.prodId===id);
   if(d>0&&p&&p.estoque!=null){
     const qAtual=ex?ex.qty:0;
-    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'Máximo disponível: '+p.estoque+'.','err');return;}
+    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'MÃ¡ximo disponÃ­vel: '+p.estoque+'.','err');return;}
   }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
@@ -781,7 +799,7 @@ function abrirCart(){
   atualizarBtnContinuar();
   setOverlayState('cart-ov',true);
   setTimeout(()=>document.getElementById('cart-drawer').classList.add('open'),10);
-  // Esconde barra mobile para não atrapalhar
+  // Esconde barra mobile para nÃ£o atrapalhar
   const bar=document.getElementById('mobile-cart-bar');
   if(bar)bar.classList.remove('show');
 }
@@ -800,21 +818,21 @@ function renderCart(){
   el.innerHTML=cart.itens.map((it,i)=>{
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
     const s=p.preco*it.qty;sub+=s;qtd+=it.qty;
-    const thumb=p.imagem_url?`<img src="${p.imagem_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`:lucideIcon('sprout');
-    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${p.nome}</div><div class="cart-item-price">${p.peso||''} · R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
+    const thumb=p.imagem_url?`<img src="${h(p.imagem_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`:lucideIcon('sprout');
+    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${h(p.nome)}</div><div class="cart-item-price">${h(p.peso||'')} &middot; R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
   }).join('');
   refreshIcons();
   updSums();
 }
 function cQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();renderCart()}
 
-// ── PROMOCAO AUTOMATICA ──
+// â”€â”€ PROMOCAO AUTOMATICA â”€â”€
 function calcPromoAuto(sub){
   if(sub>=200){
     return{
       freteGratis:true,
       desconto:Math.round(sub*0.10*100)/100,
-      label:'Promo acima de R$200: 10% off + frete grátis'
+      label:'Promo acima de R$200: 10% off + frete grÃ¡tis'
     };
   }
   return null;
@@ -825,7 +843,7 @@ function updSums(){try{
   // Promo automatica acima de R$200
   const promo=calcPromoAuto(sub);
   const freteGratis=promo?.freteGratis||false;
-  // Só aplica taxa se frete foi calculado pelo CEP
+  // SÃ³ aplica taxa se frete foi calculado pelo CEP
   const taxa=cart.entrega==='Entrega'&&!freteGratis&&_freteCalculado?TAXA:0;
   const descCupom=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
   const descPromo=promo?.desconto||0;
@@ -849,7 +867,7 @@ function updSums(){try{
     if(taxaVal)taxaVal.textContent='+ R$ '+fp(TAXA);
   }
 
-  // Aviso mínimo integrado no botão (via atualizarBtnContinuar)
+  // Aviso mÃ­nimo integrado no botÃ£o (via atualizarBtnContinuar)
 
   // Promo row
   let promoRow=document.getElementById('c-promo-row');
@@ -868,7 +886,7 @@ function updSums(){try{
     if(promo){
       promoRow.style.display='';
       document.getElementById('c-promo-label').textContent=promo.label;
-      document.getElementById('c-promo-val').textContent='- R$ '+fp(promo.desconto)+(freteGratis?' + Frete grátis':'');
+      document.getElementById('c-promo-val').textContent='- R$ '+fp(promo.desconto)+(freteGratis?' + Frete grÃ¡tis':'');
     }else{
       promoRow.style.display='none';
     }
@@ -889,14 +907,14 @@ function updSums(){try{
 }catch(e){console.warn('updSums:',e);}}
 function limparCarrinho(){
   if(!cart.itens.length)return;
-  popConfirm('🗑️','Esvaziar carrinho?','Todos os itens serão removidos.','Esvaziar','pbtn-danger',()=>{
+  popConfirm('ðŸ—‘ï¸','Esvaziar carrinho?','Todos os itens serÃ£o removidos.','Esvaziar','pbtn-danger',()=>{
     cart.itens=[];
     updCartBadge();renderCart();
   });
 }
 
 
-// ── CEP E FRETE NO CARRINHO ──
+// â”€â”€ CEP E FRETE NO CARRINHO â”€â”€
 let _cartZona = null; // zona calculada no carrinho
 
 async function calcularFreteCarrinho(){
@@ -905,19 +923,20 @@ async function calcularFreteCarrinho(){
   if(cepInput.length!==8){
     info.style.display='block';
     info.style.color='var(--orange)';
-    info.textContent='Digite um CEP válido (8 dígitos).';
+    info.textContent='Digite um CEP vÃ¡lido (8 dÃ­gitos).';
     return;
   }
   info.style.display='block';
   info.style.color='var(--text2)';
   info.innerHTML='<span class="ico-gap">'+lucideIcon('search')+' Calculando frete...</span>';
+  _freteEstimado=false;
   refreshIcons();
 
   try{
     const result = await geocodificarCEP(cepInput);
     if(!result||!result.viacep){
       info.style.color='var(--red)';
-      info.textContent='CEP não encontrado. Verifique e tente novamente.';
+      info.textContent='CEP nÃ£o encontrado. Verifique e tente novamente.';
       return;
     }
 
@@ -926,11 +945,12 @@ async function calcularFreteCarrinho(){
     window._cartCoords = {lat:result.lat, lng:result.lng};
 
     if(!LOJA_LAT||!LOJA_LNG||LOJA_LAT===0){
-      // Loja não configurada — usa primeira zona disponível
+      // Loja nÃ£o configurada â€” usa primeira zona disponÃ­vel
       _cartZona = zonas[0]||null;
       if(_cartZona)TAXA=_cartZona.taxa;
+      _freteEstimado=true;
       info.style.color='var(--text2)';
-      info.innerHTML='<span class="ico-gap">'+lucideIcon('map-pin')+' '+(dv.bairro||dv.localidade)+' — Frete padrão: R$ '+fp(TAXA)+'</span>';
+      info.innerHTML='<span class="ico-gap">'+lucideIcon('map-pin')+' '+(dv.bairro||dv.localidade)+' — Frete estimado: R$ '+fp(TAXA)+'</span>';
       refreshIcons();
       updSums();
       return;
@@ -943,7 +963,7 @@ async function calcularFreteCarrinho(){
       _cartZona = null;
       window._cartCoords = undefined; // sinaliza fora do raio
       info.style.color='var(--red)';
-      info.innerHTML=lucideIcon('ban')+' <strong>Fora do raio de entrega</strong> ('+distTxt+' · máx '+RAIO_MAX+'km)<br>'
+      info.innerHTML=lucideIcon('ban')+' <strong>Fora do raio de entrega</strong> ('+distTxt+' Â· mÃ¡x '+RAIO_MAX+'km)<br>'
         +'<span style="font-weight:400">Escolha Retirada para continuar.</span>';
       atualizarBtnContinuar();
       return;
@@ -955,14 +975,15 @@ async function calcularFreteCarrinho(){
     if(zona){
       TAXA = zona.taxa;
       _freteCalculado=true;
+      _freteEstimado=false;
       info.style.color='var(--green-bright)';
-      info.innerHTML=lucideIcon('check-circle')+' <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
+      info.innerHTML=lucideIcon('check-circle')+' <strong>'+(dv.bairro||dv.localidade)+'</strong> Â· '+distTxt+' Â· '+zona.nome+'<br>'
         +'<span style="color:var(--text2)">Frete: <strong style="color:var(--green-bright)">R$ '+fp(zona.taxa)+'</strong></span>';
     }else{
       _cartZona=null;
       info.style.color='var(--orange)';
-      info.innerHTML=lucideIcon('triangle-alert')+' '+(dv.bairro||dv.localidade)+' · '+distTxt+'<br>'
-        +'<span style="font-weight:400">Endereço fora das zonas configuradas.</span>';
+      info.innerHTML=lucideIcon('triangle-alert')+' '+(dv.bairro||dv.localidade)+' Â· '+distTxt+'<br>'
+        +'<span style="font-weight:400">EndereÃ§o fora das zonas configuradas.</span>';
     }
     updSums();
     atualizarBtnContinuar();
@@ -997,7 +1018,7 @@ function atualizarBtnContinuar(){
   const btn=document.getElementById('cart-continuar-btn');
   if(!btn)return;
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  // Sem bloqueio — aviso via balloon ao clicar
+  // Sem bloqueio â€” aviso via balloon ao clicar
   btn.disabled=false;btn.style.opacity='1';
   const aviso=document.getElementById('cart-min-aviso');
   if(aviso)aviso.style.display='none';
@@ -1021,19 +1042,19 @@ function irCheckout(){
     const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     // Bloquear se nao atingiu pedido minimo
     if(PEDIDO_MIN>0&&sub<PEDIDO_MIN){
-      toast('Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
+      toast('Pedido mÃ­nimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
       return;
     }
-    // Forçar CEP antes de prosseguir
+    // ForÃ§ar CEP antes de prosseguir
     if(!_freteCalculado){
       const cepEl=document.getElementById('cart-cep');
       if(cepEl)cepEl.focus();
       toast('Calcule o frete pelo CEP antes de continuar.','err',4000);
       return;
     }
-    // Bloquear se CEP foi calculado mas está fora do raio
+    // Bloquear se CEP foi calculado mas estÃ¡ fora do raio
     if(window._cartCoords===undefined&&LOJA_LAT){
-      toast('Endereço fora do raio de entrega. Escolha Retirada.','err',4000);
+      toast('EndereÃ§o fora do raio de entrega. Escolha Retirada.','err',4000);
       return;
     }
   }
@@ -1116,12 +1137,12 @@ function setCoE(v){
     TAXA=0;
     renderRetOpts();
   }else{
-    // Voltou para Entrega: resetar zona e coords para forçar novo cálculo
+    // Voltou para Entrega: resetar zona e coords para forÃ§ar novo cÃ¡lculo
     _zonaAtiva=null;_clienteLat=null;_clienteLng=null;TAXA=0;
     // Limpar info de zona e mostrar aviso
     const zi=document.getElementById('co-zona-info');
-    if(zi){zi.style.display='block';zi.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:600">⚠️ Preencha o CEP abaixo para calcular o frete de entrega.</div>';}
-    // Recalcular se já tem CEP
+    if(zi){zi.style.display='block';zi.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:600">âš ï¸ Preencha o CEP abaixo para calcular o frete de entrega.</div>';}
+    // Recalcular se jÃ¡ tem CEP
     const cepEl=document.getElementById('co-cep');
     if(cepEl&&cepEl.value.replace(/\D/g,'').length===8){
       setTimeout(verificarZonaEntrega,400);
@@ -1141,7 +1162,7 @@ function renderRetOpts(){
   const dow=new Date(y,m-1,d).getDay();
   const local=LOCAIS_RETIRADA[dow];
   if(!local){
-    info.innerHTML='<div style="font-size:12px;color:var(--red)">Sem retirada disponível nesta data.</div>';
+    info.innerHTML='<div style="font-size:12px;color:var(--red)">Sem retirada disponÃ­vel nesta data.</div>';
     document.getElementById('co-ret-local').value='';
     return;
   }
@@ -1157,30 +1178,30 @@ let cupomAtivo=null;
 async function aplicarCupom(){
   const nome=document.getElementById('cart-cupom-input').value.trim().toUpperCase();
   const msg=document.getElementById('cart-cupom-msg');
-  if(!nome){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Digite o código do cupom.';return}
-  if(!perfil){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Faça login para usar cupons.';return}
+  if(!nome){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Digite o cÃ³digo do cupom.';return}
+  if(!perfil){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='FaÃ§a login para usar cupons.';return}
 
   // Busca o cupom
   const {data:c,error}=await sb.from('cupons').select('*').eq('nome',nome).eq('ativo',true).single();
   if(error||!c){
-    msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Cupom inválido ou não encontrado.';return;
+    msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Cupom invÃ¡lido ou nÃ£o encontrado.';return;
   }
   if(c.usos_restantes<=0){
     msg.style.display='block';msg.style.color='var(--orange)';
-    msg.textContent='Esse cupom fez sucesso e já esgotou!';return;
+    msg.textContent='Esse cupom fez sucesso e jÃ¡ esgotou!';return;
   }
 
-  // Verifica se o cliente já usou este cupom antes
+  // Verifica se o cliente jÃ¡ usou este cupom antes
   const {data:jaUsou}=await sb.from('pedidos')
     .select('id').eq('user_id',perfil.id).eq('cupom',nome).limit(1);
   if(jaUsou&&jaUsou.length>0){
     msg.style.display='block';msg.style.color='var(--red)';
-    msg.textContent='Você já utilizou o cupom '+nome+' anteriormente.';return;
+    msg.textContent='VocÃª jÃ¡ utilizou o cupom '+nome+' anteriormente.';return;
   }
 
   cupomAtivo=c;
   msg.style.display='block';msg.style.color='var(--green-bright)';
-  msg.textContent='✓ Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';
+  msg.textContent='âœ“ Cupom '+c.nome+' aplicado! '+c.desconto+'% de desconto.';
   document.getElementById('cart-cupom-input').disabled=true;
   updSums();
 }
@@ -1229,10 +1250,10 @@ function buildTextoWhatsApp(pedido,itens){
     if(trocoVal && trocoVal !== 'sem troco'){
       pagExtra = 'Troco: R$ ' + fp(parseFloat(trocoVal));
     } else {
-      pagExtra = 'Troco: Não';
+      pagExtra = 'Troco: NÃ£o';
     }
   } else {
-    pagLabel = 'Cartão';
+    pagLabel = 'CartÃ£o';
   }
 
   // Template personalizado (se existir)
@@ -1257,11 +1278,11 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template padrao formatado
   const partes = [];
-  partes.push('Tipo de serviço: ' + (isEntrega ?'Entrega' : 'Retirada'));
+  partes.push('Tipo de serviÃ§o: ' + (isEntrega ?'Entrega' : 'Retirada'));
   partes.push('');
   partes.push('Nome: ' + (pedido.nome||''));
   partes.push('Telefone: ' + (pedido.contato||''));
-  partes.push((isEntrega ?'Endereço: ' : 'Local de retirada: ') + (endFull||''));
+  partes.push((isEntrega ?'EndereÃ§o: ' : 'Local de retirada: ') + (endFull||''));
   partes.push('Data de ' + (isEntrega ?'entrega' : 'retirada') + ': ' + (pedido.data||''));
   partes.push('');
   partes.push('-- Produtos --');
@@ -1276,19 +1297,10 @@ function buildTextoWhatsApp(pedido,itens){
   partes.push('Total a pagar: R$ ' + fp(totalFinal));
   partes.push('Forma de pagamento: ' + pagLabel);
   if(pagExtra) partes.push(pagExtra);
-  if(pedido.obs){ partes.push(''); partes.push('-- Observações --'); partes.push(pedido.obs); }
+  if(pedido.obs){ partes.push(''); partes.push('-- ObservaÃ§Ãµes --'); partes.push(pedido.obs); }
   partes.push('');
   partes.push('Por favor, envie-nos esta mensagem agora.');
   return partes.join('\n');
-}
-
-async function gerarCodigo(dataPedido){
-  try{
-    const {count}=await sb.from('pedidos').select('id',{count:'exact',head:true}).eq('data_pedido',dataPedido);
-    const seq=String((count||0)+1).padStart(3,'0');
-    const [ano,mes,dia]=dataPedido.split('-');
-    return ano.slice(2)+seq+dia+mes; // ex: 260011205
-  }catch(e){return null}
 }
 
 function abrirWhatsApp(texto){
@@ -1296,7 +1308,7 @@ function abrirWhatsApp(texto){
   const url='https://wa.me/'+num+'?text='+encodeURIComponent(texto);
   window.open(url,'_blank');
 }
-/* ── PAGAMENTO CHECKOUT ── */
+/* â”€â”€ PAGAMENTO CHECKOUT â”€â”€ */
 let _metodoEntrega='Cartao';
 function setPagMomento(m){
   document.getElementById('co-pag-momento').value=m;
@@ -1346,154 +1358,17 @@ function semTroco(){
   toast('Sem troco!','ok');
 }
 
+function abrirCheckoutSeguroLegado(){
+  fecharCo();
+  abrirCo3();
+}
+
 async function enviarPedido(){
-  const nome=document.getElementById('co-nome').value.trim();
-  const tel=document.getElementById('co-tel').value.trim();
-  const isRetirada=cart.entrega==='Retirada';
-  const endEntrega=document.getElementById('co-end').value.trim();
-  const endRetirada=document.getElementById('co-ret-local')?.value.trim()||'';
-  const end=isRetirada?endRetirada:endEntrega;
-  const pag=document.getElementById('co-pag').value;
-  const momento=document.getElementById('co-pag-momento').value;
-  const troco=document.getElementById('co-troco').value;
-  const comp=isRetirada?'':document.getElementById('co-comp').value.trim();
-  const erros=[];
-  if(!nome) erros.push('Nome');
-  if(!tel) erros.push('Contato');
-  if(!isRetirada&&!endEntrega) erros.push('Endereco');
-  if(isRetirada&&!endRetirada) erros.push('Local de retirada (selecione a data)');
-  if(!pag) erros.push('Forma de pagamento');
-  if(pag==='Dinheiro'&&!troco){popAlert('💵','Troco obrigatório','Informe o valor para troco ou clique em "Não preciso de troco!"');return}
-  if(erros.length){popAlert('⚠️','Campos obrigatórios','Preencha: '+erros.join(', '));return}
-  // Bloquear se fora do raio de entrega ou sem zona calculada
-  if(!isRetirada&&LOJA_LAT){
-    // Se tem endereço mas não calculou zona ainda, calcular agora
-    if(_zonaAtiva===null&&_clienteLat===null&&endEntrega){
-      await verificarZonaEntrega();
-    }
-    // Se calculou coords, verificar distância
-    if(_clienteLat!==null){
-      const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,_clienteLat,_clienteLng);
-      if(dist>RAIO_MAX){
-        popAlert('🚫','Fora do raio de entrega','Seu endereço está a '+dist.toFixed(1)+'km da loja. O máximo é '+RAIO_MAX+'km.\n\nEscolha Retirada para continuar.');
-        return;
-      }
-    }
-    // Bloquear se ainda sem zona válida
-    if(!_zonaAtiva){
-      popAlert('⚠️','Frete não calculado','Preencha o CEP e verifique se seu endereço está dentro da área de entrega antes de finalizar.\n\nOu escolha Retirada.');
-      return;
-    }
-  }
-  // Validar pedido minimo (so para Entrega)
-  if(!isRetirada&&PEDIDO_MIN>0){
-    const subCheck=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    if(subCheck<PEDIDO_MIN){
-      popAlert('🚚','Pedido mínimo para entrega','O valor mínimo para entrega é R$ '+fp(PEDIDO_MIN)+'.\nSeu pedido está em R$ '+fp(subCheck)+'.\n\nAdicione mais itens ou escolha Retirada.');
-      return;
-    }
-  }
-  if(!document.getElementById('co-data').value){popAlert('📅','Data obrigatória','Selecione uma data.');return}
-  const dataPedCheckout=document.getElementById('co-data').value;
-  await carregarDatasBloqueadas();
-  if(dataBloqueada(dataPedCheckout,cart.entrega)){
-    toast('Essa data não está disponível. Escolha outra data.','err',3000);
-    return;
-  }
-  if(!cart.itens.length){toast('Carrinho vazio.','err');return}
-  const btn=document.getElementById('co-btn');
-  btn.disabled=true;btn.textContent='Enviando...';
-  const statusAuto=momento==='agora'?'Pendente':'Em preparo';
-  const itensCopy=[...cart.itens];
-  const pagLabel=pag+(troco&&troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(troco))+')':(troco==='sem troco'?' (sem troco)':''));
-  const txtWpp=buildTextoWhatsApp({
-    nome,contato:tel,endereco:end,
-    numero:isRetirada?'':document.getElementById('co-num').value,
-    complemento:comp,
-    data:fd(document.getElementById('co-data').value),
-    entrega:cart.entrega,pagamento:pag,
-    troco:document.getElementById('co-troco').value,
-    obs:document.getElementById('co-obs').value
-  },itensCopy);
-  // Se for Pix: abre modal Pix primeiro, WhatsApp depois da confirmação
-  if(pag === 'Pix' || pag === 'pix' || (momento === 'agora' && pag.toLowerCase().includes('pix'))){
-    const sub2=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    const _pr2=calcPromoAuto(sub2);
-    const _fg2=_pr2?.freteGratis||false;
-    const taxa2=cart.entrega==='Entrega'&&!_fg2?(_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0)):0;
-    const dc2=cupomAtivo?Math.round(sub2*cupomAtivo.desconto/100*100)/100:0;
-    const dp2=_pr2?.desconto||0;
-    const totalPix=Math.max(0,sub2+taxa2-dc2-dp2);
-    btn.disabled=false;btn.textContent='FINALIZAR PEDIDO';
-    abrirPixModal(totalPix, {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed:document.getElementById('co-data').value, pagLabel, pag});
-    return;
-  }
-  // Outros métodos: WhatsApp direto
-  abrirWhatsApp(txtWpp);
-  try{
-    const dataPed=document.getElementById('co-data').value;
-    const codigo=await gerarCodigo(dataPed);
-    const sub=itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    const _promo=calcPromoAuto(sub);
-    const _freteGratis=_promo?.freteGratis||false;
-    // Taxa só aplica se zona foi calculada ou se loja não está configurada
-    const taxaBase=(_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0));
-    const taxa=cart.entrega==='Entrega'&&!_freteGratis?taxaBase:0;
-    const descCupomEnv=cupomAtivo?Math.round(sub*cupomAtivo.desconto/100*100)/100:0;
-    const descPromoEnv=_promo?.desconto||0;
-    const desc=descCupomEnv+descPromoEnv;
-    const insertData={
-      user_id:perfil.id,cliente_nome:nome,
-      cliente_contato:tel,
-      cliente_endereco:end,
-      cliente_numero:isRetirada?'':document.getElementById('co-num').value,
-      cliente_complemento:comp||null,
-      entrega:cart.entrega,taxa_entrega:taxa,
-      pagamento:pagLabel,
-      status:statusAuto,
-      observacoes:document.getElementById('co-obs').value,
-      subtotal:sub,total:sub+taxa-desc,
-      data_pedido:dataPed
-    };
-    if(codigo)insertData.codigo=codigo;
-    if(cupomAtivo)insertData.cupom=cupomAtivo.nome;
-    const {data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();
-    if(error)throw error;
-    await sb.from('itens_pedido').insert(itensCopy.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);
-      return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};
-    }));
-    // Decrementa uso do cupom com verificacao atomica
-    if(cupomAtivo){
-      // Re-le o valor atual do banco antes de decrementar (evita race condition)
-      const {data:cupNow}=await sb.from('cupons').select('usos_restantes').eq('id',cupomAtivo.id).single();
-      if(cupNow&&cupNow.usos_restantes!==null&&cupNow.usos_restantes>0){
-        await sb.from('cupons').update({usos_restantes:cupNow.usos_restantes-1}).eq('id',cupomAtivo.id);
-      }else if(cupNow&&cupNow.usos_restantes===0){
-        // Cupom esgotou entre o momento da verificacao e o salvamento — avisa mas mantem o pedido
-        toast('Cupom esgotado, pedido salvo sem desconto.','err');
-        // Nao aplica desconto retroativamente — apenas registra
-      }
-    }
-    // Decrementar estoque
-    await Promise.all(itensCopy.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);
-      if(!p||p.estoque==null)return Promise.resolve();
-      const novo=Math.max(0,p.estoque-it.qty);
-      p.estoque=novo;
-      const upd8={estoque:novo};
-      if(novo<=0){upd8.ativo=false;p.ativo=false;}
-      return sb.from('produtos').update(upd8).eq('id',p.id);
-    }));
-    cupomAtivo=null;
-    cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo();
-    mostrarSucesso();
-  }catch(e){toast('Erro: '+e.message,'err')}
-  btn.disabled=false;btn.textContent='Enviar pedido';
+  abrirCheckoutSeguroLegado();
 }
 
 
-/* ── CALENDAR PICKER ── */
+/* â”€â”€ CALENDAR PICKER â”€â”€ */
 let calCtx=null; // 'co' | 'adm'
 let calAno,calMes;
 
@@ -1507,7 +1382,7 @@ function abrirCal(ctx){
     ?'<span class="cal-dot"></span> Todas as datas de entrega'
     :calCtx==='adm'
     ?'<span class="cal-dot"></span> Selecione qualquer data'
-    :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
+    :'<span class="cal-dot"></span> PrÃ³ximas 3 datas disponÃ­veis';
   const _calEl=document.getElementById('cal-ov');
   document.body.appendChild(_calEl);
   _calEl.removeAttribute('aria-hidden');
@@ -1530,14 +1405,14 @@ function navCal(d){
 }
 
 function renderCal(){
-  const MESES_LONG=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const MESES_LONG=['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'];
   document.getElementById('cal-month-label').textContent=MESES_LONG[calMes]+' '+calAno;
 
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const selVal=document.getElementById(calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data').value;
 
-  // Datas disponíveis: lógica diferente por contexto
+  // Datas disponÃ­veis: lÃ³gica diferente por contexto
   const proximas=new Set();
   if(calCtx==='co'||calCtx==='co3'){
     // Usa corte de 20h (mesma regra de datasComCorte)
@@ -1555,7 +1430,7 @@ function renderCal(){
     const iso=toISO(dt);
     const isHoje=dt.getTime()===hoje.getTime();
     const dow=dt.getDay();
-    // Admin novo pedido: qualquer data. Entregas: todos Ter/Sáb. Cliente: 3 próximas
+    // Admin novo pedido: qualquer data. Entregas: todos Ter/SÃ¡b. Cliente: 3 prÃ³ximas
     let isDisponivel;
     if(calCtx==='adm') isDisponivel=true;
     else if(calCtx==='entr') isDisponivel=(dow===2||dow===5);
@@ -1574,8 +1449,8 @@ function renderCal(){
     if(isDisponivel){
       html+=`<button class="${cls}" onclick="selecionarData('${iso}')">${dia}</button>`;
     }else{
-      // Não disponível: clique só fecha o cal (não congela)
-      const msg=calCtx==='co'?'Somente terças e sextas':'';
+      // NÃ£o disponÃ­vel: clique sÃ³ fecha o cal (nÃ£o congela)
+      const msg=calCtx==='co'?'Somente terÃ§as e sextas':'';
       html+=`<button class="${cls}" onclick="fecharCal();${msg?`toast('${msg}','err',2000)`:''};">${dia}</button>`;
     }
   }
@@ -1585,7 +1460,7 @@ function renderCal(){
 function selecionarData(iso){
   if((calCtx==='co'||calCtx==='co3')&&dataBloqueada(iso,calCtx==='co3'?co3Modalidade:cart.entrega)){
     fecharCal();
-    toast('Essa data não está disponível. Escolha outra data.','err',3000);
+    toast('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.','err',3000);
     return;
   }
   const idInput=calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data';
@@ -1618,7 +1493,7 @@ function fecharSucesso(){
   _s.setAttribute('inert','');
 }
 
-/* ── POPUP & TOAST ── */
+/* â”€â”€ POPUP & TOAST â”€â”€ */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
@@ -1631,7 +1506,7 @@ function toast(msg,type='info',dur=3200){
 }
 function popup(icon,title,msg,btns){
   // btns: [{label, cls:'pbtn-ok'|'pbtn-cancel'|'pbtn-danger', cb}]
-  const iconMap={'❌':'circle-x','⚠️':'triangle-alert','🚫':'ban','🚚':'truck','📅':'calendar','💵':'banknote','🗑️':'trash-2','👤':'user','📋':'clipboard-list'};
+  const iconMap={'âŒ':'circle-x','âš ï¸':'triangle-alert','ðŸš«':'ban','ðŸšš':'truck','ðŸ“…':'calendar','ðŸ’µ':'banknote','ðŸ—‘ï¸':'trash-2','ðŸ‘¤':'user','ðŸ“‹':'clipboard-list'};
   document.getElementById('g-popup-icon').innerHTML=lucideIcon(iconMap[icon]||icon||'info');
   document.getElementById('g-popup-title').textContent=title;
   document.getElementById('g-popup-msg').textContent=msg;
@@ -1680,7 +1555,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharAuth();fechar
 ['login-email','login-pass'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()}));
 ['reg-nome','reg-tel','reg-email','reg-pass','reg-pass2'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerCadastro()}));
 
-/* ── PRODUCT MODAL ── */
+/* â”€â”€ PRODUCT MODAL â”€â”€ */
 function abrirProdModal(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   let modal=document.getElementById('prod-modal-ov');
@@ -1688,7 +1563,7 @@ function abrirProdModal(id){
     document.body.insertAdjacentHTML('beforeend',`<div class="modal-ov" id="prod-modal-ov" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
       <div class="modal-box" style="width:360px;padding:0;overflow:hidden">
         <div id="prod-modal-img" style="width:100%;height:200px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:64px;position:relative">
-          <button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          <button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>
         </div>
         <div style="padding:16px">
           <div id="prod-modal-nome" style="font-size:18px;font-weight:800;margin-bottom:4px"></div>
@@ -1705,8 +1580,8 @@ function abrirProdModal(id){
   }
   const imgEl=document.getElementById('prod-modal-img');
   imgEl.innerHTML=p.imagem_url
-    ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>`
-    :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>`;
+    ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>`
+    :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>`;
   document.getElementById('prod-modal-nome').textContent=p.nome;
   document.getElementById('prod-modal-peso').textContent=p.peso||'';
   document.getElementById('prod-modal-desc').textContent=p.descricao||'';
@@ -1722,7 +1597,7 @@ function renderProdModalCtrl(id){
   if(!ctrl)return;
   if(qty>0){
     ctrl.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
-      <button class="cqb-lg" onclick="cQtyModal(${id},-1)">−</button>
+      <button class="cqb-lg" onclick="cQtyModal(${id},-1)">âˆ’</button>
       <span style="font-size:20px;font-weight:800;min-width:24px;text-align:center">${qty}</span>
       <button class="cqb-lg" onclick="cQtyModal(${id},1)">+</button>
     </div>`;
@@ -1735,7 +1610,7 @@ function cQtyModal(id,d){
   const ex=cart.itens.find(i=>i.prodId===id);
   if(d>0&&p&&p.estoque!=null){
     const qAtual=ex?ex.qty:0;
-    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'Máximo disponível: '+p.estoque+'.','err');return;}
+    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'MÃ¡ximo disponÃ­vel: '+p.estoque+'.','err');return;}
   }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
@@ -1743,13 +1618,13 @@ function cQtyModal(id,d){
   if(document.getElementById('cart-drawer').classList.contains('open'))renderCart();
 }
 
-/* ── LOCAIS DE RETIRADA ── */
+/* â”€â”€ LOCAIS DE RETIRADA â”€â”€ */
 const LOCAIS_RETIRADA={
-  2:{nome:'Feira Terça-feira',end:'Rua Borda do Mato - Grajaú, Rio de Janeiro',ref:'Em frente à Academia Borda 90'},
-  5:{nome:'Feira Sexta-feira',end:'Av. Júlio Furtado - Grajaú, Rio de Janeiro',ref:'Em frente ao StudioGama115'}
+  2:{nome:'Feira TerÃ§a-feira',end:'Rua Borda do Mato - GrajaÃº, Rio de Janeiro',ref:'Em frente Ã  Academia Borda 90'},
+  5:{nome:'Feira Sexta-feira',end:'Av. JÃºlio Furtado - GrajaÃº, Rio de Janeiro',ref:'Em frente ao StudioGama115'}
 };
 
-/* ── MOBILE CART BAR ── */
+/* â”€â”€ MOBILE CART BAR â”€â”€ */
 function updMobileCartBar(){
   const bar=document.getElementById('mobile-cart-bar');
   if(!bar)return;
@@ -1764,26 +1639,26 @@ function updMobileCartBar(){
   }
 }
 
-/* ── DASHBOARD ── */
+/* â”€â”€ DASHBOARD â”€â”€ */
 let cupons=[];
 
 function abrirRastrearPedido(){
-  popInput('📦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
+  popInput('ðŸ“¦','Acompanhar Pedido','Digite o nÃºmero do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
     const codigo=val.trim().toUpperCase();
-    if(!codigo){toast('Digite o código do pedido.','err');return}
+    if(!codigo){toast('Digite o cÃ³digo do pedido.','err');return}
     const {data,error}=await sb.from('pedidos')
-      .select('codigo,id,status,total,created_at,cliente_nome,tipo_entrega,data_pedido')
+      .select('codigo,id,status,total,created_at,cliente_nome,entrega,data_pedido')
       .or('codigo.eq.'+codigo+',id.eq.'+(parseInt(codigo)||0))
       .single();
-    if(error||!data){toast('Pedido não encontrado. Verifique o código.','err');return}
+    if(error||!data){toast('Pedido nÃ£o encontrado. Verifique o cÃ³digo.','err');return}
     const statusEmoji={
-      'Pendente':'⏳','Em preparo':'👨‍🍳','Saiu para entrega':'🛵','Entregue':'✅','Cancelado':'❌'
+      'Pendente':'â³','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Entregue':'âœ…','Cancelado':'âŒ'
     };
     const st=data.status||'Pendente';
-    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'—';
-    popAlert(
-      (statusEmoji[st]||'📦')+' Pedido '+data.codigo,
-      'Cliente: '+data.cliente_nome+'\n'+'Data: '+dt+'\nModalidade: '+(data.tipo_entrega||'—')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
+    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'â€”';
+    popTrackAlert(
+      (statusEmoji[st]||'ðŸ“¦')+' Pedido '+data.codigo,
+      'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'â€”')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
     );
   });
 }
@@ -1807,12 +1682,12 @@ function popInput(icon,title,msg,placeholder,btnLabel,onConfirm){
   ov.querySelector('#_popbtn').addEventListener('click',()=>{ov.remove();onConfirm(inp.value)});
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});
 }
-function popAlert(title,msg){
+function popTrackAlert(title,msg){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;max-width:330px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
-    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--text)">${title}</div>
-    <div style="font-size:13px;color:var(--text2);text-align:center;line-height:1.7;margin-bottom:18px;white-space:pre-line">${msg}</div>
+    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--text)">${h(title)}</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;line-height:1.7;margin-bottom:18px;white-space:pre-line">${h(msg)}</div>
     <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">OK</button>
   </div>`;
   document.body.appendChild(ov);
@@ -1824,9 +1699,9 @@ async function loginGoogle(){
   if(error)toast('Erro ao conectar com Google.','err');
 }
 function abrirEsqueceuSenha(){
-  popInput('🔑','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
+  popInput('ðŸ”‘','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefiniÃ§Ã£o:','seu@email.com','Enviar link',async(val)=>{
     const email=val.trim().toLowerCase();
-    if(!email||!email.includes('@')){toast('Digite um e-mail válido.','err');return}
+    if(!email||!email.includes('@')){toast('Digite um e-mail vÃ¡lido.','err');return}
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/loja?reset=1'});
     if(error){toast('Erro ao enviar.','err');return}
     toast('Link enviado! Verifique sua caixa de entrada','ok');
@@ -1847,7 +1722,7 @@ function abrirNovaSenha(){
   ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px 22px 20px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
     <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)">Nova senha</div>
     <div id="reset-msg" style="margin-bottom:8px"></div>
-    <input id="reset-pass1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
+    <input id="reset-pass1" type="password" placeholder="Nova senha (mÃ­n. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
     <input id="reset-pass2" type="password" placeholder="Confirmar nova senha" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:14px;box-sizing:border-box">
     <button onclick="salvarNovaSenha()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">Salvar nova senha</button>
   </div>`;
@@ -1857,17 +1732,17 @@ async function salvarNovaSenha(){
   const p1=document.getElementById('reset-pass1').value;
   const p2=document.getElementById('reset-pass2').value;
   const msg=document.getElementById('reset-msg');
-  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">Mínimo 6 caracteres.</div>';return}
-  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas não coincidem.</div>';return}
+  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">MÃ­nimo 6 caracteres.</div>';return}
+  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas nÃ£o coincidem.</div>';return}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.innerHTML='<div style="color:var(--red);font-size:12px">Erro: '+error.message+'</div>';return}
   document.getElementById('reset-ov').remove();
   toast('Senha atualizada!','ok');
 }
 
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LANDING PAGE EDITOR
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let _pixPedidoData = null; // guarda dados do pedido para confirmar depois
 
@@ -1926,7 +1801,7 @@ function abrirPixModal(total, pedidoData){
   document.getElementById('pix-codigo-txt').textContent = payload;
   _pixQR(document.getElementById('pix-qr-canvas'), payload);
   const ov = document.getElementById('pix-modal-ov');
-  document.body.appendChild(ov); // garantir que está no topo do DOM
+  document.body.appendChild(ov); // garantir que estÃ¡ no topo do DOM
   ov.style.display = 'flex';
   ov.classList.add('open');
 }
@@ -1955,75 +1830,16 @@ async function confirmarPagamentoPix(){
   await _finalizarPedido(_pixPedidoData);
 }
 
-// ── FINALIZAR PEDIDO APÓS PIX ──
-async function _finalizarPedido(dados){
-  const {txtWpp, itensCopy, nome, tel, end, isRetirada, comp, dataPed, pagLabel, pag} = dados;
-  await carregarDatasBloqueadas();
-  if(dataBloqueada(dataPed,isRetirada?'Retirada':'Entrega')){
-    toast('Essa data não está disponível. Escolha outra data.','err',3000);
-    return;
-  }
-  fecharCo();
-  abrirWhatsApp(txtWpp);
-  try{
-    const codigo = await gerarCodigo(dataPed);
-    const sub = itensCopy.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-    const _promo = calcPromoAuto(sub);
-    const _freteGratis = _promo?.freteGratis||false;
-    const taxaBase = (_zonaAtiva?_zonaAtiva.taxa:(!LOJA_LAT?TAXA:0));
-    const taxa = !isRetirada&&!_freteGratis ?taxaBase : 0;
-    const descCupomEnv = cupomAtivo ?Math.round(sub*cupomAtivo.desconto/100*100)/100 : 0;
-    const descPromoEnv = _promo?.desconto||0;
-    const desc = descCupomEnv + descPromoEnv;
-    const insertData = {
-      user_id: perfil.id,
-      cliente_nome: nome,
-      cliente_contato: tel,
-      cliente_endereco: end,
-      cliente_numero: isRetirada ?'' : (document.getElementById('co-num')?.value||''),
-      cliente_complemento: comp||null,
-      entrega: isRetirada ?'Retirada' : 'Entrega',
-      taxa_entrega: taxa,
-      pagamento: pagLabel,
-      status: 'Pendente',
-      observacoes: document.getElementById('co-obs')?.value||'',
-      subtotal: sub,
-      total: Math.max(0, sub + taxa - desc),
-      data_pedido: dataPed
-    };
-    if(codigo) insertData.codigo = codigo;
-    if(cupomAtivo) insertData.cupom = cupomAtivo.nome;
-    const {data:ped, error} = await sb.from('pedidos').insert(insertData).select().single();
-    if(error) throw error;
-    await sb.from('itens_pedido').insert(itensCopy.map(it=>{
-      const p = prods.find(x=>x.id===it.prodId);
-      return {pedido_id:ped.id, produto_id:p.id, nome_produto:p.nome, peso_produto:p.peso||'', preco_unitario:p.preco, quantidade:it.qty, subtotal:p.preco*it.qty};
-    }));
-    if(cupomAtivo){
-      const {data:cupNow} = await sb.from('cupons').select('usos_restantes').eq('id',cupomAtivo.id).single();
-      if(cupNow && cupNow.usos_restantes > 0)
-        await sb.from('cupons').update({usos_restantes: cupNow.usos_restantes-1}).eq('id', cupomAtivo.id);
-    }
-    await Promise.all(itensCopy.map(it=>{
-      const p = prods.find(x=>x.id===it.prodId);
-      if(!p || p.estoque==null) return Promise.resolve();
-      const novo = Math.max(0, p.estoque - it.qty);
-      p.estoque = novo;
-      const updSp={estoque:novo};if(novo<=0){updSp.ativo=false;p.ativo=false;}
-      return sb.from('produtos').update(updSp).eq('id',p.id);
-    }));
-    cupomAtivo = null;
-    cart = {itens:[], entrega:'Entrega'};
-    updCartBadge();
-    mostrarSucesso();
-  }catch(e){
-    toast('Erro ao salvar pedido: ' + e.message, 'err');
-  }
+// â”€â”€ FINALIZAR PEDIDO APÃ“S PIX â”€â”€
+async function _finalizarPedido(){
+  fecharPixModal();
+  toast('Use o checkout seguro para finalizar o pedido.','err',3000);
+  abrirCheckoutSeguroLegado();
 }
 
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CHECKOUT 3 PASSOS
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='',co3EnderecoForaRaio=false;
 
 function fecharCo3(){
@@ -2042,16 +1858,16 @@ function co3GoStep(n){
     else{d.textContent=i;}
   });
   ['co3-p1','co3-p2','co3-p3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=(i+1===n)?'block':'none';});
-  // Resumo só no passo 1
+  // Resumo sÃ³ no passo 1
   const _resumo=document.getElementById('co3-resumo-sidebar');
   if(_resumo) _resumo.style.display = n===1 ?'block' : 'none';
   co3RenderResumoItens();
-  // Resumo: só no passo 1
+  // Resumo: sÃ³ no passo 1
   const resumoEl=document.querySelector('.co3-resumo');
   const bodyEl=document.querySelector('.co3-body');
   if(resumoEl)resumoEl.style.display=n===1?'':'none';
   if(bodyEl)bodyEl.classList.toggle('sem-resumo',n!==1);
-  // Mostrar resumo endereço no passo 2
+  // Mostrar resumo endereÃ§o no passo 2
   if(n>=2){
     const resumoEl=document.getElementById('co3-end-resumo');
     const endFull=document.getElementById('co3-end-full')?.value;
@@ -2062,7 +1878,7 @@ function co3GoStep(n){
     if(data){const[y,m,d]=data.split('-').map(Number);const dt=new Date(y,m-1,d);dataLabel=DIAS[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES2[m-1];}
     if(resumoEl){
       resumoEl.style.display=endFull?'block':'none';
-      if(endFull)resumoEl.innerHTML='<strong>'+co3Modalidade+'</strong> · '+dataLabel+(endFull?' · '+endFull.split(' - ')[0]:'');
+      if(endFull)resumoEl.innerHTML='<strong>'+co3Modalidade+'</strong> Â· '+dataLabel+(endFull?' Â· '+endFull.split(' - ')[0]:'');
     }
   }
   const ov=document.getElementById('co3-ov');if(ov)ov.scrollTop=0;
@@ -2076,7 +1892,7 @@ function co3RenderResumoItens(){
   el2.innerHTML=cart.itens.map(it=>{
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
-      <span style="color:var(--text2)">${it.qty}x <strong style="color:var(--text)">${p.nome}</strong></span>
+      <span style="color:var(--text2)">${it.qty}x <strong style="color:var(--text)">${h(p.nome)}</strong></span>
       <span style="font-weight:700;color:var(--text);white-space:nowrap;margin-left:8px">R$ ${fp(p.preco*it.qty)}</span>
     </div>`;
   }).join('');
@@ -2128,11 +1944,11 @@ async function co3CalcFrete(){
   if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
   window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
   const c2=document.getElementById('co3-cep2');if(c2)c2.value=cepEl.value;
-  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
+  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=true;info.style.color='var(--orange)';info.textContent='Frete estimado: R$ '+fp(TAXA);co3UpdateResumo();return;}
   const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
   if(dist>RAIO_MAX){co3EnderecoForaRaio=true;co3FreteCalculado=false;_freteCalculado=false;info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
   const zona=calcularZona(dist);
-  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
+  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=false;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' Â· '+dist.toFixed(1)+'km Â· Frete: R$ '+fp(TAXA);co3UpdateResumo();}
   else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
 }
 
@@ -2162,13 +1978,13 @@ async function co3BuscarCep(){
 function co3Passo3(){
   const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim();
   const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');
-  if(erros.length){popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
+  if(erros.length){popAlert('âš ï¸','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
   co3GoStep(3);co3SetPag('Pix');
 }
 
-function co3GerarQR(){
-  const{total}=co3UpdateResumo();
-  const payload=gerarPixPayload(total,'CORT'+Date.now().toString().slice(-8));
+function co3GerarQR(totalServidor, txidServidor){
+  const total=Number.isFinite(Number(totalServidor))?Number(totalServidor):co3UpdateResumo().total;
+  const payload=gerarPixPayload(total,txidServidor||('CORT'+Date.now().toString().slice(-8)));
   const valEl=document.getElementById('co3-pix-valor'),codEl=document.getElementById('co3-pix-codigo');
   if(valEl)valEl.textContent='R$ '+fp(total);if(codEl)codEl.textContent=payload;
   const canvas=document.getElementById('co3-pix-canvas');if(canvas)_pixQR(canvas,payload);
@@ -2186,8 +2002,8 @@ function co3ValidarTroco(){
 function co3ConfirmarTroco(){const val=parseFloat(document.getElementById('co3-troco-val')?.value)||0;const{total}=co3UpdateResumo();if(val<=total){co3ValidarTroco();return;}co3Troco=val.toFixed(2);toast('Troco para R$ '+fp(val)+' confirmado!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 function co3SemTroco(){co3Troco='sem troco';toast('Sem troco!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 
-// ── CO3: DATAS DISPONÍVEIS (próximas 3 terças e sextas) ──
-// Corte: Terça fecha na Segunda às 20h | Sexta fecha na Quinta às 20h
+// â”€â”€ CO3: DATAS DISPONÃVEIS (prÃ³ximas 3 terÃ§as e sextas) â”€â”€
+// Corte: TerÃ§a fecha na Segunda Ã s 20h | Sexta fecha na Quinta Ã s 20h
 function datasComCorte(){
   const agora = new Date();
   const hoje = new Date(agora); hoje.setHours(0,0,0,0);
@@ -2209,15 +2025,15 @@ function datasComCorte(){
 }
 
 
-// ── CO3: AUTO BUSCAR CEP (no blur) ──
-// ── CO3: Atualizar co3SetModalidade para p1 ──
+// â”€â”€ CO3: AUTO BUSCAR CEP (no blur) â”€â”€
+// â”€â”€ CO3: Atualizar co3SetModalidade para p1 â”€â”€
 
 function co3SetModalidade(v){
   co3Modalidade=v;cart.entrega=v;
   const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
   if(be)be.classList.toggle('active',v==='Entrega');
   if(br)br.classList.toggle('active',v==='Retirada');
-  // Resumo só aparece na modalidade Entrega
+  // Resumo sÃ³ aparece na modalidade Entrega
   const resumoEl=document.querySelector('.co3-resumo');
   const bodyEl=document.querySelector('.co3-body');
   const showResumo = v==='Entrega' && co3Step===1;
@@ -2235,9 +2051,9 @@ function co3SetModalidade(v){
   co3UpdateResumo();co3RenderRetOpts();
 };
 
-// ── CO3: Atualizar co3Passo2 para validar passo 1 ──
+// â”€â”€ CO3: Atualizar co3Passo2 para validar passo 1 â”€â”€
 
-// ── CO3: Abrir co3 chama RenderDatas ──
+// â”€â”€ CO3: Abrir co3 chama RenderDatas â”€â”€
 
 function abrirCo3(){
   if(!perfil){window._coPend=true;abrirAuth();return}
@@ -2261,7 +2077,7 @@ function mostrarBalloon(msg){
   window._balloonTimer = setTimeout(()=>b.classList.remove('show'), 3000);
 }
 
-// ── CO3: MOMENTO DO PAGAMENTO ──
+// â”€â”€ CO3: MOMENTO DO PAGAMENTO â”€â”€
 function co3SetMomento(v){
   document.getElementById('co3-pag-momento').value = v;
   document.getElementById('co3-momento-agora').classList.toggle('active', v==='agora');
@@ -2270,12 +2086,12 @@ function co3SetMomento(v){
   document.getElementById('co3-entrega-box').style.display = v==='entrega' ?'block' : 'none';
   const btn = document.getElementById('co3-btn-finalizar');
   if(btn){
-    if(v==='agora') btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei — Confirmar';
+    if(v==='agora') btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei â€” Confirmar';
     else btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
   }
   document.getElementById('co3-pag').value = v==='agora' ?'Pix' : document.getElementById('co3-pag-entrega-met').value;
   if(v==='agora'){
-    // Pagar agora (Pix): iniciar countdown, esconder botão direto
+    // Pagar agora (Pix): iniciar countdown, esconder botÃ£o direto
     const wrap=document.getElementById('co3-countdown-wrap');
     const btn=document.getElementById('co3-btn-finalizar');
     if(wrap)wrap.style.display='block';
@@ -2283,7 +2099,7 @@ function co3SetMomento(v){
     setTimeout(co3GerarQR,50);
     co3IniciarCountdown();
   }else{
-    // Pagar na entrega: esconder countdown, mostrar botão direto
+    // Pagar na entrega: esconder countdown, mostrar botÃ£o direto
     const wrap=document.getElementById('co3-countdown-wrap');
     const btn=document.getElementById('co3-btn-finalizar');
     if(wrap)wrap.style.display='none';
@@ -2295,7 +2111,7 @@ function co3SetMomento(v){
   }
 }
 
-// ── CO3: MÉTODO NA ENTREGA ──
+// â”€â”€ CO3: MÃ‰TODO NA ENTREGA â”€â”€
 function co3SetPagEntrega(v){
   document.getElementById('co3-pag-entrega-met').value = v;
   document.getElementById('co3-pag').value = v;
@@ -2305,7 +2121,7 @@ function co3SetPagEntrega(v){
   document.getElementById('co3-dinheiro-box').style.display = v==='Dinheiro' ?'block' : 'none';
 }
 
-// ── CO3: AUTO BUSCAR CEP ──
+// â”€â”€ CO3: AUTO BUSCAR CEP â”€â”€
 async function co3AutoBuscarCep(){
   const cepEl = document.getElementById('co3-cep');
   if(!cepEl) return;
@@ -2334,12 +2150,12 @@ async function co3AutoBuscarCep(){
             const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
             if(dist > RAIO_MAX){ co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; } return; }
             const zona = calcularZona(dist);
-            if(zona){ co3EnderecoForaRaio=false; TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true;
-              if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); }
+            if(zona){ co3EnderecoForaRaio=false; TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=false;
+              if(info){ info.textContent=d.bairro+' Â· '+dist.toFixed(1)+'km Â· Frete: R$ '+fp(TAXA); }
               co3UpdateResumo();
             }
           }
-        } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; co3UpdateResumo(); }
+        } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=true; if(info){ info.textContent='Frete estimado: R$ '+fp(TAXA); info.style.color='var(--orange)'; } co3UpdateResumo(); }
       } else {
         if(info){ info.textContent='CEP nao encontrado.'; info.style.color='var(--red)'; }
       }
@@ -2347,15 +2163,15 @@ async function co3AutoBuscarCep(){
   }
 }
 
-// ── CO3: VALIDAR PASSO 2 ATUALIZADO ──
+// â”€â”€ CO3: VALIDAR PASSO 2 ATUALIZADO â”€â”€
 function co3Passo2(){
   if(!cart.itens.length){ toast('Carrinho vazio.','err'); return; }
   const data = document.getElementById('co3-data')?.value;
   if(co3Modalidade==='Entrega'){
-    if(co3EnderecoForaRaio){ mostrarBalloon('Endereço fora da área de entrega.'); return; }
+    if(co3EnderecoForaRaio){ mostrarBalloon('EndereÃ§o fora da Ã¡rea de entrega.'); return; }
     if(!co3FreteCalculado){ mostrarBalloon('Informe o CEP para calcular o frete'); return; }
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
-    if(dataBloqueada(data,'Entrega')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
+    if(dataBloqueada(data,'Entrega')){ mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.'); return; }
     const num = document.getElementById('co3-num-p1')?.value.trim();
     if(!num){ mostrarBalloon('Informe o numero do endereco'); return; }
     const rua = document.getElementById('co3-rua-p1')?.value.trim()||'';
@@ -2369,14 +2185,14 @@ function co3Passo2(){
   }
   if(co3Modalidade==='Retirada'){
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
-    if(dataBloqueada(data,'Retirada')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
+    if(dataBloqueada(data,'Retirada')){ mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.'); return; }
     const local = document.getElementById('co3-ret-local')?.value;
     if(!local){ mostrarBalloon('Selecione uma data para ver o local de retirada'); return; }
   }
   co3GoStep(2);
 };
 
-// ── CO3: co3SetPag para pagar agora (só Pix) ──
+// â”€â”€ CO3: co3SetPag para pagar agora (sÃ³ Pix) â”€â”€
 function co3SetPag(v){
   co3PagMetodo=v;
   document.getElementById('co3-pag').value=v;
@@ -2386,108 +2202,145 @@ function co3SetPag(v){
   }
 }
 
-// ── CO3: co3Finalizar atualizado ──
-async function co3Finalizar(){
-  const momento = document.getElementById('co3-pag-momento')?.value||'agora';
-  const pag = document.getElementById('co3-pag')?.value||'Pix';
-  const btn = document.getElementById('co3-btn-finalizar');
+function co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,momento,pagLabel){
+  const isRetirada=co3Modalidade==='Retirada';
+  const cep=(document.getElementById('co3-cep')?.value||document.getElementById('co3-cep2')?.value||'').replace(/\D/g,'');
+  const rua=document.getElementById('co3-rua-p1')?.value.trim()||'';
+  const bairro=document.getElementById('co3-bairro-p1')?.value.trim()||'';
+  const cidade=document.getElementById('co3-cidade-p1')?.value.trim()||'';
+  const numero=document.getElementById('co3-num-p1')?.value.trim()||'';
+  const complemento=document.getElementById('co3-comp-p1')?.value.trim()||'';
+  const enderecoFull=isRetirada
+    ?(document.getElementById('co3-ret-local')?.value||'')
+    :(document.getElementById('co3-end-full')?.value||'');
+  return{
+    cliente:{nome,contato:tel,observacoes:obs||'',recebedor:recebedor||''},
+    entrega:{
+      tipo:co3Modalidade,
+      data_pedido:data,
+      cep:isRetirada?null:cep,
+      endereco:enderecoFull,
+      endereco_completo:enderecoFull,
+      rua,
+      bairro,
+      cidade,
+      numero:isRetirada?'':numero,
+      complemento:isRetirada?'':complemento,
+      local_retirada:isRetirada?enderecoFull:null
+    },
+    itens:cart.itens.map(it=>({produto_id:it.prodId,quantidade:it.qty})),
+    cupom:co3CupomAtivo?{codigo:co3CupomAtivo.nome}:null,
+    pagamento:{momento,metodo:pagLabel,label:pagLabel,troco:co3Troco||null}
+  };
+}
+
+async function criarPedidoSeguro(payload){
+  const {data:{session}}=await sb.auth.getSession();
+  const token=session?.access_token;
+  if(!token)throw new Error('Entre ou crie uma conta para finalizar o pedido');
+  const resp=await fetch('/api/criar-pedido',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify(payload)
+  });
+  let data=null;
+  try{data=await resp.json();}catch(e){}
+  if(!resp.ok)throw new Error(data?.error||'Nao foi possivel criar o pedido');
+  return data;
+}
+
+function montarWhatsAppPedidoSeguro(resultado){
+  const pedido=resultado?.pedido||{};
+  const itens=resultado?.itens||[];
+  const totais=resultado?.totais||{};
+  const pagamento=resultado?.pagamento||{};
+  const isRetirada=pedido.entrega==='Retirada';
+  const partes=[];
+  partes.push('Pedido: '+(pedido.codigo||pedido.id||''));
+  partes.push('Tipo de servico: '+(pedido.entrega||''));partes.push('');
+  partes.push('Nome: '+(pedido.cliente_nome||''));partes.push('Telefone: '+(pedido.cliente_contato||''));
+  partes.push((isRetirada?'Local de retirada: ':'Endereco: ')+(pedido.cliente_endereco||''));
+  partes.push('Data de '+(isRetirada?'retirada':'entrega')+': '+fd(pedido.data_pedido||''));partes.push('');
+  partes.push('-- Produtos --');
+  partes.push(itens.map(it=>String(it.quantidade||0)+'x '+(it.nome_produto||'')).join('\n'));
+  partes.push('');
+  partes.push('Subtotal: R$ '+fp(Number(totais.subtotal||0)));
+  if(!isRetirada&&Number(totais.taxa_entrega||0)>0)partes.push('Delivery: R$ '+fp(Number(totais.taxa_entrega||0)));
+  if(Number(totais.desconto||0)>0)partes.push('Desconto: - R$ '+fp(Number(totais.desconto||0)));
+  partes.push('Total: R$ '+fp(Number(totais.total||0)));partes.push('');
+  partes.push('-- Pagamento --');
+  partes.push('Forma de pagamento: '+(pagamento.label||pedido.pagamento||''));
+  partes.push('Total a pagar: R$ '+fp(Number(totais.total||0)));
+  if(String(pagamento.metodo||pagamento.label||pedido.pagamento||'').toLowerCase().includes('pix'))partes.push('Chave Pix: '+PIX_CHAVE);
+  if(pedido.observacoes){partes.push('');partes.push('-- Observacoes --');partes.push(pedido.observacoes);}
+  partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
+  return partes.join('\n');
+}
+
+// â”€â”€ CO3: co3Finalizar atualizado â”€â”€
+async function co3FinalizarLegacyDirect(){
+  return co3FinalizarSeguro();
+}
+
+// â”€â”€ CO3: CALENDÃRIO INLINE â”€â”€
+async function co3FinalizarSeguro(){
+  const momento=document.getElementById('co3-pag-momento')?.value||'agora';
+  const btn=document.getElementById('co3-btn-finalizar');
+  const cbtn=document.getElementById('co3-countdown-btn');
+  const resetBtn=()=>{if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}if(cbtn){cbtn.disabled=false;}};
   if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
+  if(cbtn)cbtn.disabled=true;
 
   if(!perfil||!perfil.id){
     mostrarBalloon('Entre ou crie uma conta para finalizar o pedido');
-    if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}
+    resetBtn();
     if(typeof abrirAuth==='function')abrirAuth();
     return;
   }
-  
+  if(!cart.itens.length){toast('Carrinho vazio.','err');resetBtn();return;}
+
   if(momento==='entrega'){
-    const met = document.getElementById('co3-pag-entrega-met')?.value||'Cartao';
-    if(met==='Dinheiro' && !co3Troco){ mostrarBalloon('Informe o valor para troco'); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
+    const met=document.getElementById('co3-pag-entrega-met')?.value||'Cartao';
+    if(met==='Dinheiro'&&!co3Troco){mostrarBalloon('Informe o valor para troco');resetBtn();return;}
   }
 
-  const nome = document.getElementById('co3-nome')?.value.trim();
-  const tel = document.getElementById('co3-tel')?.value.trim();
-  const data = document.getElementById('co3-data')?.value;
-  const obs = document.getElementById('co3-obs')?.value||'';
-  const isRetirada = co3Modalidade==='Retirada';
-  const recebedor = document.getElementById('co3-recebedor')?.value.trim()||'';
-  const endFull = isRetirada
-    ?(document.getElementById('co3-ret-local')?.value||'')
-    : (document.getElementById('co3-end-full')?.value||'');
-
+  const nome=document.getElementById('co3-nome')?.value.trim();
+  const tel=document.getElementById('co3-tel')?.value.trim();
+  const data=document.getElementById('co3-data')?.value;
+  const obs=document.getElementById('co3-obs')?.value||'';
+  const recebedor=document.getElementById('co3-recebedor')?.value.trim()||'';
   const erros=[];
-  if(!nome) erros.push('Nome');if(!tel) erros.push('Telefone');
-  if(erros.length){ popAlert('⚠️','Campos obrigatorios','Preencha: '+erros.join(', ')); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
+  if(!nome)erros.push('Nome');
+  if(!tel)erros.push('Telefone');
+  if(erros.length){popAlert('!','Campos obrigatorios','Preencha: '+erros.join(', '));resetBtn();return;}
+  if(!data){mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase());resetBtn();return;}
 
-  if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';} return; }
   await carregarDatasBloqueadas();
   if(dataBloqueada(data,co3Modalidade)){
-    mostrarBalloon('Essa data não está disponível. Escolha outra data.');
-    if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}
+    mostrarBalloon('Essa data nao esta disponivel. Escolha outra data.');
+    resetBtn();
     return;
   }
 
-  const {sub,taxa,descCupom,total} = co3UpdateResumo();
-  const pagLabel = momento==='agora' ?'Pix' :
-    (document.getElementById('co3-pag-entrega-met')?.value||'Cartao') +
+  const pagLabel=momento==='agora'?'Pix':
+    (document.getElementById('co3-pag-entrega-met')?.value||'Cartao')+
     (co3Troco&&co3Troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(co3Troco))+')':(co3Troco==='sem troco'?' (sem troco)':''));
-  const itensTxt = cart.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return p?it.qty+'x '+p.nome:'';}).filter(Boolean).join('\n');
 
-  const partes=[];
-  partes.push('Tipo de servico: '+co3Modalidade);partes.push('');
-  partes.push('Nome: '+nome);partes.push('Telefone: '+tel);
-  if(recebedor && !isRetirada) partes.push('Recebedor: '+recebedor);
-  partes.push((isRetirada?'Local de retirada: ':'Endereco: ')+endFull);
-  partes.push('Data de '+(isRetirada?'retirada':'entrega')+': '+fd(data));partes.push('');
-  partes.push('-- Produtos --');partes.push(itensTxt);partes.push('');
-  partes.push('Subtotal: R$ '+fp(sub));
-  if(!isRetirada&&taxa>0)partes.push('Delivery: R$ '+fp(taxa));
-  if(descCupom>0)partes.push('Desconto ('+co3CupomAtivo?.nome+'): - R$ '+fp(descCupom));
-  partes.push('Total: R$ '+fp(total));partes.push('');
-  partes.push('-- Pagamento --');
-  partes.push('Momento: '+(momento==='agora'?'Pagamento antecipado (Pix)':'Pagamento na entrega'));
-  partes.push('Total a pagar: R$ '+fp(total));partes.push('Forma de pagamento: '+pagLabel);
-  if(momento==='agora')partes.push('Chave Pix: '+PIX_CHAVE);
-  if(obs){partes.push('');partes.push('-- Observacoes --');partes.push(obs);}
-  partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
-  const txtWpp = partes.join('\n');
-
-  abrirWhatsApp(txtWpp);
   try{
-    const codigo = await gerarCodigo(data);
-    const insertData = {
-      user_id:perfil.id, cliente_nome:nome, cliente_contato:tel,
-      cliente_endereco:endFull, cliente_numero:'', cliente_complemento:null,
-      entrega:co3Modalidade, taxa_entrega:taxa, pagamento:pagLabel,
-      status:'Pendente', observacoes:obs, subtotal:sub,
-      total:Math.max(0,sub+taxa-descCupom), data_pedido:data
-    };
-    if(codigo)insertData.codigo=codigo;
-    if(co3CupomAtivo)insertData.cupom=co3CupomAtivo.nome;
-    const {data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();
-    if(error)throw error;
-    const itensCopy=[...cart.itens];
-    await sb.from('itens_pedido').insert(itensCopy.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);
-      return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};
-    }));
-    if(co3CupomAtivo){
-      const {data:cupNow}=await sb.from('cupons').select('usos_restantes').eq('id',co3CupomAtivo.id).single();
-      if(cupNow&&cupNow.usos_restantes>0)await sb.from('cupons').update({usos_restantes:cupNow.usos_restantes-1}).eq('id',co3CupomAtivo.id);
-    }
-    await Promise.all(itensCopy.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);if(!p||p.estoque==null)return Promise.resolve();
-      const novo=Math.max(0,p.estoque-it.qty);p.estoque=novo;return sb.from('produtos').update({estoque:novo}).eq('id',p.id);
-    }));
+    const payload=co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,momento,pagLabel);
+    const resultado=await criarPedidoSeguro(payload);
+    if(momento==='agora')co3GerarQR(Number(resultado?.totais?.total||0),String(resultado?.pedido?.codigo||'CORT'+Date.now()).slice(0,25));
+    abrirWhatsApp(montarWhatsAppPedidoSeguro(resultado));
     cupomAtivo=null;co3CupomAtivo=null;co3Troco='';
-    cart={itens:[],entrega:'Entrega'};updCartBadge();fecharCo3();mostrarSucesso();
+    cart={itens:[],entrega:'Entrega'};
+    updCartBadge();fecharCo3();mostrarSucesso();
   }catch(e){
-    toast('Erro ao salvar pedido: '+e.message,'err');
-    if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}
+    toast('Erro ao criar pedido: '+e.message,'err');
+    resetBtn();
   }
-};
+}
+window.co3Finalizar=co3FinalizarSeguro;
 
-// ── CO3: CALENDÁRIO INLINE ──
 let _co3CalAno = 0, _co3CalMes = 0;
 
 function co3CalInit(){
@@ -2553,7 +2406,7 @@ function co3CalRender(){
 
 function co3CalSel(iso){
   if(dataBloqueada(iso,co3Modalidade)){
-    mostrarBalloon('Essa data não está disponível. Escolha outra data.');
+    mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.');
     return;
   }
   document.getElementById('co3-data').value = iso;
@@ -2568,24 +2421,24 @@ function co3CalSel(iso){
   if(co3Modalidade==='Retirada') co3RenderRetOpts();
 }
 
-// ══════════════════════════════════════
-// DISTÂNCIA DE ENTREGA
-// ══════════════════════════════════════
-// Usa linha reta com fator de correção urbana calibrado para RJ.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DISTÃ‚NCIA DE ENTREGA
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Usa linha reta com fator de correÃ§Ã£o urbana calibrado para RJ.
 
 async function distanciaRota(lat1,lng1,lat2,lng2){
   // Haversine * 1.35 (fator urbano RJ calibrado)
   return haversine(lat1,lng1,lat2,lng2) * 1.35;
 }
 
-// Busca CEP sem calcular frete (só preenche os campos de endereço)
+// Busca CEP sem calcular frete (sÃ³ preenche os campos de endereÃ§o)
 async function co3BuscarCepSemFrete(){
   const cepEl = document.getElementById('co3-cep');
   const info = document.getElementById('co3-frete-info');
   if(!cepEl) return;
   const cep = cepEl.value.replace(/\D/g,'');
   if(cep.length !== 8) return;
-  if(info){ info.style.display='block'; info.textContent='Buscando endereço...'; info.style.color='var(--text2)'; }
+  if(info){ info.style.display='block'; info.textContent='Buscando endereÃ§o...'; info.style.color='var(--text2)'; }
   try{
     const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d = await r.json();
@@ -2598,14 +2451,14 @@ async function co3BuscarCepSemFrete(){
       if(info){ info.textContent='CEP encontrado. Informe o numero para calcular o frete.'; info.style.color='var(--text2)'; }
       document.getElementById('co3-num-p1').focus();
     } else {
-      if(info){ info.textContent='CEP não encontrado.'; info.style.color='var(--red)'; }
+      if(info){ info.textContent='CEP nÃ£o encontrado.'; info.style.color='var(--red)'; }
     }
   }catch(e){
     if(info){ info.textContent='Erro ao buscar CEP.'; info.style.color='var(--red)'; }
   }
 }
 
-// Calcula frete após o número ser preenchido
+// Calcula frete apÃ³s o nÃºmero ser preenchido
 async function co3CalcFreteComNum(){
   const num = document.getElementById('co3-num-p1')?.value.trim();
   const cepEl = document.getElementById('co3-cep');
@@ -2617,7 +2470,7 @@ async function co3CalcFreteComNum(){
   co3EnderecoForaRaio=false;
   if(info){ info.style.display='block'; info.textContent='Calculando frete...'; info.style.color='var(--text2)'; }
 
-  // Atualizar end-full com número
+  // Atualizar end-full com nÃºmero
   const d = window._cartCepData;
   const endBase = (d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
   document.getElementById('co3-end-full').value = endBase;
@@ -2625,14 +2478,14 @@ async function co3CalcFreteComNum(){
   if(!LOJA_LAT || !LOJA_LNG){
     TAXA = zonas[0]?.taxa || TAXA;
     co3EnderecoForaRaio = false;
-    co3FreteCalculado = true; _freteCalculado = true;
-    if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
+    co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = true;
+    if(info){ info.textContent='Frete estimado: R$ '+fp(TAXA); info.style.color='var(--orange)'; }
     co3UpdateResumo(); return;
   }
 
   try{
     const result = await geocodificarCEP(cep);
-    if(!result){ if(info){ info.textContent='Não foi possível calcular o frete.'; info.style.color='var(--orange)'; } return; }
+    if(!result){ if(info){ info.textContent='NÃ£o foi possÃ­vel calcular o frete.'; info.style.color='var(--orange)'; } return; }
     window._cartCoords = {lat:result.lat, lng:result.lng};
     const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
     if(dist > RAIO_MAX){
@@ -2644,11 +2497,11 @@ async function co3CalcFreteComNum(){
     const zona = calcularZona(dist);
     if(zona){
       co3EnderecoForaRaio = false;
-      TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true;
-      if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
+      TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = false;
+      if(info){ info.textContent=d.bairro+' Â· '+dist.toFixed(1)+'km Â· Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
       co3UpdateResumo();
     } else {
-      if(info){ info.textContent='Endereço fora das zonas configuradas.'; info.style.color='var(--orange)'; }
+      if(info){ info.textContent='EndereÃ§o fora das zonas configuradas.'; info.style.color='var(--orange)'; }
     }
   }catch(e){
     if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }
@@ -2679,7 +2532,7 @@ function co3IniciarCountdown(){
 function co3FinalizarReady(){
   const cbtn = document.getElementById('co3-countdown-btn');
   if(!cbtn || !cbtn.classList.contains('ready')) return;
-  co3Finalizar();
+  window.co3Finalizar();
 }
 
 function registrarPWA() {

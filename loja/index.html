@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/loja/loja.js?v=20260605-datas-bloqueadas" defer></script>
+  <script src="/loja/loja.js?v=20260605-secure-order-fix" defer></script>
 </head>
 <body>
 <!-- LOJA PUBLICA -->
@@ -255,7 +255,7 @@
       </div>
     </div>
     <div class="co-footer">
-      <button class="big-btn" id="co-btn" onclick="enviarPedido()">FINALIZAR PEDIDO</button>
+      <button class="big-btn" id="co-btn" onclick="abrirCheckoutSeguroLegado()">FINALIZAR PEDIDO</button>
       <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.5">Ao finalizar, você concorda com nossos <a href="/termos" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline">Política de Privacidade</a></p>
     </div>
   </div>
