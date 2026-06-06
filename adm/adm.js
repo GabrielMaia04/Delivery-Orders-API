@@ -50,6 +50,12 @@ function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
 function isRetiradaPedido(p){
   return String(p?.entrega||'').trim().toLowerCase()==='retirada';
 }
+function isPedidoCancelado(p){
+  return String(p?.status||'').trim().toLowerCase()==='cancelado';
+}
+function modalidadePedidoAdmin(p){
+  return isRetiradaPedido(p)?'Retirada':'Entrega';
+}
 function statusOptionsPedido(p){
   return isRetiradaPedido(p)
     ? ['Pendente','Em preparo','Pronto para retirar','Retirado','Cancelado']
@@ -878,17 +884,17 @@ async function renderEntregas(){
   if(!data){pedEl.innerHTML='<div class="empty">Selecione uma data acima.</div>';document.getElementById('e-cons').innerHTML='';return}
   pedEl.innerHTML='<div class="loading"><div class="spin"></div> Carregando...</div>';
   const {data:peds}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('data_pedido',data).order('created_at',{ascending:true});
-  const lista=(peds||[]).filter(p=>p.status!=='Cancelado'&&p.status!=='Entregue'&&p.status!=='Pendente');
+  const lista=(peds||[]).filter(p=>!isPedidoCancelado(p)&&p.status!=='Entregue'&&p.status!=='Pendente');
   window._entCache=lista;
   document.getElementById('e-tot-ped').textContent=lista.length;
-  document.getElementById('e-tot-entr').textContent=lista.filter(p=>p.entrega==='Entrega').length;
-  document.getElementById('e-tot-ret').textContent=lista.filter(p=>p.entrega!=='Entrega').length;
+  document.getElementById('e-tot-entr').textContent=lista.filter(p=>!isRetiradaPedido(p)).length;
+  document.getElementById('e-tot-ret').textContent=lista.filter(isRetiradaPedido).length;
   if(!lista.length){
     pedEl.innerHTML='<div class="empty">Nenhum pedido para esta data.</div>';
     return;
   }
-  const entregas=lista.filter(p=>p.entrega==='Entrega');
-  const retiradas=lista.filter(p=>p.entrega!=='Entrega');
+  const entregas=lista.filter(p=>!isRetiradaPedido(p));
+  const retiradas=lista.filter(isRetiradaPedido);
   function cardPed(p){
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(', ');
     const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
@@ -993,7 +999,7 @@ function imprimirTodosPedidos(){
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
-      <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${fdLabel(p.data_pedido)} · ${modalidadePedidoAdmin(p)}</span></div>
       ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
     </div>
@@ -1100,23 +1106,23 @@ async function renderRel(){
   // Stats: sem filtro = todos os pedidos; com filtro = só os filtrados
   let statsAtivos;
   if(temFiltroData||busca){
-    statsAtivos=lista.filter(p=>p.status!=='Cancelado');
+    statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
   }else{
     // Busca total geral sem filtro
     const {data:todos}=await sb.from('pedidos').select('id,total,status');
-    statsAtivos=(todos||[]).filter(p=>p.status!=='Cancelado');
+    statsAtivos=(todos||[]).filter(p=>!isPedidoCancelado(p));
   }
   const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
-  const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
+  const totT=lista.filter(p=>!isPedidoCancelado(p)).reduce((s,p)=>s+(Number(p.taxa_entrega)||0),0);
   document.getElementById('r-stats').innerHTML=
     '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
     +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
     +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
   const pedEl=document.getElementById('r-peds');
-  const listaSemCanc=lista.filter(p=>p.status!=='Cancelado');
-  if(!listaSemCanc.length){pedEl.innerHTML='<div class="empty">Sem pedidos ativos no período.</div>'}
+  const listaHistorico=lista;
+  if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>'}
   else{
-    pedEl.innerHTML=listaSemCanc.map(p=>{
+    pedEl.innerHTML=listaHistorico.map(p=>{
       const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
       const dataEntrega=fdLabel(p.data_pedido)||fd(p.data_pedido);
       const dtCompra=p.created_at?new Date(p.created_at):null;
@@ -1131,7 +1137,7 @@ async function renderRel(){
           </div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
             ${dataPedido?`<span>📝 ${dataPedido}${horaPedido?' · '+horaPedido:''}</span>`:''}
-            ${dataEntrega?`<span>🚚 ${dataEntrega}</span>`:''}
+            ${dataEntrega?`<span>${modalidadePedidoAdmin(p)} · ${dataEntrega}</span>`:''}
           </div>
           <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
         </div>
@@ -1187,7 +1193,7 @@ function exportRel(){
     linhas.push('TOTAL: R$ '+fp(p.total));
     linhas.push('');
   });
-  const totG=rCache.reduce((s,p)=>s+p.total,0);
+  const totG=rCache.filter(p=>!isPedidoCancelado(p)).reduce((s,p)=>s+(Number(p.total)||0),0);
   linhas.push('=== TOTAL GERAL: R$ '+fp(totG)+' ===');
   const txt=linhas.join('\n');
   navigator.clipboard.writeText(txt)
@@ -1198,25 +1204,34 @@ function exportRel(){
     });
 }
 
-function verPed(id){
-  const p=rCache.find(x=>x.id===id);if(!p)return;
-  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
-  const its=(p.itens_pedido||[]).map(it=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span style="font-weight:700;color:var(--green-bright)">R$ ${fp(it.subtotal)}</span></div>`).join('');
-  const taxa=p.taxa_entrega>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(p.taxa_entrega)}</span></div>`:'';
-  const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(p.total)}</span></div>`;
+async function verPed(id){
+  const caches=[rCache,rpCache,window._entCache||[],window._pedClienteCache||[]];
+  let p=caches.flat().find(x=>String(x.id)===String(id));
+  if(!p?.itens_pedido){
+    const {data,error}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('id',id).single();
+    if(error||!data){toast('Não foi possível abrir os detalhes do pedido.','err');return;}
+    p=data;
+  }
+  window._pedDetalheAtual=p;
+  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', nº ');
+  const subtotal=Number(p.subtotal)||(p.itens_pedido||[]).reduce((s,it)=>s+(Number(it.subtotal)||0),0);
+  const its=(p.itens_pedido||[]).map(it=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${Number(it.quantidade)||0}x ${h(it.nome_produto)}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span style="font-weight:700;color:var(--green-bright)">R$ ${fp(Number(it.subtotal)||0)}</span></div>`).join('');
+  const taxa=Number(p.taxa_entrega)>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(Number(p.taxa_entrega))}</span></div>`:'';
+  const cupom=p.cupom?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span>Cupom</span><span style="font-weight:700">${h(p.cupom)}</span></div>`:'';
+  const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(Number(p.total)||0)}</span></div>`;
 
-  // Usar modal rico do cliente (ped-det-modal) em vez do popup de texto
   document.getElementById('ped-det-codigo').textContent='Pedido '+(p.codigo||'#'+p.id);
   document.getElementById('ped-det-status').innerHTML=
-    buildTimelineHtml(p.status||'Pendente')
-    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">Entrega: ${fdLabel(p.data_pedido)}</div>`;
+    `<div style="text-align:center;font-size:12px;font-weight:800;color:var(--green-bright)">${h(p.status||'Pendente')}</div>`
+    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">${modalidadePedidoAdmin(p)}: ${fdLabel(p.data_pedido)}</div>`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;flex-direction:column;gap:3px">
-      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${end}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${p.pagamento} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+      <div class="ico-gap">${lucideIcon('user')} ${h(p.cliente_nome||'Cliente')} · ${h(p.cliente_contato||'Sem contato')}</div>
+      ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento||'Não informado')} · ${modalidadePedidoAdmin(p)}</div>
       ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
-    <div>${its}${taxa}${total}</div>`;
+    <div>${its}<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span>Subtotal</span><span style="font-weight:700">R$ ${fp(subtotal)}</span></div>${taxa}${cupom}${total}</div>`;
   document.getElementById('ped-det-btns').innerHTML=
     `<div style="display:flex;gap:8px">
       <button class="btn btn-o" style="flex:1" onclick="imprimirPedido(${id});document.getElementById('ped-det-modal').classList.remove('open')">Imprimir</button>
@@ -1230,7 +1245,7 @@ function verPed(id){
   refreshIcons();
 }
 function imprimirPedido(id){
-  const p=rCache.find(x=>x.id===id);if(!p)return;
+  const p=[rCache,rpCache,window._entCache||[],[window._pedDetalheAtual].filter(Boolean)].flat().find(x=>String(x.id)===String(id));if(!p)return;
   const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
     const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
     const _comp=p.cliente_complemento||'';
@@ -1271,7 +1286,7 @@ function imprimirPedido(id){
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
-      <div class="ir"><span class="lbl">ENTREGA: </span><span class="val">${fdLabel(p.data_pedido)} · ${ p.entrega==='Entrega'?'Entrega':'Retirada'}</span></div>
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${fdLabel(p.data_pedido)} · ${modalidadePedidoAdmin(p)}</span></div>
       ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
     </div>
@@ -1411,7 +1426,7 @@ function renderRPage(){
       +'</td>'
       +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
-      +'<td>'+(p.entrega==='Entrega'?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
+      +'<td>'+(!isRetiradaPedido(p)?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
       +'<td>'+p.pagamento+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
       +'<td><button class="btn btn-o btn-sm" onclick="verPed('+p.id+')">Ver</button></td>'
@@ -1966,9 +1981,9 @@ async function renderPedidos(){
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
   rpCache=lista;rpTotal=lista.length;rpPage=1;
 
-  const statsAtivos=lista.filter(p=>p.status!=='Cancelado');
+  const statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
   const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
-  const totT=lista.reduce((s,p)=>s+(p.taxa_entrega||0),0);
+  const totT=statsAtivos.reduce((s,p)=>s+(Number(p.taxa_entrega)||0),0);
   const statsEl=document.getElementById('rp-stats');
   if(statsEl)statsEl.innerHTML=
     '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
@@ -1977,9 +1992,9 @@ async function renderPedidos(){
 
   const pedEl=document.getElementById('rp-peds');
   if(!pedEl)return;
-  const listaSemCanc=lista.filter(p=>p.status!=='Cancelado');
-  if(!listaSemCanc.length){pedEl.innerHTML='<div class="empty">Sem pedidos ativos no período.</div>';renderRPPage();return}
-  pedEl.innerHTML=listaSemCanc.map(p=>{
+  const listaHistorico=lista;
+  if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>';renderRPPage();return}
+  pedEl.innerHTML=listaHistorico.map(p=>{
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
     const dtCompra=p.created_at?new Date(p.created_at):null;
     const dataPedido=dtCompra?dtCompra.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
@@ -1990,7 +2005,7 @@ async function renderPedidos(){
           <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
           ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`📝 ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`🚚 ${fdLabel(p.data_pedido)}`:''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`📝 ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`${modalidadePedidoAdmin(p)} · ${fdLabel(p.data_pedido)}`:''}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
       </div>
       <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
@@ -2017,7 +2032,7 @@ function renderRPPage(){
       +'<td><div style="font-size:11px">'+(p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div></td>'
       +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
       +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
-      +'<td>'+(p.entrega==='Entrega'?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
+      +'<td>'+(!isRetiradaPedido(p)?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
       +'<td>'+p.pagamento+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
       +'<td><button class="btn btn-o btn-sm" onclick="verPedRP('+p.id+')">Ver</button></td>'
@@ -2025,7 +2040,7 @@ function renderRPPage(){
   }).join('');
 }
 
-function verPedRP(id){const p=rpCache.find(x=>x.id===id);if(!p)return;rCache=rpCache;verPed(id);}
+function verPedRP(id){return verPed(id);}
 
 function renderRPPag(){
   const total=Math.ceil(rpTotal/PER);
@@ -2064,7 +2079,7 @@ async function renderFinanceiro(){
 
   const {data:peds}=await sb.from('pedidos').select('total,status,data_pedido')
     .gte('data_pedido',de).lte('data_pedido',ate);
-  const ativos=(peds||[]).filter(p=>p.status!=='Cancelado');
+  const ativos=(peds||[]).filter(p=>!isPedidoCancelado(p));
   const total=ativos.reduce((s,p)=>s+p.total,0);
   const ticket=ativos.length?total/ativos.length:0;
 
@@ -2234,7 +2249,7 @@ async function atualizarResultado(){
   let peds_data=[],gastos_data=[];
   try{const r=await sb.from('pedidos').select('total,status,data_pedido').gte('data_pedido',de).lte('data_pedido',ate);peds_data=r.data||[];}catch(e){}
   const peds=peds_data;
-  const totalVendas=(peds||[]).filter(p=>p.status!=='Cancelado').reduce((s,p)=>s+p.total,0);
+  const totalVendas=(peds||[]).filter(p=>!isPedidoCancelado(p)).reduce((s,p)=>s+p.total,0);
   try{const r=await sb.from('gastos').select('valor,data').gte('data',de).lte('data',ate);gastos_data=r.data||[];}catch(e){}
   const gastos=gastos_data;
   const totalGastos=(gastos||[]).reduce((s,g)=>s+g.valor,0);
@@ -2288,7 +2303,7 @@ async function loadDashMetrics(){
     sb.from('pedidos').select('id,total,status').eq('data_pedido',getISODate(-1)),
   ]);
 
-  const ativos=p=>p.status!=='Cancelado';
+  const ativos=p=>!isPedidoCancelado(p);
   const soma=arr=>arr.filter(ativos).reduce((s,p)=>s+p.total,0);
 
   const totHoje=soma(pedHoje||[]);
@@ -2331,7 +2346,7 @@ async function loadDashChart(){
 
   const por_dia={};
   dias.forEach(d=>por_dia[d]=0);
-  (peds||[]).filter(p=>p.status!=='Cancelado').forEach(p=>{
+  (peds||[]).filter(p=>!isPedidoCancelado(p)).forEach(p=>{
     if(por_dia[p.data_pedido]!==undefined)por_dia[p.data_pedido]+=p.total;
   });
 
@@ -2374,10 +2389,10 @@ async function loadDashChart(){
 }
 
 async function loadDashRecentes(){
-  const {data:peds}=await sb.from('pedidos')
+  const {data:pedsRaw}=await sb.from('pedidos')
     .select('id,codigo,cliente_nome,total,status,data_pedido')
-    .neq('status','Cancelado')
     .order('created_at',{ascending:false}).limit(6);
+  const peds=(pedsRaw||[]).filter(p=>!isPedidoCancelado(p)).slice(0,6);
 
   const statusColor={
     'Pendente':'var(--orange)',
@@ -2400,8 +2415,8 @@ async function loadDashRecentes(){
 
 async function loadDashTopProds(){
   // Buscar pedidos não cancelados
-  const {data:pedidos}=await sb.from('pedidos').select('id').neq('status','Cancelado');
-  const pedIds=(pedidos||[]).map(p=>p.id);
+  const {data:pedidos}=await sb.from('pedidos').select('id,status');
+  const pedIds=(pedidos||[]).filter(p=>!isPedidoCancelado(p)).map(p=>p.id);
   if(!pedIds.length){document.getElementById('dm-top-prods').innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
   const {data:itens}=await sb.from('itens_pedido')
     .select('produto_id,nome_produto,quantidade,subtotal')
@@ -2429,8 +2444,8 @@ async function loadDashTopProds(){
 }
 
 async function loadDashPie(){
-  const {data:pedidos}=await sb.from('pedidos').select('id').neq('status','Cancelado');
-  const pedIds=(pedidos||[]).map(p=>p.id);
+  const {data:pedidos}=await sb.from('pedidos').select('id,status');
+  const pedIds=(pedidos||[]).filter(p=>!isPedidoCancelado(p)).map(p=>p.id);
   if(!pedIds.length)return;
   const {data:itens}=await sb.from('itens_pedido')
     .select('produto_id,quantidade,subtotal')
@@ -2556,7 +2571,26 @@ async function buscarPedidosCliente(){
       .order('created_at',{ascending:false})
       .limit(80);
     if(error)throw error;
-    const filtrados=data||[];
+    let filtrados=data||[];
+    if(/^\d+$/.test(q)){
+      const id=Number(q);
+      const [{data:pedidoId},{data:itemIds}]=await Promise.all([
+        sb.from('pedidos').select('id,codigo,cliente_nome,cliente_contato,total,status,data_pedido,created_at').eq('id',id),
+        sb.from('itens_pedido').select('pedido_id').eq('produto_id',id)
+      ]);
+      const idsProduto=[...new Set((itemIds||[]).map(it=>it.pedido_id))];
+      let pedidosProduto=[];
+      if(idsProduto.length){
+        const {data:porProduto}=await sb.from('pedidos')
+          .select('id,codigo,cliente_nome,cliente_contato,total,status,data_pedido,created_at')
+          .in('id',idsProduto);
+        pedidosProduto=porProduto||[];
+      }
+      filtrados=[...filtrados,...(pedidoId||[]),...pedidosProduto]
+        .filter((p,i,arr)=>arr.findIndex(x=>String(x.id)===String(p.id))===i)
+        .slice(0,80);
+    }
+    window._pedClienteCache=filtrados;
     if(!filtrados.length){
       lista.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Nenhum pedido encontrado.</div>';
       return;
