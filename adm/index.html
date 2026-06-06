@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260606-admin-hide-canceled-orders" defer></script>
+  <script src="/adm/adm.js?v=20260606-admin-canceled-filter" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -380,6 +380,7 @@
     <div class="acard-sm" style="margin-bottom:12px">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div><label>Cliente ou ID</label><input id="rp-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderPedidos()"></div>
+        <div><label>Status</label><select id="rp-status" style="width:130px" onchange="renderPedidos()"><option value="ativos">Ativos</option><option value="cancelados">Cancelados</option><option value="todos">Todos</option></select></div>
         <div><label>Filtro</label><select id="rp-tipo" style="width:150px" onchange="toggleRPFiltro()"><option value="dia">Data única</option><option value="periodo">Período</option></select></div>
         <div id="rp-fdia"><label>Data</label><input id="rp-data" type="date" style="width:155px" onchange="renderPedidos()"></div>
         <div id="rp-fper" class="date-range hidden"><div><label>De</label><input id="rp-de" type="date" style="width:145px" onchange="renderPedidos()"></div><div><label>Até</label><input id="rp-ate" type="date" style="width:145px" onchange="renderPedidos()"></div></div>

@@ -1970,6 +1970,7 @@ function toggleRPFiltro(){
 
 async function renderPedidos(){
   const busca=(document.getElementById('rp-busca')?.value||'').toLowerCase();
+  const statusFiltro=document.getElementById('rp-status')?.value||'ativos';
   const tipo=document.getElementById('rp-tipo')?.value||'dia';
   const dataFiltro=tipo==='dia'?document.getElementById('rp-data')?.value:null;
   const deFiltro=document.getElementById('rp-de')?.value;
@@ -1980,7 +1981,11 @@ async function renderPedidos(){
   else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
-  const listaVisivel=lista.filter(p=>!isPedidoCancelado(p));
+  const listaVisivel=statusFiltro==='cancelados'
+    ?lista.filter(isPedidoCancelado)
+    :statusFiltro==='todos'
+      ?lista
+      :lista.filter(p=>!isPedidoCancelado(p));
   rpCache=listaVisivel;rpTotal=listaVisivel.length;rpPage=1;
 
   const statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
