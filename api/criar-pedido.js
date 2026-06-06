@@ -12,25 +12,28 @@ const FORBIDDEN_KEYS = new Set([
   'taxa_entrega',
   'desconto',
   'preco_unitario',
-  'codigo',
   'estoque',
   'usos_restantes'
 ]);
 
-function hasForbiddenFinancialField(value) {
+function hasForbiddenFinancialField(value, path = []) {
   if (!value || typeof value !== 'object') return null;
   if (Array.isArray(value)) {
     for (const item of value) {
-      const found = hasForbiddenFinancialField(item);
+      const found = hasForbiddenFinancialField(item, path);
       if (found) return found;
     }
     return null;
   }
   for (const key of Object.keys(value)) {
     const normalized = key.toLowerCase();
+    if (normalized === 'codigo') {
+      const isAllowedCouponCode = path.length === 1 && path[0] === 'cupom';
+      if (!isAllowedCouponCode) return key;
+    }
     if (FORBIDDEN_KEYS.has(normalized)) return key;
     if (normalized === 'item_subtotal' || (normalized === 'subtotal' && key !== 'subtotal')) return key;
-    const found = hasForbiddenFinancialField(value[key]);
+    const found = hasForbiddenFinancialField(value[key], [...path, normalized]);
     if (found) return found;
   }
   return null;

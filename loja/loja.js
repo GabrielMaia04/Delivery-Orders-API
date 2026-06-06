@@ -173,6 +173,10 @@ async function salvarPerfil(){
   showMsg(msg,'Endereco salvo com sucesso!','success');
 }
 
+function modalidadePedidoLabel(value){
+  return String(value||'').trim().toLowerCase()==='retirada'?'RETIRADA':'ENTREGA';
+}
+
 async function carregarHistoricoCliente(){
   const el=document.getElementById('p-hist-list');
   const loading=document.getElementById('p-hist-loading');
@@ -186,7 +190,7 @@ async function carregarHistoricoCliente(){
     return`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Entrega</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">${modalidadePedidoLabel(p.entrega)}</div>
           <div style="font-size:13px;font-weight:700">${fdLabel(p.data_pedido)}</div>
           <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
         </div>
@@ -204,15 +208,21 @@ async function carregarHistoricoCliente(){
 
 // ── TIMELINE DE STATUS ──
 // Versão correta da timeline com linhas de progresso
-function buildTimelineHtml(status){
-  const STEPS=[
+function buildTimelineHtml(status,entrega){
+  const retirada=modalidadePedidoLabel(entrega)==='RETIRADA';
+  const STEPS=retirada?[
+    {key:'Pendente',           label:'Confirmado',          icon:'clock'},
+    {key:'Em preparo',         label:'Em preparo',          icon:'package'},
+    {key:'Pronto para retirar',label:'Pronto para retirar', icon:'store'}
+  ]:[
     {key:'Pendente',         label:'Confirmado',        icon:'clock'},
     {key:'Em preparo',       label:'Em preparo',         icon:'package'},
     {key:'Saiu para entrega',label:'Saiu para entrega',  icon:'truck'},
     {key:'Entregue',         label:'Entregue',           icon:'circle-check-big'}
   ];
   const ORDER=STEPS.map(s=>s.key);
-  const curIdx=ORDER.indexOf(status);
+  const statusNormalizado=retirada&&status==='Retirado'?'Pronto para retirar':status;
+  const curIdx=ORDER.indexOf(statusNormalizado);
   const cancelado=status==='Cancelado';
 
   if(cancelado){
@@ -267,12 +277,12 @@ function verPedCliente(id){
   const total=`<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:800;border-top:2px solid var(--border);margin-top:2px"><span>Total</span><span style="color:var(--green-bright)">R$ ${fp(p.total)}</span></div>`;
   document.getElementById('ped-det-codigo').textContent='Pedido '+(p.codigo||'#'+p.id);
   document.getElementById('ped-det-status').innerHTML=
-    buildTimelineHtml(status)
-    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">Entrega: ${fdLabel(p.data_pedido)}</div>`;
+    buildTimelineHtml(status,p.entrega)
+    +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">${modalidadePedidoLabel(p.entrega)}: ${fdLabel(p.data_pedido)}</div>`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento)} · ${p.entrega==='Entrega'?'Entrega':'Retirada'}</div>
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento)} · ${modalidadePedidoLabel(p.entrega)}</div>
       ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}${taxa}${total}</div>`;
@@ -451,9 +461,7 @@ async function verificarZonaEntrega(){
   const zona=calcularZona(dist);
 
   if(dist>RAIO_MAX){
-    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--red-soft);border:1px solid var(--red);color:var(--red);font-size:12px;font-weight:700">'
-      +'🚫 Fora do raio de entrega ('+dist.toFixed(1)+'km). Máximo: '+RAIO_MAX+'km.<br>'
-      +'<span style="font-weight:400">Escolha Retirada ou adicione um endereço mais próximo.</span></div>';
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--red-soft);border:1px solid var(--red);color:var(--red);font-size:12px;font-weight:700">Fora do raio de entrega.</div>';
     _zonaAtiva=null;
     updCoResumo();
     return;
@@ -462,12 +470,9 @@ async function verificarZonaEntrega(){
   if(zona){
     TAXA=zona.taxa;
     _zonaAtiva=zona;
-    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px">'
-      +'<div style="font-weight:700;color:var(--green-bright)">✅ '+zona.nome+'</div>'
-      +'<div style="color:var(--text2);margin-top:2px">Distância: '+dist.toFixed(1)+'km · Taxa de entrega: R$ '+fp(zona.taxa)+'</div></div>';
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px;font-weight:700;color:var(--green-bright)">Frete: R$ '+fp(zona.taxa)+'</div>';
   }else{
-    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:700">'
-      +'triangle-alert '+dist.toFixed(1)+'km - fora das zonas configuradas. Verifique com o admin.</div>';
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:700">Fora do raio de entrega.</div>';
     _zonaAtiva=null;
   }
   updCoResumo();
@@ -950,21 +955,18 @@ async function calcularFreteCarrinho(){
       if(_cartZona)TAXA=_cartZona.taxa;
       _freteEstimado=true;
       info.style.color='var(--text2)';
-      info.innerHTML='<span class="ico-gap">'+lucideIcon('map-pin')+' '+(dv.bairro||dv.localidade)+' — Frete estimado: R$ '+fp(TAXA)+'</span>';
+      info.textContent='Frete: R$ '+fp(TAXA);
       refreshIcons();
       updSums();
       return;
     }
 
     const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-    const distTxt = dist.toFixed(1)+'km';
-
     if(dist > RAIO_MAX){
       _cartZona = null;
       window._cartCoords = undefined; // sinaliza fora do raio
       info.style.color='var(--red)';
-      info.innerHTML=lucideIcon('ban')+' <strong>Fora do raio de entrega</strong> ('+distTxt+' · máx '+RAIO_MAX+'km)<br>'
-        +'<span style="font-weight:400">Escolha Retirada para continuar.</span>';
+      info.textContent='Fora do raio de entrega.';
       atualizarBtnContinuar();
       return;
     }
@@ -977,13 +979,11 @@ async function calcularFreteCarrinho(){
       _freteCalculado=true;
       _freteEstimado=false;
       info.style.color='var(--green-bright)';
-      info.innerHTML=lucideIcon('check-circle')+' <strong>'+(dv.bairro||dv.localidade)+'</strong> · '+distTxt+' · '+zona.nome+'<br>'
-        +'<span style="color:var(--text2)">Frete: <strong style="color:var(--green-bright)">R$ '+fp(zona.taxa)+'</strong></span>';
+      info.textContent='Frete: R$ '+fp(zona.taxa);
     }else{
       _cartZona=null;
       info.style.color='var(--orange)';
-      info.innerHTML=lucideIcon('triangle-alert')+' '+(dv.bairro||dv.localidade)+' · '+distTxt+'<br>'
-        +'<span style="font-weight:400">Endereço fora das zonas configuradas.</span>';
+      info.textContent='Fora do raio de entrega.';
     }
     updSums();
     atualizarBtnContinuar();
@@ -1992,12 +1992,12 @@ async function co3CalcFrete(){
   if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
   window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
   const c2=document.getElementById('co3-cep2');if(c2)c2.value=cepEl.value;
-  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=true;info.style.color='var(--orange)';info.textContent='Frete estimado: R$ '+fp(TAXA);co3UpdateResumo();return;}
+  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=true;info.style.color='var(--orange)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
   const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
-  if(dist>RAIO_MAX){co3EnderecoForaRaio=true;co3FreteCalculado=false;_freteCalculado=false;info.style.color='var(--red)';info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).';return;}
+  if(dist>RAIO_MAX){co3EnderecoForaRaio=true;co3FreteCalculado=false;_freteCalculado=false;info.style.color='var(--red)';info.textContent='Fora do raio de entrega.';return;}
   const zona=calcularZona(dist);
-  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=false;info.style.color='var(--green-bright)';info.textContent=result.viacep.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA);co3UpdateResumo();}
-  else{info.style.color='var(--orange)';info.textContent='Endereco fora das zonas configuradas.';}
+  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=false;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();}
+  else{info.style.color='var(--orange)';info.textContent='Fora do raio de entrega.';}
 }
 
 
@@ -2081,10 +2081,10 @@ function co3SetModalidade(v){
   const be=document.getElementById('co3-btn-entrega'),br=document.getElementById('co3-btn-retirada');
   if(be)be.classList.toggle('active',v==='Entrega');
   if(br)br.classList.toggle('active',v==='Retirada');
-  // Resumo só aparece na modalidade Entrega
+  // O resumo permanece visivel nas duas modalidades durante o primeiro passo.
   const resumoEl=document.querySelector('.co3-resumo');
   const bodyEl=document.querySelector('.co3-body');
-  const showResumo = v==='Entrega' && co3Step===1;
+  const showResumo = co3Step===1;
   if(resumoEl)resumoEl.style.display=showResumo?'':'none';
   if(bodyEl)bodyEl.classList.toggle('sem-resumo',!showResumo);
   // Passo 1
@@ -2200,14 +2200,14 @@ async function co3AutoBuscarCep(){
           if(result){
             window._cartCoords = {lat:result.lat, lng:result.lng};
             const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-            if(dist > RAIO_MAX){ co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; } return; }
+            if(dist > RAIO_MAX){ co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--red)'; } return; }
             const zona = calcularZona(dist);
             if(zona){ co3EnderecoForaRaio=false; TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=false;
-              if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); }
+              if(info){ info.textContent='Frete: R$ '+fp(TAXA); }
               co3UpdateResumo();
             }
           }
-        } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=true; if(info){ info.textContent='Frete estimado: R$ '+fp(TAXA); info.style.color='var(--orange)'; } co3UpdateResumo(); }
+        } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=true; if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--orange)'; } co3UpdateResumo(); }
       } else {
         if(info){ info.textContent='CEP nao encontrado.'; info.style.color='var(--red)'; }
       }
@@ -2281,7 +2281,7 @@ function co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,momento,pagLabel){
       local_retirada:isRetirada?enderecoFull:null
     },
     itens:cart.itens.map(it=>({produto_id:it.prodId,quantidade:it.qty})),
-    cupom:co3CupomAtivo?{codigo:co3CupomAtivo.nome}:null,
+    cupom:co3CupomAtivo?.nome||null,
     pagamento:{momento,metodo:pagLabel,label:pagLabel,troco:co3Troco||null}
   };
 }
@@ -2534,7 +2534,7 @@ async function co3CalcFreteComNum(){
     TAXA = zonas[0]?.taxa || TAXA;
     co3EnderecoForaRaio = false;
     co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = true;
-    if(info){ info.textContent='Frete estimado: R$ '+fp(TAXA); info.style.color='var(--orange)'; }
+    if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--orange)'; }
     co3UpdateResumo(); return;
   }
 
@@ -2546,17 +2546,17 @@ async function co3CalcFreteComNum(){
     if(dist > RAIO_MAX){
       co3EnderecoForaRaio = true;
       co3FreteCalculado = false; _freteCalculado = false;
-      if(info){ info.textContent='Fora do raio de entrega ('+dist.toFixed(1)+'km).'; info.style.color='var(--red)'; }
+      if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--red)'; }
       return;
     }
     const zona = calcularZona(dist);
     if(zona){
       co3EnderecoForaRaio = false;
       TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = false;
-      if(info){ info.textContent=d.bairro+' · '+dist.toFixed(1)+'km · Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
+      if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
       co3UpdateResumo();
     } else {
-      if(info){ info.textContent='Endereço fora das zonas configuradas.'; info.style.color='var(--orange)'; }
+      if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--orange)'; }
     }
   }catch(e){
     if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }

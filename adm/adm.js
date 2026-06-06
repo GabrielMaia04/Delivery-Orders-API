@@ -47,6 +47,21 @@ const emoji=p=>p.emoji||'\u{1F966}';
 const lucideIcon=(name,cls='')=>`<i data-lucide="${name}"${cls?` class="${cls}"`:''}></i>`;
 function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
 
+function isRetiradaPedido(p){
+  return String(p?.entrega||'').trim().toLowerCase()==='retirada';
+}
+function statusOptionsPedido(p){
+  return isRetiradaPedido(p)
+    ? ['Pendente','Em preparo','Pronto para retirar','Retirado','Cancelado']
+    : ['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'];
+}
+function statusLabelPedido(status){
+  return status==='Pendente'?'Confirmado':status;
+}
+function renderStatusOptionsPedido(p){
+  return statusOptionsPedido(p).map(s=>`<option value="${s}"${(p.status||'Pendente')===s?' selected':''}>${statusLabelPedido(s)}</option>`).join('');
+}
+
 function urlBase64ToUint8Array(base64String){
   const padding='='.repeat((4-base64String.length%4)%4);
   const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
@@ -889,7 +904,7 @@ async function renderEntregas(){
         <div style="text-align:right;flex-shrink:0">
           <div style="font-weight:800;font-size:13px;color:var(--green-bright)">R$ ${fp(p.total)}</div>
           <select onchange="alterarStatusE(${p.id},this.value)" style="font-size:10px;padding:3px 5px;border-radius:6px;margin-top:4px;width:100%">
-            ${['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'].map(s=>`<option value="${s}"${p.status===s?' selected':''}>${s}</option>`).join('')}
+            ${renderStatusOptionsPedido(p)}
           </select>
         </div>
       </div>
@@ -1386,9 +1401,8 @@ function renderRPage(){
   const table=document.getElementById('r-table');table.classList.remove('hidden');
   const tbody=document.getElementById('r-tbody');
   if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPag();return}
-  const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'];
   tbody.innerHTML=pagina.map(p=>{
-    const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
+    const opts=renderStatusOptionsPedido(p);
     return '<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
@@ -1995,9 +2009,8 @@ function renderRPPage(){
   const table=document.getElementById('rp-table');if(table)table.classList.remove('hidden');
   const tbody=document.getElementById('rp-tbody');if(!tbody)return;
   if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPPag();return}
-  const statusOpts=['Pendente','Em preparo','Saiu para entrega','Entregue','Cancelado'];
   tbody.innerHTML=pagina.map(p=>{
-    const opts=statusOpts.map(s=>'<option value="'+s+'"'+(((p.status||'Pendente')===s)?' selected':'')+'>'+s+'</option>').join('');
+    const opts=renderStatusOptionsPedido(p);
     return'<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
