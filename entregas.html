@@ -159,6 +159,13 @@
   width:100%;height:340px;border:none;display:block;
   filter:grayscale(20%) invert(5%);
 }
+.mapa-caption{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--text2);
+  line-height:1.6;
+}
+.mapa-caption strong{color:var(--green-bright)}
 .mapa-overlay-btn{
   position:absolute;bottom:14px;right:14px;
   display:flex;align-items:center;gap:7px;
@@ -323,7 +330,7 @@
           </span>
           <div class="dia-info-row">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Manhã e tarde (horário combinado)
+            Entregas na parte da manhã e da tarde
           </div>
           <div class="dia-info-row">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -342,7 +349,7 @@
           </span>
           <div class="dia-info-row">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Manhã e tarde (horário combinado)
+            Entregas na parte da manhã e da tarde
           </div>
           <div class="dia-info-row">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -366,11 +373,11 @@
       </div>
       <div>
         <h2>Onde entregamos</h2>
-        <p>Regiões atendidas no Rio de Janeiro</p>
+        <p>Atendemos regiões próximas ao Grajaú</p>
       </div>
     </div>
     <div class="ent-card-body">
-      <p class="zonas-intro">Atendemos regiões próximas ao Grajaú, conforme validação automática pelo CEP no checkout.</p>
+      <p class="zonas-intro">Entregamos em regiões próximas ao Grajaú. Ao informar seu CEP no pedido, mostramos se atendemos sua região e o valor da entrega.</p>
 
       <div class="zonas-list">
         <div class="zona-row">
@@ -379,27 +386,27 @@
             <div class="zona-nome">Zona próxima</div>
             <div class="zona-bairros">Parte de Grajaú, Andaraí, Vila Isabel, Tijuca, Maracanã e regiões próximas.</div>
           </div>
-          <div class="zona-taxa">Calculada no checkout</div>
+          <div class="zona-taxa">Consulte pelo CEP</div>
         </div>
         <div class="zona-row">
           <div class="zona-dot zona-dot-azul"></div>
           <div style="flex:1">
             <div class="zona-nome">Zona intermediária</div>
-            <div class="zona-bairros">Regiões próximas validadas automaticamente pelo CEP.</div>
+            <div class="zona-bairros">Regiões um pouco mais afastadas, atendidas conforme disponibilidade.</div>
           </div>
-          <div class="zona-taxa">Calculada no checkout</div>
+          <div class="zona-taxa">Consulte pelo CEP</div>
         </div>
         <div class="zona-row">
           <div class="zona-dot zona-dot-amarelo"></div>
           <div style="flex:1">
             <div class="zona-nome">Zona distante</div>
-            <div class="zona-bairros">Endereços aprovados pela validação automática do checkout.</div>
+            <div class="zona-bairros">Algumas regiões mais distantes podem ser atendidas, dependendo da localização informada.</div>
           </div>
-          <div class="zona-taxa">Calculada no checkout</div>
+          <div class="zona-taxa">Consulte pelo CEP</div>
         </div>
         <div class="zona-raio-aviso">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>As taxas exatas são calculadas automaticamente pelo sistema no momento do pedido, com base no CEP informado. Em caso de dúvida, entre em contato pelo WhatsApp antes de finalizar.</span>
+          <span>O valor da entrega é informado durante o pedido, de acordo com o endereço informado. Se ficar com dúvida, fale com a gente no WhatsApp.</span>
         </div>
       </div>
 
@@ -419,6 +426,7 @@
           Abrir no Google Maps
         </a>
       </div>
+      <p class="mapa-caption"><strong>Área principal de atendimento:</strong> a imagem do mapa é uma referência da região. Consulte seu CEP no pedido para confirmar a entrega.</p>
     </div>
   </div>
 
@@ -442,7 +450,7 @@
           </div>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Cálculo por distância</div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.6">A taxa é calculada pela distância real entre nossa base em Grajaú e o seu endereço, usando um fator de rota. O valor é exibido automaticamente no checkout ao digitar seu CEP.</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">A taxa considera a distância entre nossa base em Grajaú e o endereço informado. O valor aparece durante o pedido, depois que você informa o CEP.</div>
           </div>
         </div>
 
@@ -452,7 +460,7 @@
           </div>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Transparência total</div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.6">Você vê a taxa antes de confirmar o pedido. Não existe cobrança surpresa — o que aparece no checkout é exatamente o que você paga.</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">Você vê a taxa antes de confirmar o pedido. Não existe cobrança surpresa — o valor informado no pedido é exatamente o que você paga.</div>
           </div>
         </div>
 
@@ -548,7 +556,7 @@
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
           <div class="faq-a">
-            A forma mais fácil de verificar é tentar fazer um pedido na loja e digitar seu CEP no checkout. O sistema calcula a distância automaticamente e informa se o endereço está dentro do raio de entrega. Você também pode nos perguntar pelo WhatsApp.
+            A forma mais fácil de verificar é fazer um pedido na loja e informar seu CEP. A gente mostra se atendemos sua região e o valor da entrega. Você também pode nos perguntar pelo WhatsApp.
           </div>
         </div>
 
