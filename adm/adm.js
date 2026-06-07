@@ -69,6 +69,44 @@ function isStatusProntoRetirada(status){
   const st=statusKeyPedido(status);
   return st==='pronto para retirar'||st==='pronto para retirada';
 }
+function getPedidoCriadoEm(p){
+  const raw=p?.created_at||p?.criado_em||p?.data_criacao||p?.inserted_at||p?.data_pedido;
+  if(!raw)return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))){
+    const [y,m,d]=String(raw).split('-').map(Number);
+    return new Date(y,m-1,d);
+  }
+  const dt=new Date(raw);
+  return Number.isNaN(dt.getTime())?null:dt;
+}
+function isoLocalDate(dt){
+  if(!dt)return'';
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+function localDayStartISO(offset=0){
+  const d=new Date();
+  d.setDate(d.getDate()+offset);
+  d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function localMonthStartISO(){
+  const d=new Date();
+  d.setDate(1);
+  d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function formatFormaPagamentoRelatorio(pedido){
+  const raw=String(pedido?.pagamento||'Não informado').trim();
+  const key=statusKeyPedido(raw);
+  if(key.includes('pix'))return'Pix';
+  if(key.includes('cartao')||key.includes('cartao de credito')||key.includes('cartao de debito'))return'Cartão';
+  if(key.includes('dinheiro')){
+    const trocoMatch=raw.match(/\(([^)]*troco[^)]*)\)/i);
+    const troco=trocoMatch?trocoMatch[1].trim():'';
+    return troco?'Dinheiro ('+troco+')':'Dinheiro';
+  }
+  return raw||'Não informado';
+}
 function pedidoNoGrupoStatus(p,grupo){
   const st=statusKeyPedido(p?.status);
   if(grupo==='todos')return true;
@@ -1192,7 +1230,7 @@ async function renderRel(){
 
   const payMap={};
   concluidos.forEach(p=>{
-    const key=String(p.pagamento||'Não informado').trim()||'Não informado';
+    const key=formatFormaPagamentoRelatorio(p);
     if(!payMap[key])payMap[key]={qtd:0,total:0};
     payMap[key].qtd++;
     payMap[key].total+=Number(p.total)||0;
@@ -1249,7 +1287,7 @@ function exportRel(){
     if(p.cliente_contato)linhas.push('Contato: '+p.cliente_contato);
     linhas.push('Entrega: '+fd(p.data_pedido));
     if(end)linhas.push('Endereco: '+end);
-    linhas.push('Entrega: '+p.entrega+' | Pagamento: '+p.pagamento);
+    linhas.push('Entrega: '+p.entrega+' | Pagamento: '+formatFormaPagamentoRelatorio(p));
     if(p.status)linhas.push('Status: '+p.status);
     if(p.observacoes)linhas.push('Obs: '+p.observacoes);
     (p.itens_pedido||[]).forEach(it=>{
@@ -1294,7 +1332,7 @@ async function verPed(id){
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;flex-direction:column;gap:3px">
       <div class="ico-gap">${lucideIcon('user')} ${h(p.cliente_nome||'Cliente')} · ${h(p.cliente_contato||'Sem contato')}</div>
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento||'Não informado')} · ${modalidadePedidoAdmin(p)}</div>
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(formatFormaPagamentoRelatorio(p))} · ${modalidadePedidoAdmin(p)}</div>
       ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span>Subtotal</span><span style="font-weight:700">R$ ${fp(subtotal)}</span></div>${taxa}${cupom}${total}</div>`;
@@ -1494,7 +1532,7 @@ function renderRPage(){
       +'<td>'+(!isRetiradaPedido(p)?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
       +'<td><span class="badge bg-green">'+h(p.status||'')+'</span></td>'
       +'<td><div style="font-size:11px;font-weight:600">'+(fdLabel(p.data_pedido)||fd(p.data_pedido)||'-')+'</div></td>'
-      +'<td>'+h(p.pagamento||'Não informado')+'</td>'
+      +'<td>'+h(formatFormaPagamentoRelatorio(p))+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--orange)">R$ '+fp(Number(p.taxa_entrega)||0)+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
       +'<td><button class="btn btn-o btn-sm" onclick="verPed('+p.id+')">Ver</button></td>'
@@ -2362,19 +2400,20 @@ function renderPieGastos(lista){
 let _dashChart=null, _dashPie=null;
 
 async function loadDashMetrics(){
-  const hoje=new Date();
-  const isoHoje=hoje.toISOString().split('T')[0];
-  const primeiroDiaMes=isoHoje.slice(0,7)+'-01';
+  const hojeInicio=localDayStartISO(0);
+  const amanhaInicio=localDayStartISO(1);
+  const ontemInicio=localDayStartISO(-1);
+  const mesInicio=localMonthStartISO();
 
   // Buscar pedidos de hoje e do mês
   const [{data:pedHoje},{data:pedMes},{data:pedOntem}]=await Promise.all([
-    sb.from('pedidos').select('id,total,status,created_at,data_pedido').eq('data_pedido',isoHoje),
-    sb.from('pedidos').select('id,total,status,data_pedido').gte('data_pedido',primeiroDiaMes),
-    sb.from('pedidos').select('id,total,status').eq('data_pedido',getISODate(-1)),
+    sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',hojeInicio).lt('created_at',amanhaInicio),
+    sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',mesInicio).lt('created_at',amanhaInicio),
+    sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',ontemInicio).lt('created_at',hojeInicio),
   ]);
 
   const ativos=p=>!isPedidoCancelado(p);
-  const soma=arr=>arr.filter(ativos).reduce((s,p)=>s+p.total,0);
+  const soma=arr=>arr.filter(ativos).reduce((s,p)=>s+(Number(p.total)||0),0);
 
   const totHoje=soma(pedHoje||[]);
   const totOntem=soma(pedOntem||[]);
@@ -2401,23 +2440,25 @@ async function loadDashMetrics(){
 function getISODate(offset=0){
   const d=new Date();
   d.setDate(d.getDate()+offset);
-  return d.toISOString().split('T')[0];
+  return isoLocalDate(d);
 }
 
 async function loadDashChart(){
   // Últimos 7 dias
   const dias=[];
   for(let i=6;i>=0;i--)dias.push(getISODate(-i));
-  const de=dias[0],ate=dias[dias.length-1];
+  const inicio=localDayStartISO(-6);
+  const fim=localDayStartISO(1);
 
   const {data:peds}=await sb.from('pedidos')
-    .select('total,status,data_pedido')
-    .gte('data_pedido',de).lte('data_pedido',ate);
+    .select('total,status,created_at,data_pedido')
+    .gte('created_at',inicio).lt('created_at',fim);
 
   const por_dia={};
   dias.forEach(d=>por_dia[d]=0);
   (peds||[]).filter(p=>!isPedidoCancelado(p)).forEach(p=>{
-    if(por_dia[p.data_pedido]!==undefined)por_dia[p.data_pedido]+=p.total;
+    const criado=isoLocalDate(getPedidoCriadoEm(p));
+    if(por_dia[criado]!==undefined)por_dia[criado]+=Number(p.total)||0;
   });
 
   const labels=dias.map(d=>{
