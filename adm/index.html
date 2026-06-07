@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260606-admin-canceled-filter" defer></script>
+  <script src="/adm/adm.js?v=20260607-relatorio-contabil-retirada" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -305,20 +305,21 @@
     </div>
 <div class="acard-sm" style="margin-bottom:12px">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div><label>Cliente ou ID do pedido</label><input id="r-busca" type="text" placeholder="Nome ou ID..." style="width:180px" oninput="renderRel()"></div>
+        <div><label>Cliente ou código</label><input id="r-busca" type="text" placeholder="Nome ou código..." style="width:180px" oninput="renderRel()"></div>
         <div><label>Filtro</label><select id="r-tipo" style="width:150px" onchange="toggleRFiltro()"><option value="dia">Data unica</option><option value="periodo">Periodo</option></select></div>
         <div id="r-fdia"><label>Data</label><input id="r-data" type="date" style="width:155px" onchange="renderRel()"></div>
         <div id="r-fper" class="date-range hidden"><div><label>De</label><input id="r-de" type="date" style="width:145px" onchange="renderRel()"></div><div><label>Ate</label><input id="r-ate" type="date" style="width:145px" onchange="renderRel()"></div></div>
       </div>
     </div>
     <div id="r-stats" class="stats"></div>
-    <div style="margin-bottom:12px">
-      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Pedidos do periodo</div><div class="r-scroll-box"><div id="r-peds"></div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Resumo por pagamento</div><div id="r-pay"></div></div>
+      <div class="acard-sm"><div style="font-size:12px;font-weight:700;margin-bottom:10px">Produtos vendidos</div><div class="r-scroll-box"><div id="r-prods"></div></div></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Histórico</div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700">Histórico de concluídos</div>
       <div id="r-loading" class="loading"><div class="spin"></div> Carregando...</div>
-      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Pedido em</th><th>Entrega</th><th>Status</th><th>Forma</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
+      <div class="twrap"><table class="tbl hidden" id="r-table"><thead><tr><th>Código</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Data</th><th>Pagamento</th><th style="text-align:right">Taxa</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="r-tbody"></tbody></table></div>
       <div class="pag" id="r-pag"></div>
     </div>
   </div>

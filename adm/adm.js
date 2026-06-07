@@ -61,6 +61,14 @@ function statusKeyPedido(status){
     .replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,' ');
 }
+function isPedidoConcluido(p){
+  const st=statusKeyPedido(p?.status);
+  return st==='entregue'||st==='retirado';
+}
+function isStatusProntoRetirada(status){
+  const st=statusKeyPedido(status);
+  return st==='pronto para retirar'||st==='pronto para retirada';
+}
 function pedidoNoGrupoStatus(p,grupo){
   const st=statusKeyPedido(p?.status);
   if(grupo==='todos')return true;
@@ -1013,7 +1021,7 @@ async function alterarStatusE(id,status){
   if(error){toast('Erro: '+error.message,'err');return;}
   // WhatsApp automático
   const p=(window._entCache||[]).find(x=>x.id===id);
-  if(p&&WPP_STATUS_MSGS[status]){
+  if(p&&(WPP_STATUS_MSGS[status]||(isRetiradaPedido(p)&&isStatusProntoRetirada(status)))){
     p.status=status;
     dispararWppStatus(p,status);
   }
@@ -1160,60 +1168,50 @@ async function renderRel(){
   const dataFiltro=tipo==='dia'?document.getElementById('r-data').value:null;
   const deFiltro=document.getElementById('r-de').value;
   const ateFiltro=document.getElementById('r-ate').value;
-  const temFiltroData=(tipo==='dia'&&dataFiltro)||(tipo==='periodo'&&(deFiltro||ateFiltro));
 
-  // Query para a listagem (filtrada)
   let q=sb.from('pedidos').select('*,itens_pedido(*)').order('created_at',{ascending:false});
   if(tipo==='dia'){if(dataFiltro)q=q.eq('data_pedido',dataFiltro);}
   else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
-  const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
-  const listaVisivel=lista.filter(p=>!isPedidoCancelado(p));
+  const lista=(peds||[]).filter(p=>!busca||String(p.cliente_nome||'').toLowerCase().includes(busca)||String(p.codigo||'').toLowerCase().includes(busca));
+  const listaVisivel=lista.filter(isPedidoConcluido);
   rCache=listaVisivel;rTotal=listaVisivel.length;rPage=1;
 
-  // Stats: sem filtro = todos os pedidos; com filtro = só os filtrados
-  let statsAtivos;
-  if(temFiltroData||busca){
-    statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
-  }else{
-    // Busca total geral sem filtro
-    const {data:todos}=await sb.from('pedidos').select('id,total,status');
-    statsAtivos=(todos||[]).filter(p=>!isPedidoCancelado(p));
-  }
-  const totG=statsAtivos.reduce((s,p)=>s+p.total,0);
-  const totT=lista.filter(p=>!isPedidoCancelado(p)).reduce((s,p)=>s+(Number(p.taxa_entrega)||0),0);
+  const concluidos=listaVisivel;
+  const entregas=concluidos.filter(p=>!isRetiradaPedido(p));
+  const retiradas=concluidos.filter(isRetiradaPedido);
+  const totG=concluidos.reduce((s,p)=>s+(Number(p.total)||0),0);
+  const totT=entregas.reduce((s,p)=>s+(Number(p.taxa_entrega)||0),0);
   document.getElementById('r-stats').innerHTML=
-    '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
-    +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
-    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
-  const pedEl=document.getElementById('r-peds');
-  const listaHistorico=listaVisivel;
-  if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>'}
-  else{
-    pedEl.innerHTML=listaHistorico.map(p=>{
-      const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
-      const dataEntrega=fdLabel(p.data_pedido)||fd(p.data_pedido);
-      const dtCompra=p.created_at?new Date(p.created_at):null;
-      const dataPedido=dtCompra?dtCompra.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
-      const horaPedido=dtCompra?dtCompra.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
-      return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
-            ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
-            ${p.taxa_entrega>0?'<span class="badge bg-orange" style="font-size:9px">Taxa</span>':''}
-          </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
-            ${dataPedido?`<span>📝 ${dataPedido}${horaPedido?' · '+horaPedido:''}</span>`:''}
-            ${dataEntrega?`<span>${modalidadePedidoAdmin(p)} · ${dataEntrega}</span>`:''}
-          </div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
-        </div>
-        <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
-      </div>`;
-    }).join('');
-    if(totT>0)pedEl.innerHTML+=`<div style="padding:7px 0;display:flex;justify-content:space-between;font-size:11px;color:var(--orange)"><span>Total taxas</span><span style="font-weight:700">R$ ${fp(totT)}</span></div>`;
-  }
+    '<div class="scard"><div class="scard-l">Pedidos concluídos</div><div class="scard-v">'+concluidos.length+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Faturamento concluído</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(concluidos.length?fp(totG/concluidos.length):'0,00')+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Taxas de entrega</div><div class="scard-v">R$ '+fp(totT)+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Total em entregas</div><div class="scard-v">'+entregas.length+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Total em retiradas</div><div class="scard-v">'+retiradas.length+'</div></div>';
+
+  const payMap={};
+  concluidos.forEach(p=>{
+    const key=String(p.pagamento||'Não informado').trim()||'Não informado';
+    if(!payMap[key])payMap[key]={qtd:0,total:0};
+    payMap[key].qtd++;
+    payMap[key].total+=Number(p.total)||0;
+  });
+  document.getElementById('r-pay').innerHTML=Object.keys(payMap).length
+    ?Object.entries(payMap).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`<div class="srow"><span>${h(k)}</span><span>${v.qtd} · R$ ${fp(v.total)}</span></div>`).join('')
+    :'<div class="empty">Nenhum pagamento no período.</div>';
+
+  const prodMap={};
+  concluidos.forEach(p=>(p.itens_pedido||[]).forEach(it=>{
+    const k=it.produto_id||it.nome_produto||'produto';
+    if(!prodMap[k])prodMap[k]={nome:it.nome_produto||'Produto',qtd:0,total:0};
+    prodMap[k].qtd+=Number(it.quantidade)||0;
+    prodMap[k].total+=Number(it.subtotal)||0;
+  }));
+  document.getElementById('r-prods').innerHTML=Object.keys(prodMap).length
+    ?Object.values(prodMap).sort((a,b)=>b.total-a.total).map(it=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${h(it.nome)}</span><span style="font-weight:700;white-space:nowrap">${it.qtd} un · R$ ${fp(it.total)}</span></div>`).join('')
+    :'<div class="empty">Nenhum produto vendido no período.</div>';
+
   renderRPage();
   renderRPag();
 }
@@ -1243,7 +1241,7 @@ function goRPage(p){
 
 function exportRel(){
   if(!rCache.length){toast('Nenhum pedido para exportar.','err');return}
-  const linhas=['=== RELATORIO DE PEDIDOS ===','Total: '+rCache.length+' pedido(s)','Gerado em: '+new Date().toLocaleString('pt-BR'),''];
+  const linhas=['=== RELATORIO DE PEDIDOS CONCLUIDOS ===','Total: '+rCache.length+' pedido(s)','Gerado em: '+new Date().toLocaleString('pt-BR'),''];
   rCache.forEach((p,i)=>{
     const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', no ');
     linhas.push('--- Pedido '+(i+1)+' ---');
@@ -1440,7 +1438,11 @@ const WPP_STATUS_MSGS = {
 function dispararWppStatus(pedido, status){
   // Prioridade: mensagem customizada → mensagem padrão
   let msg;
-  if(WPP_STATUS_CUSTOM[status]){
+  if(isRetiradaPedido(pedido)&&isStatusProntoRetirada(status)){
+    msg = `Seu pedido ${pedido.codigo||'#'+pedido.id} está pronto para retirada! 🌱\n`+
+      `Estaremos na barraca até 12h.\n`+
+      `Qualquer dúvida, estamos por aqui! 😊`;
+  }else if(WPP_STATUS_CUSTOM[status]){
     // Substituir variáveis na mensagem customizada
     msg = WPP_STATUS_CUSTOM[status]
       .replace(/{nome}/g, pedido.cliente_nome.split(' ')[0])
@@ -1471,7 +1473,7 @@ async function alterarStatus(id,status){
   if(p){
     p.status=status;
     // Disparar WhatsApp se status envia mensagem
-    if(WPP_STATUS_MSGS[status]){
+    if(WPP_STATUS_MSGS[status]||(isRetiradaPedido(p)&&isStatusProntoRetirada(status))){
       dispararWppStatus(p, status);
     }
   }
@@ -1484,19 +1486,16 @@ function renderRPage(){
   document.getElementById('r-loading').classList.add('hidden');
   const table=document.getElementById('r-table');table.classList.remove('hidden');
   const tbody=document.getElementById('r-tbody');
-  if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPag();return}
+  if(!pagina.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido concluído</td></tr>';renderRPag();return}
   tbody.innerHTML=pagina.map(p=>{
-    const opts=renderStatusOptionsPedido(p);
     return '<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
-      +'<td><div style="font-size:11px">'+( p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'-')+'</div>'
-      +(p.created_at?'<div style="font-size:10px;color:var(--text3)">'+new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</div>':'')
-      +'</td>'
-      +'<td><div style="font-size:11px;font-weight:600">'+fdLabel(p.data_pedido)+'</div></td>'
-      +'<td><select onchange="alterarStatus('+p.id+',this.value)" style="font-size:11px;padding:4px 6px;border-radius:6px;width:100%;min-width:120px">'+opts+'</select></td>'
       +'<td>'+(!isRetiradaPedido(p)?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
-      +'<td>'+p.pagamento+'</td>'
+      +'<td><span class="badge bg-green">'+h(p.status||'')+'</span></td>'
+      +'<td><div style="font-size:11px;font-weight:600">'+(fdLabel(p.data_pedido)||fd(p.data_pedido)||'-')+'</div></td>'
+      +'<td>'+h(p.pagamento||'Não informado')+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:var(--orange)">R$ '+fp(Number(p.taxa_entrega)||0)+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
       +'<td><button class="btn btn-o btn-sm" onclick="verPed('+p.id+')">Ver</button></td>'
       +'</tr>';
