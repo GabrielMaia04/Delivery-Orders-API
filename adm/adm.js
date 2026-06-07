@@ -53,6 +53,24 @@ function isRetiradaPedido(p){
 function isPedidoCancelado(p){
   return String(p?.status||'').trim().toLowerCase()==='cancelado';
 }
+function statusKeyPedido(status){
+  return String(status||'Pendente')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
+function pedidoNoGrupoStatus(p,grupo){
+  const st=statusKeyPedido(p?.status);
+  if(grupo==='todos')return true;
+  if(grupo==='pendente')return ['pendente','pagamento pendente','aguardando pagamento','aguardando confirmacao'].includes(st);
+  if(grupo==='preparo')return ['em preparo','preparo'].includes(st);
+  if(grupo==='prontos_rota')return ['pronto para retirada','pronto para retirar','saiu para entrega'].includes(st);
+  if(grupo==='concluidos')return ['retirado','entregue'].includes(st);
+  if(grupo==='cancelados')return st==='cancelado';
+  return !isPedidoCancelado(p);
+}
 function modalidadePedidoAdmin(p){
   return isRetiradaPedido(p)?'Retirada':'Entrega';
 }
@@ -1458,6 +1476,7 @@ async function alterarStatus(id,status){
     }
   }
   toast('Status atualizado: '+status,'ok');
+  if(document.getElementById('ap-pedidos')?.classList.contains('active'))renderPedidos();
 }
 function renderRPage(){
   const start=(rPage-1)*PER;
@@ -2019,7 +2038,7 @@ function toggleRPFiltro(){
 
 async function renderPedidos(){
   const busca=(document.getElementById('rp-busca')?.value||'').toLowerCase();
-  const statusFiltro=document.getElementById('rp-status')?.value||'ativos';
+  const statusFiltro=document.getElementById('rp-status')?.value||'preparo';
   const tipo=document.getElementById('rp-tipo')?.value||'dia';
   const dataFiltro=tipo==='dia'?document.getElementById('rp-data')?.value:null;
   const deFiltro=document.getElementById('rp-de')?.value;
@@ -2030,11 +2049,7 @@ async function renderPedidos(){
   else{if(deFiltro)q=q.gte('data_pedido',deFiltro);if(ateFiltro)q=q.lte('data_pedido',ateFiltro);}
   const {data:peds}=await q;
   const lista=(peds||[]).filter(p=>!busca||p.cliente_nome.toLowerCase().includes(busca)||(p.codigo&&p.codigo.includes(busca)));
-  const listaVisivel=statusFiltro==='cancelados'
-    ?lista.filter(isPedidoCancelado)
-    :statusFiltro==='todos'
-      ?lista
-      :lista.filter(p=>!isPedidoCancelado(p));
+  const listaVisivel=lista.filter(p=>pedidoNoGrupoStatus(p,statusFiltro));
   rpCache=listaVisivel;rpTotal=listaVisivel.length;rpPage=1;
 
   const statsAtivos=lista.filter(p=>!isPedidoCancelado(p));
