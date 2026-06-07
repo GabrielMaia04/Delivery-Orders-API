@@ -67,6 +67,23 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .apage-3col.active{display:flex;flex-direction:column}
 .col3{display:grid;grid-template-columns:260px 1fr 300px;gap:12px;flex:1;min-height:0}
 @media(max-width:860px){.col3{grid-template-columns:1fr;overflow-y:auto}}
+.np-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;flex-shrink:0}
+.np-head .page-title{margin:0;font-size:20px;line-height:1.15}
+.np-head .page-kicker{font-size:10px;font-weight:800;color:var(--green-bright);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.np-sub{font-size:12px;color:var(--text2);line-height:1.5;margin-top:4px}
+.novo-pedido-grid{grid-template-columns:minmax(280px,320px) minmax(320px,1fr) minmax(320px,360px)}
+.np-card{min-height:0}
+.np-form{display:flex;flex-direction:column;gap:12px}
+.np-section{padding:12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.015)}
+.np-section .field:last-child{margin-bottom:0}
+.np-section-title{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px}
+.np-section-title svg,.np-section-title i{width:15px;height:15px;color:var(--green-bright)}
+.np-section-title-inline{margin-bottom:8px}
+.np-help{font-size:11px;color:var(--text2);line-height:1.5;margin:-3px 0 10px}
+.np-retirada-msg{background:rgba(45,140,78,.08);border-color:rgba(45,140,78,.28)}
+.np-retirada-msg p{font-size:12px;color:var(--text2);line-height:1.55;margin:0}
+@media(max-width:1100px){.novo-pedido-grid{grid-template-columns:minmax(270px,1fr) minmax(300px,1.1fr)}.np-resumo{grid-column:1/-1;min-height:420px}}
+@media(max-width:860px){.np-head{padding:0 2px}.novo-pedido-grid{grid-template-columns:1fr}.np-resumo{grid-column:auto;min-height:420px}}
 
 /* CARDS ADMIN */
 .acard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow)}

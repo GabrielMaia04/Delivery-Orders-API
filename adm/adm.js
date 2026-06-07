@@ -521,10 +521,13 @@ async function desativarDataBloqueada(id){
 
 function setAE(v){
   ap.entrega=v;
-  document.getElementById('a-de').classList.toggle('active',v==='Entrega');
+  const isEntrega=v==='Entrega';
+  document.getElementById('a-de').classList.toggle('active',isEntrega);
   document.getElementById('a-dr').classList.toggle('active',v==='Retirada');
-  document.getElementById('a-taxa').style.display=v==='Entrega'?'inline-flex':'none';
-  document.getElementById('a-tr').classList.toggle('hidden',v!=='Entrega');
+  const taxaEl=document.getElementById('a-taxa');if(taxaEl)taxaEl.style.display=isEntrega?'inline-flex':'none';
+  const tr=document.getElementById('a-tr');if(tr)tr.classList.toggle('hidden',!isEntrega);
+  const endSec=document.getElementById('a-endereco-sec');if(endSec)endSec.classList.toggle('hidden',!isEntrega);
+  const retMsg=document.getElementById('a-retirada-msg');if(retMsg)retMsg.classList.toggle('hidden',isEntrega);
   const tv=document.getElementById('a-taxa-val');if(tv)tv.textContent=fp(TAXA);
   const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(TAXA);
   renderAOrder();
@@ -826,8 +829,13 @@ async function aSalvar(){
   const nome=document.getElementById('a-nome').value.trim();
   if(!nome){toast('Informe o nome do cliente.','err');return}
   if(!ap.itens.length){toast('Adicione ao menos um produto.','err');return}
+  if(ap.entrega==='Entrega'){
+    const endereco=document.getElementById('a-end').value.trim();
+    if(!endereco){toast('Informe o endereço de entrega.','err');return}
+    if(Number.isNaN(Number(TAXA))){toast('Confira a taxa de entrega.','err');return}
+  }
   const btn=document.getElementById('a-save-btn');
-  btn.disabled=true;btn.textContent='Salvando...';
+  btn.disabled=true;btn.innerHTML='<i data-lucide="loader-2"></i> Criando...';refreshIcons();
   try{
     const dataPed=document.getElementById('a-data').value;
     const codigo=await gerarCodigo(dataPed);
@@ -859,9 +867,9 @@ async function aSalvar(){
       if(novo<=0){upd8.ativo=false;p.ativo=false;}
       return sb.from('produtos').update(upd8).eq('id',p.id);
     }));
-    toast('Pedido salvo!','ok');aLimpar();
+    toast('Pedido criado!','ok');_aLimparExec();
   }catch(e){toast('Erro: '+e.message,'err')}
-  btn.disabled=false;btn.textContent='Salvar pedido';
+  btn.disabled=false;btn.innerHTML='<i data-lucide="save"></i> Criar pedido';refreshIcons();
 }
 function bldTxt(ped){
   const end=[ped.cliente_endereco,ped.cliente_numero].filter(Boolean).join(', no ');
