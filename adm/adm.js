@@ -3,7 +3,7 @@ const IMG_BASE = CONFIG.IMG_BASE;
 const WHATSAPP_NUM = CONFIG.WHATSAPP_NUMBER;
 const sb = window.sb;
 
-let TAXA=2.50;
+let TAXA=0;
 let PEDIDO_MIN=0;
 let LOJA_LAT=null;
 let _freteCalculado=false; // true somente após calcular CEP no carrinho // Latitude da loja (configurado no painel)
@@ -524,12 +524,13 @@ function setAE(v){
   const isEntrega=v==='Entrega';
   document.getElementById('a-de').classList.toggle('active',isEntrega);
   document.getElementById('a-dr').classList.toggle('active',v==='Retirada');
-  const taxaEl=document.getElementById('a-taxa');if(taxaEl)taxaEl.style.display=isEntrega?'inline-flex':'none';
+  const taxaEl=document.getElementById('a-taxa');if(taxaEl)taxaEl.style.display=isEntrega?'block':'none';
   const tr=document.getElementById('a-tr');if(tr)tr.classList.toggle('hidden',!isEntrega);
   const endSec=document.getElementById('a-endereco-sec');if(endSec)endSec.classList.toggle('hidden',!isEntrega);
   const retMsg=document.getElementById('a-retirada-msg');if(retMsg)retMsg.classList.toggle('hidden',isEntrega);
-  const tv=document.getElementById('a-taxa-val');if(tv)tv.textContent=fp(TAXA);
-  const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(TAXA);
+  if(!isEntrega){
+    const ti=document.getElementById('a-taxa-input');if(ti)ti.value='';
+  }
   renderAOrder();
 }
 function renderACpills(){
@@ -772,6 +773,7 @@ function renderAOrder(){
   document.getElementById('a-si').textContent=tQty;
   document.getElementById('a-sp').textContent=tPeso.toFixed(2)+' kg';
   document.getElementById('a-ss').textContent='R$ '+fp(sub);
+  const trv=document.getElementById('a-tr-val');if(trv)trv.textContent='+ R$ '+fp(aTaxaEntrega());
   document.getElementById('a-st').textContent='R$ '+fp(tot);
 }
 
@@ -783,9 +785,9 @@ async function buscarCepAdmin(){
   if(cep.length!==8)return;
   if(spin)spin.style.display='inline-block';
   try{
-    let data=null;
+    let data=null,result=null;
     if(typeof geocodificarCEP==='function'){
-      const result=await geocodificarCEP(cep);
+      result=await geocodificarCEP(cep);
       data=result?.viacep||null;
     }
     if(!data){
@@ -801,6 +803,19 @@ async function buscarCepAdmin(){
       [data.localidade,data.uf].filter(Boolean).join(' / ')
     ].filter(Boolean);
     if(end)end.value=partes.join(' - ');
+    if(ap.entrega==='Entrega'&&result?.lat&&LOJA_LAT&&LOJA_LNG){
+      const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
+      const zona=calcularZona(dist);
+      const taxaInput=document.getElementById('a-taxa-input');
+      if(taxaInput&&zona){
+        taxaInput.value=Number(zona.taxa||0).toFixed(2);
+        toast('Taxa calculada: R$ '+fp(Number(zona.taxa||0)),'ok');
+      }else if(taxaInput){
+        taxaInput.value='';
+        toast('CEP sem zona configurada. Informe a taxa manualmente.','info');
+      }
+      renderAOrder();
+    }
     if(num&&!num.value)num.focus();
   }catch(e){
     console.warn('buscarCepAdmin falhou',e);
@@ -812,7 +827,31 @@ async function buscarCepAdmin(){
 function aChgQ(i,d){ap.itens[i].qty=Math.max(1,ap.itens[i].qty+d);renderAOrder()}
 function aRm(i){ap.itens.splice(i,1);renderAOrder()}
 function aCalcSub(){return ap.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0)}
-function aCalcTot(){return aCalcSub()+(ap.entrega==='Entrega'?TAXA:0)}
+function aTaxaEntrega(){
+  if(ap.entrega!=='Entrega')return 0;
+  const raw=(document.getElementById('a-taxa-input')?.value||'').replace(',','.');
+  const n=parseFloat(raw);
+  return Number.isFinite(n)&&n>0?n:0;
+}
+function aCalcTot(){return aCalcSub()+aTaxaEntrega()}
+async function gerarCodigo(dataPed){
+  const iso=dataPed||hoje();
+  const [y,m,d]=iso.split('-').map(Number);
+  if(!y||!m||!d)return null;
+  const yy=String(y).slice(-2);
+  const ddmm=String(d).padStart(2,'0')+String(m).padStart(2,'0');
+  const {data,error}=await sb.from('pedidos').select('codigo').eq('data_pedido',iso);
+  if(error)throw error;
+  let maxSeq=0;
+  (data||[]).forEach(p=>{
+    const cod=String(p.codigo||'');
+    if(cod.startsWith(yy)&&cod.endsWith(ddmm)){
+      const seq=parseInt(cod.slice(2,-4),10);
+      if(Number.isFinite(seq)&&seq>maxSeq)maxSeq=seq;
+    }
+  });
+  return yy+String(maxSeq+1).padStart(3,'0')+ddmm;
+}
 function aLimpar(){
   if(ap.itens.length){popConfirm('🗑️','Limpar pedido?','Todos os itens serão removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
   _aLimparExec();
@@ -820,6 +859,7 @@ function aLimpar(){
 function _aLimparExec(){
   ap={itens:[],entrega:'Entrega'};
   ['a-nome','a-tel','a-cep','a-end','a-num','a-obs'].forEach(id=>document.getElementById(id).value='');
+  const taxaInput=document.getElementById('a-taxa-input');if(taxaInput)taxaInput.value='';
   document.getElementById('a-data').value='';
   const adb=document.getElementById('a-data-btn');
   if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
@@ -832,14 +872,15 @@ async function aSalvar(){
   if(ap.entrega==='Entrega'){
     const endereco=document.getElementById('a-end').value.trim();
     if(!endereco){toast('Informe o endereço de entrega.','err');return}
-    if(Number.isNaN(Number(TAXA))){toast('Confira a taxa de entrega.','err');return}
+    const taxaManual=(document.getElementById('a-taxa-input')?.value||'').trim();
+    if(taxaManual&&Number.isNaN(parseFloat(taxaManual.replace(',','.')))){toast('Confira a taxa de entrega.','err');return}
   }
   const btn=document.getElementById('a-save-btn');
   btn.disabled=true;btn.innerHTML='<i data-lucide="loader-2"></i> Criando...';refreshIcons();
   try{
     const dataPed=document.getElementById('a-data').value;
     const codigo=await gerarCodigo(dataPed);
-    const sub=aCalcSub(),total=aCalcTot(),taxa=ap.entrega==='Entrega'?TAXA:0;
+    const sub=aCalcSub(),total=aCalcTot(),taxa=aTaxaEntrega();
     const insertData={
       user_id:perfil.id,cliente_nome:nome,
       cliente_contato:document.getElementById('a-tel').value,
@@ -879,7 +920,7 @@ function bldTxt(ped){
   return ls.filter(Boolean).join('\n');
 }
 function aObj(){
-  const sub=aCalcSub(),taxa=ap.entrega==='Entrega'?TAXA:0;
+  const sub=aCalcSub(),taxa=aTaxaEntrega();
   return{cliente_nome:document.getElementById('a-nome').value.trim(),cliente_contato:document.getElementById('a-tel').value,cliente_endereco:document.getElementById('a-end').value,cliente_numero:document.getElementById('a-num').value,data_pedido:document.getElementById('a-data').value,entrega:ap.entrega,taxa_entrega:taxa,pagamento:document.getElementById('a-pag').value,observacoes:document.getElementById('a-obs').value,subtotal:sub,total:sub+taxa,_itens:ap.itens.map(it=>{const p=prods.find(x=>x.id===it.prodId);return{quantidade:it.qty,nome_produto:p?.nome||'',peso_produto:p?.peso||'',subtotal:(p?.preco||0)*it.qty}})};
 }
 function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
@@ -3090,8 +3131,7 @@ async function iniciarAdmin(){
   const aData = document.getElementById('a-data'); if (aData) aData.value = '';
   const adb = document.getElementById('a-data-btn');
   if (adb) { adb.textContent = 'Selecionar data de entrega'; adb.classList.remove('selected'); }
-  const tv = document.getElementById('a-taxa-val'); if (tv) tv.textContent = fp(TAXA);
-  const trv = document.getElementById('a-tr-val'); if (trv) trv.textContent = '+ R$ ' + fp(TAXA);
+  const trv = document.getElementById('a-tr-val'); if (trv) trv.textContent = '+ R$ ' + fp(aTaxaEntrega());
   if (!fCatAdm && cats.length) fCatAdm = cats[0].id;
   renderACpills(); renderAGrid(); renderCatSel();
   showAEl('ap-dashboard');

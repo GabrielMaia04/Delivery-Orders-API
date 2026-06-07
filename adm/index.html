@@ -174,7 +174,11 @@
               <div class="field"><label>Endereço *</label><input id="a-end" type="text" placeholder="Rua, bairro"></div>
               <div class="field"><label>Número</label><input id="a-num" type="text" placeholder="Nº"></div>
             </div>
-            <div id="a-taxa" class="taxa-badge">Taxa de entrega: R$ <span id="a-taxa-val">2,50</span></div>
+            <div class="field" id="a-taxa">
+              <label>Taxa de entrega</label>
+              <input id="a-taxa-input" type="number" min="0" step="0.5" placeholder="0,00" oninput="renderAOrder()">
+              <div class="field-hint">Informe a taxa de entrega conforme a região do cliente.</div>
+            </div>
           </section>
 
           <section class="np-section np-retirada-msg hidden" id="a-retirada-msg">
@@ -216,7 +220,7 @@
             <div class="srow"><span>Itens</span><span id="a-si">0</span></div>
             <div class="srow"><span>Peso</span><span id="a-sp">0,00 kg</span></div>
             <div class="srow"><span>Subtotal</span><span id="a-ss">R$ 0,00</span></div>
-            <div class="srow taxa hidden" id="a-tr"><span>Taxa de entrega</span><span id="a-tr-val">+ R$ 2,50</span></div>
+            <div class="srow taxa hidden" id="a-tr"><span>Taxa de entrega</span><span id="a-tr-val">+ R$ 0,00</span></div>
             <div class="stotal"><span class="stotal-l">Total</span><span class="stotal-v" id="a-st">R$ 0,00</span></div>
           </div>
           <div class="abtns">
