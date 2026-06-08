@@ -60,23 +60,25 @@ function perfilCompleto(profile) {
 function friendlyRpcError(message) {
   const text = String(message || '');
   const known = new Map([
-    ['Cupom invalido ou nao encontrado', 'Cupom inválido ou não encontrado.'],
-    ['Cupom esgotado', 'Este cupom está esgotado.'],
-    ['Cupom ja utilizado por este cliente', 'Você já utilizou este cupom.'],
-    ['Produto nao encontrado', 'Um produto do carrinho não foi encontrado.'],
-    ['Produto inativo', 'Um produto do carrinho não está mais disponível.'],
+    ['Cupom invalido ou nao encontrado', 'Cupom inv\u00e1lido ou n\u00e3o encontrado.'],
+    ['Cupom esgotado', 'Este cupom est\u00e1 esgotado.'],
+    ['Cupom ja utilizado por este cliente', 'Voc\u00ea j\u00e1 utilizou este cupom.'],
+    ['Este cupom e valido para pedidos acima de R$', 'Este cupom \u00e9 v\u00e1lido para pedidos acima do valor m\u00ednimo.'],
+    ['Cupom de frete gratis valido apenas para entrega', 'Este cupom \u00e9 v\u00e1lido apenas para entrega.'],
+    ['Produto nao encontrado', 'Um produto do carrinho n\u00e3o foi encontrado.'],
+    ['Produto inativo', 'Um produto do carrinho n\u00e3o est\u00e1 mais dispon\u00edvel.'],
     ['Estoque insuficiente', 'Estoque insuficiente para um produto do carrinho.'],
-    ['Essa data nao esta disponivel', 'Essa data não está disponível. Escolha outra data.'],
-    ['Pedido minimo para entrega', 'O pedido não atingiu o valor mínimo para entrega.'],
-    ['Endereco fora da area de entrega', 'Endereço fora da área de entrega.'],
-    ['Endereco fora das zonas de entrega', 'Endereço fora das zonas de entrega.'],
+    ['Essa data nao esta disponivel', 'Essa data n\u00e3o est\u00e1 dispon\u00edvel. Escolha outra data.'],
+    ['Pedido minimo para entrega', 'O pedido n\u00e3o atingiu o valor m\u00ednimo para entrega.'],
+    ['Endereco fora da area de entrega', 'Endere\u00e7o fora da \u00e1rea de entrega.'],
+    ['Endereco fora das zonas de entrega', 'Endere\u00e7o fora das zonas de entrega.'],
     ['Carrinho vazio', 'Carrinho vazio.'],
     ['Dados do cliente incompletos', 'Preencha os dados do cliente.']
   ]);
   for (const [internal, friendly] of known) {
     if (text.includes(internal)) return friendly;
   }
-  return 'Não foi possível finalizar o pedido. Tente novamente.';
+  return 'N\u00e3o foi poss\u00edvel finalizar o pedido. Tente novamente.';
 }
 
 function haversine(lat1, lng1, lat2, lng2) {

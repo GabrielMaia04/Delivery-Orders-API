@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260607-entregas-print-split" defer></script>
+  <script src="/adm/adm.js?v=20260607-coupon-rules" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -709,9 +709,14 @@
         <div class="ico-gap" style="font-size:13px;font-weight:800;margin-bottom:12px"><i data-lucide="ticket-percent"></i> Cupons de Desconto</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div class="field"><label>Nome do cupom</label><input id="dash-cup-nome" type="text" placeholder="BEMVINDO10" oninput="this.value=this.value.toUpperCase()"></div>
-          <div class="field"><label>Desconto (%)</label><input id="dash-cup-pct" type="number" min="1" max="100" placeholder="10"></div>
+          <div class="field"><label>Tipo de cupom</label><select id="dash-cup-tipo" onchange="toggleCupomTipoAdm()"><option value="porcentagem">Desconto em porcentagem</option><option value="valor">Desconto em valor</option><option value="frete_gratis">Frete gr&aacute;tis</option></select></div>
+          <div class="field" id="dash-cup-valor-wrap"><label id="dash-cup-valor-label">Desconto (%)</label><input id="dash-cup-pct" type="number" min="1" max="100" step="0.01" placeholder="10"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="field"><label>Valor m&iacute;nimo do pedido</label><input id="dash-cup-min" type="number" min="0" step="0.01" placeholder="Opcional"></div>
           <div class="field"><label>Quantidade</label><input id="dash-cup-qty" type="number" min="1" placeholder="50"></div>
         </div>
+        <label class="checkline" style="margin-bottom:10px"><input id="dash-cup-ativo" type="checkbox" checked> Ativo</label>
         <button class="btn btn-g" style="width:100%;margin-bottom:10px" onclick="criarCupom()">+ Criar cupom</button>
         <div id="dash-cup-list"></div>
       </div>

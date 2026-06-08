@@ -6,14 +6,14 @@ const sb = window.sb;
 let TAXA=0;
 let PEDIDO_MIN=0;
 let LOJA_LAT=null;
-let _freteCalculado=false; // true somente após calcular CEP no carrinho // Latitude da loja (configurado no painel)
+let _freteCalculado=false; // true somente apÃ³s calcular CEP no carrinho // Latitude da loja (configurado no painel)
 let LOJA_LNG=null; // Longitude da loja
-let LOJA_ENDERECO=''; // Endereço da loja para geocoding
-let RAIO_MAX=5; // Raio máximo de entrega em km
+let LOJA_ENDERECO=''; // EndereÃ§o da loja para geocoding
+let RAIO_MAX=5; // Raio mÃ¡ximo de entrega em km
 let zonas=[];
 let datasBloqueadasAdm=[];
 let INSTAGRAM_URL='https://instagram.com';
-let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
+let WPP_MSG_TEMPLATE=''; // vazio = usa padrÃ£o do cÃ³digo
 const PER=15;
 
 
@@ -25,7 +25,7 @@ let rPage=1,rTotal=0,rCache=[];
 
 const fp=v=>typeof v==='number'?v.toFixed(2).replace('.',','):'0,00';
 const fd=d=>d?d.split('-').reverse().join('/'):'';
-// Exibe "Terça, 20/mai" para datas de entrega
+// Exibe "TerÃ§a, 20/mai" para datas de entrega
 const h=v=>window.escapeHTML?window.escapeHTML(v??''):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function fdLabel(iso){
   if(!iso)return'';
@@ -33,11 +33,11 @@ function fdLabel(iso){
   const dt=new Date(y,m-1,d);
   return DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
 }
-/* ── DATAS DE ENTREGA ──
-   Produção: Segunda(1), Quinta(4), Sexta(5)
-   Entrega:  Terça(2) → Segunda | Sábado(6) → Quinta+Sexta
+/* â”€â”€ DATAS DE ENTREGA â”€â”€
+   ProduÃ§Ã£o: Segunda(1), Quinta(4), Sexta(5)
+   Entrega:  TerÃ§a(2) â†’ Segunda | SÃ¡bado(6) â†’ Quinta+Sexta
    Regras: sem entrega no mesmo dia, sem datas passadas           */
-const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DIAS_NOME_LONG=['Domingo','Segunda','TerÃ§a','Quarta','Quinta','Sexta','SÃ¡bado'];
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
 function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
@@ -99,16 +99,16 @@ function localMonthStartISO(){
   return d.toISOString();
 }
 function formatFormaPagamentoRelatorio(pedido){
-  const raw=String(pedido?.pagamento||'Não informado').trim();
+  const raw=String(pedido?.pagamento||'NÃ£o informado').trim();
   const key=statusKeyPedido(raw);
   if(key.includes('pix'))return'Pix';
-  if(key.includes('cartao')||key.includes('cartao de credito')||key.includes('cartao de debito'))return'Cartão';
+  if(key.includes('cartao')||key.includes('cartao de credito')||key.includes('cartao de debito'))return'CartÃ£o';
   if(key.includes('dinheiro')){
     const trocoMatch=raw.match(/\(([^)]*troco[^)]*)\)/i);
     const troco=trocoMatch?trocoMatch[1].trim():'';
     return troco?'Dinheiro ('+troco+')':'Dinheiro';
   }
-  return raw||'Não informado';
+  return raw||'NÃ£o informado';
 }
 function pedidoNoGrupoStatus(p,grupo){
   const st=statusKeyPedido(p?.status);
@@ -140,7 +140,7 @@ async function carregarPedidoStatusItens(id){
     .select('id,status,itens_pedido(produto_id,quantidade)')
     .eq('id',id)
     .single();
-  if(error)throw new Error('Não foi possível carregar o pedido antes de cancelar.');
+  if(error)throw new Error('NÃ£o foi possÃ­vel carregar o pedido antes de cancelar.');
   return data;
 }
 
@@ -204,7 +204,7 @@ async function registrarPushAdmin(){
 
     if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
       log('Push nao suportado neste dispositivo/navegador');
-      setMsg('Este dispositivo/navegador não suporta push.','err');
+      setMsg('Este dispositivo/navegador nÃ£o suporta push.','err');
       return;
     }
 
@@ -216,35 +216,35 @@ async function registrarPushAdmin(){
     );
     if(!reg.active){
       log('Service worker instalado, mas ainda nao ativo',reg);
-      setMsg('Service worker instalado. Feche e abra o app novamente e clique em Ativar notificações.','err');
+      setMsg('Service worker instalado. Feche e abra o app novamente e clique em Ativar notificaÃ§Ãµes.','err');
       return;
     }
     if(!reg.pushManager){
       log('PushManager indisponivel no service worker');
-      setMsg('Este dispositivo/navegador não suporta push.','err');
+      setMsg('Este dispositivo/navegador nÃ£o suporta push.','err');
       return;
     }
 
-    log('Buscando chave pública...');
-    setMsg('Buscando chave pública...');
-    const keyRes=await withTimeout(fetch('/api/push-public-key'),'Busca da chave pública');
+    log('Buscando chave pÃºblica...');
+    setMsg('Buscando chave pÃºblica...');
+    const keyRes=await withTimeout(fetch('/api/push-public-key'),'Busca da chave pÃºblica');
     if(!keyRes.ok)throw new Error('Falha ao buscar chave publica');
-    const {publicKey}=await withTimeout(keyRes.json(),'Leitura da chave pública');
+    const {publicKey}=await withTimeout(keyRes.json(),'Leitura da chave pÃºblica');
     if(!publicKey)throw new Error('Chave publica ausente');
 
-    log('Solicitando permissão...');
-    setMsg('Solicitando permissão...');
+    log('Solicitando permissÃ£o...');
+    setMsg('Solicitando permissÃ£o...');
     let permission=Notification.permission;
-    if(permission==='default')permission=await withTimeout(Notification.requestPermission(),'Permissão de notificação');
+    if(permission==='default')permission=await withTimeout(Notification.requestPermission(),'PermissÃ£o de notificaÃ§Ã£o');
     if(permission!=='granted'){
       log('Permissao negada',permission);
-      setMsg('Permissão de notificação negada.','err');
+      setMsg('PermissÃ£o de notificaÃ§Ã£o negada.','err');
       return;
     }
 
-    log('Criando inscrição push...');
-    setMsg('Criando inscrição push...');
-    let sub=await withTimeout(reg.pushManager.getSubscription(),'Busca da inscrição push');
+    log('Criando inscriÃ§Ã£o push...');
+    setMsg('Criando inscriÃ§Ã£o push...');
+    let sub=await withTimeout(reg.pushManager.getSubscription(),'Busca da inscriÃ§Ã£o push');
     if(!sub){
       log('Criando nova subscription');
       sub=await withTimeout(
@@ -252,12 +252,12 @@ async function registrarPushAdmin(){
           userVisibleOnly:true,
           applicationServerKey:urlBase64ToUint8Array(publicKey)
         }),
-        'Criação da inscrição push'
+        'CriaÃ§Ã£o da inscriÃ§Ã£o push'
       );
     }
 
-    log('Salvando inscrição...');
-    setMsg('Salvando inscrição...');
+    log('Salvando inscriÃ§Ã£o...');
+    setMsg('Salvando inscriÃ§Ã£o...');
     const {data:{session}}=await withTimeout(sb.auth.getSession(),'Leitura da sessao admin');
     const accessToken=session?.access_token;
     if(!accessToken){
@@ -273,7 +273,7 @@ async function registrarPushAdmin(){
         },
         body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
       }),
-      'Salvamento da inscrição push'
+      'Salvamento da inscriÃ§Ã£o push'
     );
     if(!saveRes.ok){
       log('Erro ao salvar subscription',saveRes.status);
@@ -281,16 +281,16 @@ async function registrarPushAdmin(){
         setMsg('Voc\u00ea precisa estar logado como administrador para ativar as notifica\u00e7\u00f5es.','err');
         return;
       }
-      setMsg('Erro ao salvar inscrição push.','err');
+      setMsg('Erro ao salvar inscriÃ§Ã£o push.','err');
       return;
     }
     log('Subscription salva com sucesso');
-    setMsg('Notificações ativadas neste dispositivo.','ok');
+    setMsg('NotificaÃ§Ãµes ativadas neste dispositivo.','ok');
   }catch(err){
     console.warn('[PUSH ADMIN] Erro ao registrar push:',err);
-    setMsg('Erro ao salvar inscrição push: '+(err?.message||'falha desconhecida')+'.','err');
+    setMsg('Erro ao salvar inscriÃ§Ã£o push: '+(err?.message||'falha desconhecida')+'.','err');
   }finally{
-    if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="bell"></i> Ativar notificações';refreshIcons();}
+    if(btn){btn.disabled=false;btn.innerHTML='<i data-lucide="bell"></i> Ativar notificaÃ§Ãµes';refreshIcons();}
   }
 }
 
@@ -304,7 +304,7 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Geocodificar endereço via Nominatim (OpenStreetMap) — gratuito, sem API key
+// Geocodificar endereÃ§o via Nominatim (OpenStreetMap) â€” gratuito, sem API key
 async function distanciaRota(lat1,lng1,lat2,lng2){
   return haversine(lat1,lng1,lat2,lng2) * 1.35;
 }
@@ -316,7 +316,7 @@ async function geocodificar(endereco){
     const r=await fetch(url,{headers:{'Accept-Language':'pt-BR','User-Agent':'HortifrutiApp/1.0'}});
     const d=await r.json();
     if(!d.length)return null;
-    // Prefere resultado com maior importância
+    // Prefere resultado com maior importÃ¢ncia
     d.sort((a,b)=>(b.importance||0)-(a.importance||0));
     return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
   }catch(e){return null}
@@ -325,12 +325,12 @@ async function geocodificar(endereco){
 async function geocodificarCEP(cep){
   const cepLimpo = cep.replace(/\D/g,'');
   try{
-    // 1. ViaCEP para dados do endereço (nome da rua, bairro, cidade)
+    // 1. ViaCEP para dados do endereÃ§o (nome da rua, bairro, cidade)
     const rv = await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
     const dv = await rv.json();
     if(dv.erro) return null;
 
-    // 2. BrasilAPI v2 — retorna centroide do polígono do CEP (mais preciso)
+    // 2. BrasilAPI v2 â€” retorna centroide do polÃ­gono do CEP (mais preciso)
     try{
       const rb = await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
       if(rb.ok){
@@ -353,7 +353,7 @@ async function geocodificarCEP(cep){
       }
     }catch(e3){}
 
-    // 4. Nominatim fallback por bairro + cidade (NÃO por rua — evita resultados errados)
+    // 4. Nominatim fallback por bairro + cidade (NÃƒO por rua â€” evita resultados errados)
     try{
       const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
       const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
@@ -371,7 +371,7 @@ async function geocodificarCEP(cep){
 }
 
 
-// Calcular zona do cliente baseado na distância
+// Calcular zona do cliente baseado na distÃ¢ncia
 function calcularZona(distKm){
   if(!zonas.length)return null;
   const ativos=zonas.filter(z=>z.ativo);
@@ -384,16 +384,16 @@ async function carregarZonas(){
   zonas=data||[];
 }
 
-// Geocodificação e zonas de entrega para configuração administrativa
+// GeocodificaÃ§Ã£o e zonas de entrega para configuraÃ§Ã£o administrativa
 
 async function salvarConfigLoja(){
   const end=document.getElementById('dash-loja-end').value.trim();
   const raio=parseFloat(document.getElementById('dash-raio').value)||5;
   const msg=document.getElementById('dash-loja-msg');
-  if(!end){toast('Informe o endereço da loja.','err');return}
-  msg.style.color='var(--text2)';msg.textContent='Geocodificando endereço...';
+  if(!end){toast('Informe o endereÃ§o da loja.','err');return}
+  msg.style.color='var(--text2)';msg.textContent='Geocodificando endereÃ§o...';
   const coords=await geocodificar(end);
-  if(!coords){msg.style.color='var(--red)';msg.textContent='Endereço não encontrado. Tente ser mais específico.';return}
+  if(!coords){msg.style.color='var(--red)';msg.textContent='EndereÃ§o nÃ£o encontrado. Tente ser mais especÃ­fico.';return}
   LOJA_LAT=coords.lat;LOJA_LNG=coords.lng;RAIO_MAX=raio;
   // Salvar no banco
   await Promise.all([
@@ -403,8 +403,8 @@ async function salvarConfigLoja(){
     sb.from('configuracoes').upsert({chave:'raio_max',valor:String(raio)},{onConflict:'chave'}),
   ]);
   msg.style.color='var(--green-bright)';
-  msg.textContent='Loja localizada! Lat: '+coords.lat.toFixed(4)+', Lng: '+coords.lng.toFixed(4)+' · Raio: '+raio+'km';
-  toast('Endereço da loja salvo!','ok');
+  msg.textContent='Loja localizada! Lat: '+coords.lat.toFixed(4)+', Lng: '+coords.lng.toFixed(4)+' Â· Raio: '+raio+'km';
+  toast('EndereÃ§o da loja salvo!','ok');
 }
 
 // Carregar config da loja
@@ -424,11 +424,11 @@ async function renderZonas(){
   el.innerHTML=zonas.map(z=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">'
     +'<div style="flex:1">'
     +'<div style="font-size:12px;font-weight:700">'+z.nome+'</div>'
-    +'<div style="font-size:11px;color:var(--text2)">'+z.km_min+' – '+z.km_max+' km · R$ '+fp(z.taxa)+'</div>'
+    +'<div style="font-size:11px;color:var(--text2)">'+z.km_min+' â€“ '+z.km_max+' km Â· R$ '+fp(z.taxa)+'</div>'
     +'</div>'
     +'<span class="badge '+(z.ativo?'bg-green':'bg-gray')+'">'+(z.ativo?'Ativa':'Off')+'</span>'
     +'<input type="number" step="0.5" value="'+z.taxa+'" style="width:70px;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" onchange="editarZonaTaxa('+z.id+',this.value)">'
-    +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">×</button>'
+    +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">Ã—</button>'
     +'</div>').join('');
 }
 
@@ -436,31 +436,31 @@ async function renderZonas(){
 async function testarCEP(){
   const cep=document.getElementById('test-cep').value.replace(/\D/g,'');
   const res=document.getElementById('test-cep-result');
-  if(cep.length!==8){res.style.display='block';res.textContent='CEP inválido.';return}
+  if(cep.length!==8){res.style.display='block';res.textContent='CEP invÃ¡lido.';return}
   res.style.display='block';res.textContent='Calculando...';
 
   const result=await geocodificarCEP(cep);
-  if(!result||!result.viacep){res.textContent='CEP não encontrado ou erro de geocoding.';return}
+  if(!result||!result.viacep){res.textContent='CEP nÃ£o encontrado ou erro de geocoding.';return}
 
   const dv=result.viacep;
   const dist=LOJA_LAT?await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng):null;
   const zona=dist?calcularZona(dist):null;
 
   let html='<div style="line-height:1.8">';
-  html+='<div>📍 <strong>'+(dv.logradouro||dv.bairro)+', '+dv.bairro+'</strong></div>';
-  html+='<div>🏙️ '+dv.localidade+' / '+dv.uf+'</div>';
-  html+='<div>🌐 Lat: '+result.lat.toFixed(5)+' · Lng: '+result.lng.toFixed(5)+'</div>';
+  html+='<div>ðŸ“ <strong>'+(dv.logradouro||dv.bairro)+', '+dv.bairro+'</strong></div>';
+  html+='<div>ðŸ™ï¸ '+dv.localidade+' / '+dv.uf+'</div>';
+  html+='<div>ðŸŒ Lat: '+result.lat.toFixed(5)+' Â· Lng: '+result.lng.toFixed(5)+'</div>';
   if(dist!==null){
-    html+='<div>📏 Distância da loja: <strong>'+dist.toFixed(2)+'km</strong></div>';
+    html+='<div>ðŸ“ DistÃ¢ncia da loja: <strong>'+dist.toFixed(2)+'km</strong></div>';
     if(dist>RAIO_MAX){
-      html+='<div style="color:var(--red)">🚫 FORA DO RAIO (máx '+RAIO_MAX+'km)</div>';
+      html+='<div style="color:var(--red)">ðŸš« FORA DO RAIO (mÃ¡x '+RAIO_MAX+'km)</div>';
     }else if(zona){
-      html+='<div style="color:var(--green-bright)">✅ '+zona.nome+' — Taxa: <strong>R$ '+fp(zona.taxa)+'</strong></div>';
+      html+='<div style="color:var(--green-bright)">âœ… '+zona.nome+' â€” Taxa: <strong>R$ '+fp(zona.taxa)+'</strong></div>';
     }else{
-      html+='<div style="color:var(--orange)">⚠️ Dentro do raio mas sem zona configurada para '+dist.toFixed(2)+'km</div>';
+      html+='<div style="color:var(--orange)">âš ï¸ Dentro do raio mas sem zona configurada para '+dist.toFixed(2)+'km</div>';
     }
   }else{
-    html+='<div style="color:var(--orange)">⚠️ Endereço da loja não configurado. Configure acima primeiro.</div>';
+    html+='<div style="color:var(--orange)">âš ï¸ EndereÃ§o da loja nÃ£o configurado. Configure acima primeiro.</div>';
   }
   html+='</div>';
   res.innerHTML=html;
@@ -472,7 +472,7 @@ async function addZona(){
   const max=parseFloat(document.getElementById('z-max').value);
   const taxa=parseFloat(document.getElementById('z-taxa').value);
   if(!nome||isNaN(max)||isNaN(taxa)){toast('Preencha todos os campos.','err');return}
-  if(max<=min){toast('KM máximo deve ser maior que o mínimo.','err');return}
+  if(max<=min){toast('KM mÃ¡ximo deve ser maior que o mÃ­nimo.','err');return}
   const {data,error}=await sb.from('zonas_entrega').insert({nome,km_min:min,km_max:max,taxa,ativo:true}).select().single();
   if(error){toast('Erro: '+error.message,'err');return}
   zonas.push(data);
@@ -580,7 +580,7 @@ async function carregarDatasBloqueadasAdm(){
   }catch(e){
     datasBloqueadasAdm=[];
     if(count)count.textContent='';
-    if(list)list.innerHTML='<div class="empty">Não foi possível carregar as datas bloqueadas.</div>';
+    if(list)list.innerHTML='<div class="empty">NÃ£o foi possÃ­vel carregar as datas bloqueadas.</div>';
     toast('Erro ao carregar datas bloqueadas.','err');
   }
 }
@@ -613,7 +613,7 @@ async function salvarDataBloqueada(){
   const motivo=document.getElementById('db-motivo')?.value.trim()||null;
   const msg=document.getElementById('db-msg');
   if(!data){toast('Selecione uma data.','err');return}
-  if(!['entrega','retirada','ambos'].includes(tipo)){toast('Tipo de bloqueio inválido.','err');return}
+  if(!['entrega','retirada','ambos'].includes(tipo)){toast('Tipo de bloqueio invÃ¡lido.','err');return}
   if(msg){msg.style.color='var(--text2)';msg.textContent='Salvando...';}
   try{
     const payload={data,tipo,motivo,ativo:true,criado_por:perfil?.id||null};
@@ -632,7 +632,7 @@ async function salvarDataBloqueada(){
 
 async function desativarDataBloqueada(id){
   if(!id)return;
-  popConfirm('📅','Remover data bloqueada?','A data voltará a ficar disponível se as regras normais permitirem.','Remover','pbtn-danger',async()=>{
+  popConfirm('ðŸ“…','Remover data bloqueada?','A data voltarÃ¡ a ficar disponÃ­vel se as regras normais permitirem.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('datas_bloqueadas').update({ativo:false}).eq('id',id);
     if(error){toast('Erro ao remover data.','err');return}
     toast('Data liberada.','ok');
@@ -671,13 +671,13 @@ function renderAGrid(){
     return '<div class="prod-row">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:12px;font-weight:700">'+emoji(p)+' '+p.nome+'</div>'
-      +'<div style="font-size:10px;color:var(--text2)">'+(p.peso||'')+' · R$ '+fp(p.preco)+'</div>'
+      +'<div style="font-size:10px;color:var(--text2)">'+(p.peso||'')+' Â· R$ '+fp(p.preco)+'</div>'
       +'</div>'
       +'<button class="btn btn-o btn-sm" style="flex-shrink:0" onclick="abrirModal('+p.id+')">+ Add</button>'
       +'</div>';
   }).join('');
 }
-/* ── CALENDAR PICKER ── */
+/* â”€â”€ CALENDAR PICKER â”€â”€ */
 let calCtx=null; // 'co' | 'adm'
 let calAno,calMes;
 
@@ -691,7 +691,7 @@ function abrirCal(ctx){
     ?'<span class="cal-dot"></span> Todas as datas de entrega'
     :calCtx==='adm'
     ?'<span class="cal-dot"></span> Selecione qualquer data'
-    :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
+    :'<span class="cal-dot"></span> PrÃ³ximas 3 datas disponÃ­veis';
   const _calEl=document.getElementById('cal-ov');
   document.body.appendChild(_calEl);
   _calEl.removeAttribute('aria-hidden');
@@ -714,8 +714,8 @@ function navCal(d){
 }
 
 function renderCal(){
-  const MESES_LONG=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const MESES_LONG=['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'];
   document.getElementById('cal-month-label').textContent=MESES_LONG[calMes]+' '+calAno;
 
   const hoje=new Date();hoje.setHours(0,0,0,0);
@@ -732,7 +732,7 @@ function renderCal(){
     const iso=toISO(dt);
     const isHoje=dt.getTime()===hoje.getTime();
     const dow=dt.getDay();
-    // Admin novo pedido: qualquer data. Entregas: todas as terças e sextas.
+    // Admin novo pedido: qualquer data. Entregas: todas as terÃ§as e sextas.
     let isDisponivel;
     if(calCtx==='adm') isDisponivel=true;
     else if(calCtx==='entr') isDisponivel=(dow===2||dow===5);
@@ -783,7 +783,7 @@ function fecharSucesso(){
   _s.setAttribute('inert','');
 }
 
-/* ── POPUP & TOAST ── */
+/* â”€â”€ POPUP & TOAST â”€â”€ */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
@@ -796,7 +796,7 @@ function toast(msg,type='info',dur=3200){
 }
 function popup(icon,title,msg,btns){
   // btns: [{label, cls:'pbtn-ok'|'pbtn-cancel'|'pbtn-danger', cb}]
-  const iconMap={'❌':'circle-x','⚠️':'triangle-alert','🚫':'ban','🚚':'truck','📅':'calendar','💵':'banknote','🗑️':'trash-2','👤':'user','📋':'clipboard-list'};
+  const iconMap={'âŒ':'circle-x','âš ï¸':'triangle-alert','ðŸš«':'ban','ðŸšš':'truck','ðŸ“…':'calendar','ðŸ’µ':'banknote','ðŸ—‘ï¸':'trash-2','ðŸ‘¤':'user','ðŸ“‹':'clipboard-list'};
   document.getElementById('g-popup-icon').innerHTML=lucideIcon(iconMap[icon]||icon||'info');
   document.getElementById('g-popup-title').textContent=title;
   document.getElementById('g-popup-msg').textContent=msg;
@@ -842,7 +842,7 @@ function abrirModal(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   apSel=id;
   document.getElementById('a-modal-t').textContent=emoji(p)+' '+p.nome;
-  document.getElementById('a-modal-s').textContent=(p.peso?p.peso+' · ':'')+' R$ '+fp(p.preco);
+  document.getElementById('a-modal-s').textContent=(p.peso?p.peso+' Â· ':'')+' R$ '+fp(p.preco);
   document.getElementById('a-qty').value=1;
   document.getElementById('a-modal').classList.add('open');
   setTimeout(()=>document.getElementById('a-qty').select(),60);
@@ -886,7 +886,7 @@ function renderAOrder(){
       <div class="oi-q"><button class="qb" onclick="aChgQ(${i},-1)">-</button><span class="qn">${it.qty}</span><button class="qb" onclick="aChgQ(${i},1)">+</button></div>
       <div class="oi-p">R$ ${fp(p.preco)}</div>
       <div class="oi-v">R$ ${fp(sub)}</div>
-      <button class="db" onclick="aRm(${i})">✕</button>
+      <button class="db" onclick="aRm(${i})">âœ•</button>
     </div>`;
   }).join('');
   const sub=aCalcSub(),tot=aCalcTot();
@@ -974,7 +974,7 @@ async function gerarCodigo(dataPed){
   return yy+String(maxSeq+1).padStart(3,'0')+ddmm;
 }
 function aLimpar(){
-  if(ap.itens.length){popConfirm('🗑️','Limpar pedido?','Todos os itens serão removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
+  if(ap.itens.length){popConfirm('ðŸ—‘ï¸','Limpar pedido?','Todos os itens serÃ£o removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
   _aLimparExec();
 }
 function _aLimparExec(){
@@ -992,7 +992,7 @@ async function aSalvar(){
   if(!ap.itens.length){toast('Adicione ao menos um produto.','err');return}
   if(ap.entrega==='Entrega'){
     const endereco=document.getElementById('a-end').value.trim();
-    if(!endereco){toast('Informe o endereço de entrega.','err');return}
+    if(!endereco){toast('Informe o endereÃ§o de entrega.','err');return}
     const taxaManual=(document.getElementById('a-taxa-input')?.value||'').trim();
     if(taxaManual&&Number.isNaN(parseFloat(taxaManual.replace(',','.')))){toast('Confira a taxa de entrega.','err');return}
   }
@@ -1047,7 +1047,7 @@ function aObj(){
 function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
 function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}navigator.clipboard.writeText(bldTxt(o)).then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar.','err'))}
 
-/* ── ENTREGAS ── */
+/* â”€â”€ ENTREGAS â”€â”€ */
 async function renderEntregas(){
   const data=document.getElementById('e-data').value;
   const pedEl=document.getElementById('e-pedidos');
@@ -1075,7 +1075,7 @@ async function renderEntregas(){
           ${p.cliente_contato?`<div style="font-size:11px;color:var(--text2)">${h(p.cliente_contato)}</div>`:''}
           ${end?`<div style="font-size:11px;color:var(--text2)">${end}</div>`:''}
           <div style="font-size:11px;color:var(--text2);margin-top:3px">${its}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">Pgto: ${h(p.pagamento)}${p.observacoes?' · '+h(p.observacoes):''}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Pgto: ${h(p.pagamento)}${p.observacoes?' Â· '+h(p.observacoes):''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-weight:800;font-size:13px;color:var(--green-bright)">R$ ${fp(p.total)}</div>
@@ -1103,8 +1103,8 @@ async function renderEntregas(){
     const n=it.peso?parseFloat(it.peso.replace(/[^0-9.]/g,'')):null;
     const u=it.peso?it.peso.replace(/[0-9. ]/g,'').toLowerCase():'';
     let kg='';
-    if(n&&u==='g')kg=` · ${(n*it.qty/1000).toFixed(2)}kg`;
-    else if(n&&u==='kg')kg=` · ${(n*it.qty).toFixed(2)}kg`;
+    if(n&&u==='g')kg=` Â· ${(n*it.qty/1000).toFixed(2)}kg`;
+    else if(n&&u==='kg')kg=` Â· ${(n*it.qty).toFixed(2)}kg`;
     return`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
       <div style="font-weight:700;font-size:12px">${it.nome}</div>
       <div style="font-weight:700;color:var(--green-bright);font-size:12px">${it.qty} un${kg}</div>
@@ -1121,7 +1121,7 @@ async function alterarStatusE(id,status){
   }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return;}
-  // WhatsApp automático
+  // WhatsApp automÃ¡tico
   const p=(window._entCache||[]).find(x=>x.id===id);
   if(p&&(WPP_STATUS_MSGS[status]||(isRetiradaPedido(p)&&isStatusProntoRetirada(status)))){
     p.status=status;
@@ -1138,7 +1138,7 @@ function imprimirPedidosLista(lista,emptyMsg){
       const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
     const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
     const _comp=p.cliente_complemento||'';
-    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
+    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX â€” AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
     const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
@@ -1173,10 +1173,10 @@ function imprimirPedidosLista(lista,emptyMsg){
     <hr class="sep">
     <div class="info-block">
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
-      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'â€”')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${h(_end)}</span></div>`:''}
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} Â· ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÃ‡O: </span><span class="val">${h(_end)}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
@@ -1188,7 +1188,7 @@ function imprimirPedidosLista(lista,emptyMsg){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${h(p.observacoes||'')}</span></div>
+    <div class="obs"><span class="lbl">OBSERVAÃ‡ÃƒO: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
@@ -1256,7 +1256,7 @@ function imprimirEntregas(){
   </style></head><body>
   <div class="header">
     <div class="title">CONSOLIDADO</div>
-    <div class="sub">${label} · ${pedidos.length} pedido(s)</div>
+    <div class="sub">${label} Â· ${pedidos.length} pedido(s)</div>
   </div>
   ${consLines}
   <div class="footer"><span>TOTAL GERAL</span><span>${total} un</span></div>
@@ -1298,9 +1298,9 @@ async function renderRel(){
   const totG=concluidos.reduce((s,p)=>s+(Number(p.total)||0),0);
   const totT=entregas.reduce((s,p)=>s+(Number(p.taxa_entrega)||0),0);
   document.getElementById('r-stats').innerHTML=
-    '<div class="scard"><div class="scard-l">Pedidos concluídos</div><div class="scard-v">'+concluidos.length+'</div></div>'
-    +'<div class="scard"><div class="scard-l">Faturamento concluído</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
-    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(concluidos.length?fp(totG/concluidos.length):'0,00')+'</div></div>'
+    '<div class="scard"><div class="scard-l">Pedidos concluÃ­dos</div><div class="scard-v">'+concluidos.length+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Faturamento concluÃ­do</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
+    +'<div class="scard"><div class="scard-l">Ticket mÃ©dio</div><div class="scard-v">R$ '+(concluidos.length?fp(totG/concluidos.length):'0,00')+'</div></div>'
     +'<div class="scard"><div class="scard-l">Taxas de entrega</div><div class="scard-v">R$ '+fp(totT)+'</div></div>'
     +'<div class="scard"><div class="scard-l">Total em entregas</div><div class="scard-v">'+entregas.length+'</div></div>'
     +'<div class="scard"><div class="scard-l">Total em retiradas</div><div class="scard-v">'+retiradas.length+'</div></div>';
@@ -1313,8 +1313,8 @@ async function renderRel(){
     payMap[key].total+=Number(p.total)||0;
   });
   document.getElementById('r-pay').innerHTML=Object.keys(payMap).length
-    ?Object.entries(payMap).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`<div class="srow"><span>${h(k)}</span><span>${v.qtd} · R$ ${fp(v.total)}</span></div>`).join('')
-    :'<div class="empty">Nenhum pagamento no período.</div>';
+    ?Object.entries(payMap).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`<div class="srow"><span>${h(k)}</span><span>${v.qtd} Â· R$ ${fp(v.total)}</span></div>`).join('')
+    :'<div class="empty">Nenhum pagamento no perÃ­odo.</div>';
 
   const prodMap={};
   concluidos.forEach(p=>(p.itens_pedido||[]).forEach(it=>{
@@ -1324,8 +1324,8 @@ async function renderRel(){
     prodMap[k].total+=Number(it.subtotal)||0;
   }));
   document.getElementById('r-prods').innerHTML=Object.keys(prodMap).length
-    ?Object.values(prodMap).sort((a,b)=>b.total-a.total).map(it=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${h(it.nome)}</span><span style="font-weight:700;white-space:nowrap">${it.qtd} un · R$ ${fp(it.total)}</span></div>`).join('')
-    :'<div class="empty">Nenhum produto vendido no período.</div>';
+    ?Object.values(prodMap).sort((a,b)=>b.total-a.total).map(it=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${h(it.nome)}</span><span style="font-weight:700;white-space:nowrap">${it.qtd} un Â· R$ ${fp(it.total)}</span></div>`).join('')
+    :'<div class="empty">Nenhum produto vendido no perÃ­odo.</div>';
 
   renderRPage();
   renderRPag();
@@ -1378,7 +1378,7 @@ function exportRel(){
   linhas.push('=== TOTAL GERAL: R$ '+fp(totG)+' ===');
   const txt=linhas.join('\n');
   navigator.clipboard.writeText(txt)
-    .then(()=>toast('Relatório copiado!','ok'))
+    .then(()=>toast('RelatÃ³rio copiado!','ok'))
     .catch(()=>{
       const w=window.open('','_blank','width=600,height=700');
       if(w){w.document.write('<html><body style="font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap">'+txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</body></html>');w.document.close();}
@@ -1390,11 +1390,11 @@ async function verPed(id){
   let p=caches.flat().find(x=>String(x.id)===String(id));
   if(!p?.itens_pedido){
     const {data,error}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('id',id).single();
-    if(error||!data){toast('Não foi possível abrir os detalhes do pedido.','err');return;}
+    if(error||!data){toast('NÃ£o foi possÃ­vel abrir os detalhes do pedido.','err');return;}
     p=data;
   }
   window._pedDetalheAtual=p;
-  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', nº ');
+  const end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', nÂº ');
   const subtotal=Number(p.subtotal)||(p.itens_pedido||[]).reduce((s,it)=>s+(Number(it.subtotal)||0),0);
   const its=(p.itens_pedido||[]).map(it=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${Number(it.quantidade)||0}x ${h(it.nome_produto)}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span style="font-weight:700;color:var(--green-bright)">R$ ${fp(Number(it.subtotal)||0)}</span></div>`).join('');
   const taxa=Number(p.taxa_entrega)>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--orange)"><span>Taxa de entrega</span><span style="font-weight:700">R$ ${fp(Number(p.taxa_entrega))}</span></div>`:'';
@@ -1407,9 +1407,9 @@ async function verPed(id){
     +`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px">${modalidadePedidoAdmin(p)}: ${fdLabel(p.data_pedido)}</div>`;
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;flex-direction:column;gap:3px">
-      <div class="ico-gap">${lucideIcon('user')} ${h(p.cliente_nome||'Cliente')} · ${h(p.cliente_contato||'Sem contato')}</div>
+      <div class="ico-gap">${lucideIcon('user')} ${h(p.cliente_nome||'Cliente')} Â· ${h(p.cliente_contato||'Sem contato')}</div>
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${h(formatFormaPagamentoRelatorio(p))} · ${modalidadePedidoAdmin(p)}</div>
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(formatFormaPagamentoRelatorio(p))} Â· ${modalidadePedidoAdmin(p)}</div>
       ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span>Subtotal</span><span style="font-weight:700">R$ ${fp(subtotal)}</span></div>${taxa}${cupom}${total}</div>`;
@@ -1430,7 +1430,7 @@ function imprimirPedido(id){
   const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
     const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
     const _comp=p.cliente_complemento||'';
-    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
+    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX â€” AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
     const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
@@ -1465,10 +1465,10 @@ function imprimirPedido(id){
     <hr class="sep">
     <div class="info-block">
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
-      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
+      <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'â€”')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${h(_end)}</span></div>`:''}
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} Â· ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÃ‡O: </span><span class="val">${h(_end)}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
@@ -1480,7 +1480,7 @@ function imprimirPedido(id){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVAÇÃO: </span><span class="val">${h(p.observacoes||'')}</span></div>
+    <div class="obs"><span class="lbl">OBSERVAÃ‡ÃƒO: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();}<\/script>
@@ -1494,71 +1494,71 @@ function imprimirPedido(id){
 }
 
 
-// ══════════════════════════════════════
-// WHATSAPP AUTOMÁTICO POR STATUS
-// ══════════════════════════════════════
-// Mensagens padrão (usadas se não houver customização)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// WHATSAPP AUTOMÃTICO POR STATUS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Mensagens padrÃ£o (usadas se nÃ£o houver customizaÃ§Ã£o)
 const WPP_STATUS_MSGS_DEFAULT = {
   'Em preparo': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 👋\n\n`+
-    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! 🌿\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸ‘‹\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* estÃ¡ sendo preparado com carinho! ðŸŒ¿\n`+
     `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
-    `Qualquer dúvida estamos aqui! 😊`,
+    `Qualquer dÃºvida estamos aqui! ðŸ˜Š`,
   'Saiu para entrega': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 🚚\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸšš\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
-    `Fique de olho, está a caminho! 🌱\n\n`+
-    `Qualquer dúvida estamos aqui! 😊`,
+    `Fique de olho, estÃ¡ a caminho! ðŸŒ±\n\n`+
+    `Qualquer dÃºvida estamos aqui! ðŸ˜Š`,
   'Entregue': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ✅\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! âœ…\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
-    `Obrigado pela preferência e até a próxima! 💚\n\n`+
-    `*Cortadinhos com Carinho* 🌿`,
+    `Obrigado pela preferÃªncia e atÃ© a prÃ³xima! ðŸ’š\n\n`+
+    `*Cortadinhos com Carinho* ðŸŒ¿`,
   'Cancelado': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 😔\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸ˜”\n\n`+
     `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
-    `Em caso de dúvidas, entre em contato conosco.\n\n`+
-    `*Cortadinhos com Carinho* 🌿`
+    `Em caso de dÃºvidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho* ðŸŒ¿`
 };
 
-// Mensagens customizadas salvas no banco (sobrescrevem as padrão)
+// Mensagens customizadas salvas no banco (sobrescrevem as padrÃ£o)
 let WPP_STATUS_CUSTOM = {};
 
 const WPP_STATUS_MSGS = {
   'Em preparo': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 👋\n\n`+
-    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! 🌿\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸ‘‹\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* estÃ¡ sendo preparado com carinho! ðŸŒ¿\n`+
     `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
-    `Qualquer dúvida estamos aqui! 😊`,
+    `Qualquer dÃºvida estamos aqui! ðŸ˜Š`,
 
   'Saiu para entrega': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 🚚\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸšš\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
-    `Fique de olho, está a caminho! 🌱\n\n`+
-    `Qualquer dúvida estamos aqui! 😊`,
+    `Fique de olho, estÃ¡ a caminho! ðŸŒ±\n\n`+
+    `Qualquer dÃºvida estamos aqui! ðŸ˜Š`,
 
   'Entregue': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ✅\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! âœ…\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
-    `Obrigado pela preferência e até a próxima! 💚\n\n`+
-    `*Cortadinhos com Carinho* 🌿`,
+    `Obrigado pela preferÃªncia e atÃ© a prÃ³xima! ðŸ’š\n\n`+
+    `*Cortadinhos com Carinho* ðŸŒ¿`,
 
   'Cancelado': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! 😔\n\n`+
+    `OlÃ¡, ${p.cliente_nome.split(' ')[0]}! ðŸ˜”\n\n`+
     `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
-    `Em caso de dúvidas, entre em contato conosco.\n\n`+
-    `*Cortadinhos com Carinho* 🌿`
+    `Em caso de dÃºvidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho* ðŸŒ¿`
 };
 
 function dispararWppStatus(pedido, status){
-  // Prioridade: mensagem customizada → mensagem padrão
+  // Prioridade: mensagem customizada â†’ mensagem padrÃ£o
   let msg;
   if(isRetiradaPedido(pedido)&&isStatusProntoRetirada(status)){
-    msg = `Seu pedido ${pedido.codigo||'#'+pedido.id} está pronto para retirada! 🌱\n`+
-      `Estaremos na barraca até 12h.\n`+
-      `Qualquer dúvida, estamos por aqui! 😊`;
+    msg = `Seu pedido ${pedido.codigo||'#'+pedido.id} estÃ¡ pronto para retirada! ðŸŒ±\n`+
+      `Estaremos na barraca atÃ© 12h.\n`+
+      `Qualquer dÃºvida, estamos por aqui! ðŸ˜Š`;
   }else if(WPP_STATUS_CUSTOM[status]){
-    // Substituir variáveis na mensagem customizada
+    // Substituir variÃ¡veis na mensagem customizada
     msg = WPP_STATUS_CUSTOM[status]
       .replace(/{nome}/g, pedido.cliente_nome.split(' ')[0])
       .replace(/{nomeCompleto}/g, pedido.cliente_nome)
@@ -1574,7 +1574,7 @@ function dispararWppStatus(pedido, status){
     toast('Sem telefone do cliente para enviar WhatsApp.','err',3000);
     return;
   }
-  // Adicionar DDI 55 se não tiver
+  // Adicionar DDI 55 se nÃ£o tiver
   const telFull = tel.startsWith('55') ?tel : '55'+tel;
   const url = 'https://wa.me/'+telFull+'?text='+encodeURIComponent(msg);
   window.open(url, '_blank');
@@ -1608,7 +1608,7 @@ function renderRPage(){
   document.getElementById('r-loading').classList.add('hidden');
   const table=document.getElementById('r-table');table.classList.remove('hidden');
   const tbody=document.getElementById('r-tbody');
-  if(!pagina.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido concluído</td></tr>';renderRPag();return}
+  if(!pagina.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido concluÃ­do</td></tr>';renderRPag();return}
   tbody.innerHTML=pagina.map(p=>{
     return '<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
@@ -1643,14 +1643,14 @@ async function salvarEstoque(){
   let novo;
   if(deltaRaw!==''){
     const d=parseInt(deltaRaw);
-    if(isNaN(d)){toast('Delta inválido.','err');return}
+    if(isNaN(d)){toast('Delta invÃ¡lido.','err');return}
     novo=(p.estoque!=null?p.estoque:0)+d;
     if(novo<0)novo=0;
   }else if(valRaw===''){
     novo=null; // ilimitado
   }else{
     novo=parseInt(valRaw);
-    if(isNaN(novo)||novo<0){toast('Valor inválido.','err');return}
+    if(isNaN(novo)||novo<0){toast('Valor invÃ¡lido.','err');return}
   }
   const {error}=await sb.from('produtos').update({estoque:novo}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return}
@@ -1675,7 +1675,7 @@ async function salvarEditProd(){
   const p=prods.find(x=>x.id===id);if(!p)return;
   const nome=document.getElementById('edit-p-nome').value.trim();
   const preco=parseFloat(document.getElementById('edit-p-preco').value);
-  if(!nome||isNaN(preco)){toast('Nome e preço são obrigatórios.','err');return}
+  if(!nome||isNaN(preco)){toast('Nome e preÃ§o sÃ£o obrigatÃ³rios.','err');return}
   const upd={
     nome,
     descricao:document.getElementById('edit-p-desc').value.trim(),
@@ -1709,7 +1709,7 @@ function renderEstoque(){
   if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto.</div>';return}
   el.innerHTML=lista.map(p=>{
     const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">∞ ilimitado</span>'
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">âˆž ilimitado</span>'
       :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
       :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
       :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
@@ -1718,8 +1718,8 @@ function renderEstoque(){
       :'';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'🔇 ')+(p.nome)+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'ðŸ”‡ ')+(p.nome)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' Â· ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
       +bar
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
@@ -1745,7 +1745,7 @@ function filtrarEstoque(){
   if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto encontrado.</div>';return;}
   el.innerHTML=lista.map(p=>{
     const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">∞ ilimitado</span>'
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">âˆž ilimitado</span>'
       :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
       :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
       :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
@@ -1754,8 +1754,8 @@ function filtrarEstoque(){
       :'';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'🔇 ')+(p.nome)+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'ðŸ”‡ ')+(p.nome)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' Â· ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
       +bar
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
@@ -1768,7 +1768,7 @@ function filtrarEstoque(){
 }
 
 async function rmProd(id){
-  popConfirm('🗑️','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
+  popConfirm('ðŸ—‘ï¸','Remover produto?','Esta aÃ§Ã£o nÃ£o pode ser desfeita.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('produtos').delete().eq('id',id);
     if(error){toast('Erro: '+error.message,'err');return}
     prods=prods.filter(p=>p.id!==id);
@@ -1830,12 +1830,12 @@ async function addCat(){
   if(!nome)return;
   const saveBtn=document.querySelector('#ap-categorias .btn-g');
   const origLabel=saveBtn?saveBtn.textContent:'';
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando…';}
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvandoâ€¦';}
   try{
     let imagem_url=null;
     const imgFile=document.getElementById('cat-img-file')?.files[0];
     if(imgFile){
-      if(imgFile.size>5*1024*1024){toast('Imagem muito grande. Máx 5 MB.','err');return}
+      if(imgFile.size>5*1024*1024){toast('Imagem muito grande. MÃ¡x 5 MB.','err');return}
       const ext=imgFile.name.split('.').pop().toLowerCase();
       const path='categorias/'+Date.now()+'.'+ext;
       const {error:upErr}=await sb.storage.from('imagens').upload(path,imgFile,{upsert:true});
@@ -1864,8 +1864,8 @@ async function rmCat(id){
   const {data:pVinc} = await sb.from('produtos').select('id').eq('cat_id',id).limit(1);
   const cat = cats.find(c=>c.id===id);
   if(pVinc && pVinc.length > 0){
-    popConfirm('⚠️','Categoria com produtos',
-      '"'+(cat?.nome||'Categoria')+'" tem produtos vinculados.\n\nRemovê-la irá desvincular todos os produtos desta categoria. Deseja continuar?',
+    popConfirm('âš ï¸','Categoria com produtos',
+      '"'+(cat?.nome||'Categoria')+'" tem produtos vinculados.\n\nRemovÃª-la irÃ¡ desvincular todos os produtos desta categoria. Deseja continuar?',
       'Sim, remover','pbtn-danger',async()=>{
         // Desvincular produtos primeiro (setar cat_id = null)
         await sb.from('produtos').update({cat_id:null}).eq('cat_id',id);
@@ -1878,7 +1878,7 @@ async function rmCat(id){
       });
     return;
   }
-  popConfirm('🗑️','Remover categoria?','"'+(cat?.nome||'Categoria')+'" será removida permanentemente.','Remover','pbtn-danger',async()=>{
+  popConfirm('ðŸ—‘ï¸','Remover categoria?','"'+(cat?.nome||'Categoria')+'" serÃ¡ removida permanentemente.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('categorias').delete().eq('id',id);
     if(error){toast('Erro: '+error.message,'err');return}
     cats=cats.filter(c=>c.id!==id);
@@ -1896,22 +1896,22 @@ function renderCatSel(){
 async function addProd(){
   const nome=document.getElementById('p-nome').value.trim();
   const preco=parseFloat(document.getElementById('p-preco').value);
-  if(!nome||isNaN(preco)){toast('Informe nome e preço.','err');return}
+  if(!nome||isNaN(preco)){toast('Informe nome e preÃ§o.','err');return}
   const estoqueVal=document.getElementById('p-estoque').value;
   const estoque=estoqueVal!==''?parseInt(estoqueVal):null;
 
   const saveBtn=document.querySelector('#ap-produtos .btn-g[onclick="addProd()"]');
   const origLabel=saveBtn?saveBtn.textContent:'';
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando…';}
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvandoâ€¦';}
 
   try{
     let imagem_url=null;
     const imgFile=document.getElementById('p-img-file')?.files[0];
     if(imgFile){
-      if(imgFile.size>5*1024*1024){toast('Imagem muito grande. Máx 5 MB.','err');return}
+      if(imgFile.size>5*1024*1024){toast('Imagem muito grande. MÃ¡x 5 MB.','err');return}
       const ext=imgFile.name.split('.').pop().toLowerCase();
       const path='produtos/'+Date.now()+'.'+ext;
-      toast('Enviando imagem…','ok');
+      toast('Enviando imagemâ€¦','ok');
       const {error:upErr}=await sb.storage.from('imagens').upload(path,imgFile,{upsert:true});
       if(upErr){
         console.error('Upload error:',upErr);
@@ -1990,7 +1990,7 @@ function renderProdList(){
       +'</div>'
       +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
       +'<button class="btn btn-o btn-sm" onclick="abrirEditProd('+p.id+')" title="Editar produto">&#9999;</button>'
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'∞')+'</button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'âˆž')+'</button>'
       +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
       +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
       +'</div>';
@@ -2061,7 +2061,7 @@ function renderUPagina(q){
   const total=Math.ceil(filtrado.length/U_PER);
   const pagina=filtrado.slice((uPage-1)*U_PER,uPage*U_PER);
   const el=document.getElementById('u-lista');
-  if(!pagina.length){el.innerHTML='<div class="empty">Nenhum usuário encontrado.</div>';document.getElementById('u-pag').innerHTML='';return}
+  if(!pagina.length){el.innerHTML='<div class="empty">Nenhum usuÃ¡rio encontrado.</div>';document.getElementById('u-pag').innerHTML='';return}
   el.innerHTML=pagina.map(u=>{
     const peds=u._peds||[];
     const pedRows=peds.length
@@ -2075,12 +2075,12 @@ function renderUPagina(q){
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div>
           <div style="font-weight:700;font-size:13px">${h(u.nome)}</div>
-          <div style="font-size:11px;color:var(--text2)">${u.telefone||'—'} · ${new Date(u.created_at).toLocaleDateString('pt-BR')}</div>
+          <div style="font-size:11px;color:var(--text2)">${u.telefone||'â€”'} Â· ${new Date(u.created_at).toLocaleDateString('pt-BR')}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span>
-          ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'→Cliente':'→Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Você</span>'}
-          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">▾ Pedidos (${peds.length})</button>
+          ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'â†’Cliente':'â†’Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">VocÃª</span>'}
+          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">â–¾ Pedidos (${peds.length})</button>
           <button class="btn btn-o btn-sm ico-gap" onclick="toggleUserInfo('u-dados-${u.id}')">${lucideIcon('user')} Info</button>
         </div>
       </div>
@@ -2090,21 +2090,21 @@ function renderUPagina(q){
       <div id="u-dados-${u.id}" style="display:none;margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
           <div><span style="color:var(--text3)">Nome: </span><strong>${h(u.nome)}</strong></div>
-          <div><span style="color:var(--text3)">Telefone: </span><strong>${u.telefone||'—'}</strong></div>
+          <div><span style="color:var(--text3)">Telefone: </span><strong>${u.telefone||'â€”'}</strong></div>
           <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
           <div><span style="color:var(--text3)">Perfil: </span><strong>${u.role==='admin'?'Admin':'Cliente'}</strong></div>
-          ${u.endereco?`<div style="grid-column:1/-1"><span style="color:var(--text3)">Endereço: </span><strong>${u.endereco}${u.endereco_num?', '+u.endereco_num:''} — ${u.bairro||''} — ${u.cidade||''}</strong></div>`:''}
+          ${u.endereco?`<div style="grid-column:1/-1"><span style="color:var(--text3)">EndereÃ§o: </span><strong>${u.endereco}${u.endereco_num?', '+u.endereco_num:''} â€” ${u.bairro||''} â€” ${u.cidade||''}</strong></div>`:''}
         </div>
       </div>
     </div>`;
   }).join('');
-  // Paginação
+  // PaginaÃ§Ã£o
   const pag=document.getElementById('u-pag');
   if(total<=1){pag.innerHTML='';return}
-  let html='<button class="pag-btn"'+(uPage===1?' disabled':'')+` onclick="uPage--;renderUPagina()">← Ant</button>`;
+  let html='<button class="pag-btn"'+(uPage===1?' disabled':'')+` onclick="uPage--;renderUPagina()">â† Ant</button>`;
   for(let i=1;i<=total;i++)html+=`<button class="pag-btn${i===uPage?' active':''}" onclick="uPage=${i};renderUPagina()">${i}</button>`;
-  html+=`<button class="pag-btn"${uPage===total?' disabled':''} onclick="uPage++;renderUPagina()">Prox →</button>`;
-  html+=`<span style="padding:4px 8px;font-size:11px;color:var(--text3)">${filtrado.length} usuário(s)</span>`;
+  html+=`<button class="pag-btn"${uPage===total?' disabled':''} onclick="uPage++;renderUPagina()">Prox â†’</button>`;
+  html+=`<span style="padding:4px 8px;font-size:11px;color:var(--text3)">${filtrado.length} usuÃ¡rio(s)</span>`;
   pag.innerHTML=html;
 }
 
@@ -2114,10 +2114,10 @@ function toggleUserInfo(id){
 }
 async function togRole(uid,cur){
   const nr=cur==='admin'?'cliente':'admin';
-  popConfirm('👤','Alterar função?','Alterar para "'+nr+'"?','Confirmar','pbtn-ok',async()=>{
+  popConfirm('ðŸ‘¤','Alterar funÃ§Ã£o?','Alterar para "'+nr+'"?','Confirmar','pbtn-ok',async()=>{
     await sb.from('profiles').update({role:nr}).eq('id',uid);
     renderUsers();
-    toast('Função alterada para '+nr+'.','ok');
+    toast('FunÃ§Ã£o alterada para '+nr+'.','ok');
   });
 }
 
@@ -2132,22 +2132,22 @@ function tErr(msg){
 document.getElementById('a-qty')?.addEventListener('keydown',e=>{if(e.key==='Enter')confQty()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('a-modal')?.classList.remove('open')});
 
-/* ── PRODUCT MODAL ── */
+/* â”€â”€ PRODUCT MODAL â”€â”€ */
 
 
 
 
-/* ── LOCAIS DE RETIRADA ── */
+/* â”€â”€ LOCAIS DE RETIRADA â”€â”€ */
 
 
-/* ── MOBILE CART BAR ── */
+/* â”€â”€ MOBILE CART BAR â”€â”€ */
 
 
-/* ── DASHBOARD ── */
+/* â”€â”€ DASHBOARD â”€â”€ */
 let cupons=[];
 
 
-// ── PAGE PEDIDOS ──
+// â”€â”€ PAGE PEDIDOS â”€â”€
 let rpPage=1, rpTotal=0, rpCache=[];
 
 function toggleRPFiltro(){
@@ -2180,12 +2180,12 @@ async function renderPedidos(){
   if(statsEl)statsEl.innerHTML=
     '<div class="scard"><div class="scard-l">Pedidos</div><div class="scard-v">'+statsAtivos.length+'</div></div>'
     +'<div class="scard"><div class="scard-l">Faturamento</div><div class="scard-v green">R$ '+fp(totG)+'</div></div>'
-    +'<div class="scard"><div class="scard-l">Ticket médio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
+    +'<div class="scard"><div class="scard-l">Ticket mÃ©dio</div><div class="scard-v">R$ '+(statsAtivos.length?fp(totG/statsAtivos.length):'0,00')+'</div></div>';
 
   const pedEl=document.getElementById('rp-peds');
   if(!pedEl)return;
   const listaHistorico=listaVisivel;
-  if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no período.</div>';renderRPPage();return}
+  if(!listaHistorico.length){pedEl.innerHTML='<div class="empty">Nenhum pedido no perÃ­odo.</div>';renderRPPage();return}
   pedEl.innerHTML=listaHistorico.map(p=>{
     const its=(p.itens_pedido||[]).map(it=>it.quantidade+'x '+it.nome_produto).join(' / ');
     const dtCompra=p.created_at?new Date(p.created_at):null;
@@ -2197,7 +2197,7 @@ async function renderPedidos(){
           <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
           ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`📝 ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`${modalidadePedidoAdmin(p)} · ${fdLabel(p.data_pedido)}`:''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`ðŸ“ ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`${modalidadePedidoAdmin(p)} Â· ${fdLabel(p.data_pedido)}`:''}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
       </div>
       <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
@@ -2238,23 +2238,23 @@ function renderRPPag(){
   const total=Math.ceil(rpTotal/PER);
   const el=document.getElementById('rp-pag');if(!el)return;
   if(total<=1){el.innerHTML='';return}
-  let html='<button class="pag-btn"'+(rpPage===1?' disabled':'')+' onclick="goRPPage('+(rpPage-1)+')">← Ant</button>';
+  let html='<button class="pag-btn"'+(rpPage===1?' disabled':'')+' onclick="goRPPage('+(rpPage-1)+')">â† Ant</button>';
   let start=Math.max(1,rpPage-3),end=Math.min(total,start+6);
   if(start>1)html+='<button class="pag-btn" onclick="goRPPage(1)">1</button><span style="padding:4px;color:var(--text3)">...</span>';
   for(let i=start;i<=end;i++)html+='<button class="pag-btn'+(i===rpPage?' active':'')+'" onclick="goRPPage('+i+')">'+i+'</button>';
   if(end<total)html+='<span style="padding:4px;color:var(--text3)">...</span><button class="pag-btn" onclick="goRPPage('+total+')">'+total+'</button>';
-  html+='<button class="pag-btn"'+(rpPage===total?' disabled':'')+' onclick="goRPPage('+(rpPage+1)+')">Prox →</button>';
+  html+='<button class="pag-btn"'+(rpPage===total?' disabled':'')+' onclick="goRPPage('+(rpPage+1)+')">Prox â†’</button>';
   html+='<span style="padding:4px 8px;font-size:11px;color:var(--text3)">'+rpTotal+' pedido(s)</span>';
   el.innerHTML=html;
 }
 function goRPPage(p){const t=Math.ceil(rpTotal/PER);rpPage=Math.max(1,Math.min(t,p));renderRPPage();renderRPPag();}
 
 
-// ── PAGE FINANCEIRO ──
+// â”€â”€ PAGE FINANCEIRO â”€â”€
 let _finChart=null, _finPie=null;
 
 async function initFinanceiro(){
-  // Datas padrão: mês atual
+  // Datas padrÃ£o: mÃªs atual
   const hoje=new Date();
   const de=hoje.toISOString().slice(0,7)+'-01';
   const ate=hoje.toISOString().split('T')[0];
@@ -2277,10 +2277,10 @@ async function renderFinanceiro(){
 
   document.getElementById('fin-total').textContent='R$ '+fp(total);
   document.getElementById('fin-ticket').textContent='R$ '+fp(ticket);
-  const label=de.split('-').reverse().slice(0,2).join('/')+'–'+ate.split('-').reverse().slice(0,2).join('/');
+  const label=de.split('-').reverse().slice(0,2).join('/')+'â€“'+ate.split('-').reverse().slice(0,2).join('/');
   if(document.getElementById('fin-chart-label'))document.getElementById('fin-chart-label').textContent=label;
 
-  // Gráfico de linha por dia
+  // GrÃ¡fico de linha por dia
   const diasMap={};
   ativos.forEach(p=>{if(!diasMap[p.data_pedido])diasMap[p.data_pedido]=0;diasMap[p.data_pedido]+=p.total;});
   const dias=Object.keys(diasMap).sort();
@@ -2310,13 +2310,13 @@ async function carregarGastos(){
   if(sel){
     sel.innerHTML=catsData.length
       ?catsData.map(c=>'<option value="'+c.id+'">'+h(c.nome)+'</option>').join('')
-      :'<option value="">— Crie uma categoria acima primeiro —</option>';
+      :'<option value="">â€” Crie uma categoria acima primeiro â€”</option>';
   }
   // Renderizar select customizado de categorias
   _renderCatDropdown(catsData);
 }
 
-// ── SELECT CUSTOMIZADO DE CATEGORIAS DE GASTO ──
+// â”€â”€ SELECT CUSTOMIZADO DE CATEGORIAS DE GASTO â”€â”€
 let _catDropdownOpen=false;
 
 function _renderCatDropdown(cats){
@@ -2333,7 +2333,7 @@ function _renderCatDropdown(cats){
     const div=document.createElement('div');
     div.className='fin-cat-opt'+(curVal===String(c.id)?' selected':'');
     div.innerHTML='<span class="fin-cat-opt-nome">'+h(c.nome)+'</span>'
-      +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">×</button>';
+      +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">Ã—</button>';
     div.querySelector('.fin-cat-opt-nome').onclick=()=>{
       if(hiddenInput)hiddenInput.value=c.id;
       const lbl=document.getElementById('fin-cat-label');
@@ -2369,8 +2369,8 @@ document.addEventListener('click',e=>{
 });
 
 async function rmCategGasto(id,nome){
-  popConfirm('🗑️','Remover categoria?',
-    '"'+nome+'" será removida. Os gastos vinculados ficam sem categoria.',
+  popConfirm('ðŸ—‘ï¸','Remover categoria?',
+    '"'+nome+'" serÃ¡ removida. Os gastos vinculados ficam sem categoria.',
     'Remover','pbtn-danger',async()=>{
       const {error}=await sb.from('categorias_gasto').delete().eq('id',id);
       if(error){toast('Erro: '+error.message,'err');return;}
@@ -2386,7 +2386,7 @@ async function addCategGasto(){
   const {error}=await sb.from('categorias_gasto').insert({nome});
   if(error){
     if(error.message.includes('duplicate')||error.message.includes('unique'))
-      toast('Categoria "'+nome+'" já existe.','err');
+      toast('Categoria "'+nome+'" jÃ¡ existe.','err');
     else
       toast('Erro: '+error.message,'err');
     return;
@@ -2402,8 +2402,8 @@ async function addGasto(){
   const desc=document.getElementById('fin-gasto-desc').value.trim();
   const val=parseFloat(document.getElementById('fin-gasto-val').value);
   const data=document.getElementById('fin-gasto-data').value;
-  if(!desc){toast('Informe a descrição do gasto.','err');return}
-  if(isNaN(val)||val<=0){toast('Informe um valor válido.','err');return}
+  if(!desc){toast('Informe a descriÃ§Ã£o do gasto.','err');return}
+  if(isNaN(val)||val<=0){toast('Informe um valor vÃ¡lido.','err');return}
   if(!data){toast('Informe a data do gasto.','err');return}
   const {error}=await sb.from('gastos').insert({descricao:desc,valor:val,data,categoria_id:cat||null});
   if(error){toast('Erro ao registrar: '+error.message,'err');return}
@@ -2423,7 +2423,7 @@ function renderGastos(lista){
     +'<div><div style="font-weight:600">'+g.descricao+'</div><div style="font-size:10px;color:var(--text3)">'+fd(g.data)+'</div></div>'
     +'<div style="display:flex;align-items:center;gap:8px">'
     +'<span style="font-weight:700;color:var(--red)">R$ '+fp(g.valor)+'</span>'
-    +'<button onclick="rmGasto('+g.id+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">×</button>'
+    +'<button onclick="rmGasto('+g.id+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">Ã—</button>'
     +'</div></div>').join('');
 }
 
@@ -2478,9 +2478,9 @@ function renderPieGastos(lista){
     +'<span style="font-weight:700">R$ '+fp(v)+'</span></div>').join('');
 }
 
-// ══════════════════════════════════════
-// DASHBOARD — métricas, gráfico, top produtos
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DASHBOARD â€” mÃ©tricas, grÃ¡fico, top produtos
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let _dashChart=null, _dashPie=null;
 
 async function loadDashMetrics(){
@@ -2489,7 +2489,7 @@ async function loadDashMetrics(){
   const ontemInicio=localDayStartISO(-1);
   const mesInicio=localMonthStartISO();
 
-  // Buscar pedidos de hoje e do mês
+  // Buscar pedidos de hoje e do mÃªs
   const [{data:pedHoje},{data:pedMes},{data:pedOntem}]=await Promise.all([
     sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',hojeInicio).lt('created_at',amanhaInicio),
     sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',mesInicio).lt('created_at',amanhaInicio),
@@ -2506,19 +2506,19 @@ async function loadDashMetrics(){
   const qtdMes=(pedMes||[]).filter(ativos).length;
   const ticket=qtdMes>0?totMes/qtdMes:0;
 
-  // Variação vs ontem
+  // VariaÃ§Ã£o vs ontem
   const varFat=totOntem>0?((totHoje-totOntem)/totOntem*100):0;
   const varSub=varFat>=0?`+${varFat.toFixed(0)}% vs ontem`:`${varFat.toFixed(0)}% vs ontem`;
   const varCls=varFat>=0?'up':'down';
 
   document.getElementById('dm-pedidos').textContent=qtdHoje;
-  document.getElementById('dm-pedidos-sub').textContent=`${qtdMes} no mês`;
+  document.getElementById('dm-pedidos-sub').textContent=`${qtdMes} no mÃªs`;
   document.getElementById('dm-fat').textContent='R$ '+fp(totHoje);
   document.getElementById('dm-fat-sub').innerHTML=`<span class="${varCls}">${varSub}</span>`;
   document.getElementById('dm-mes').textContent='R$ '+fp(totMes);
   document.getElementById('dm-mes-sub').textContent=`${qtdMes} pedidos`;
   document.getElementById('dm-ticket').textContent='R$ '+fp(ticket);
-  document.getElementById('dm-ticket-sub').textContent='média por pedido';
+  document.getElementById('dm-ticket-sub').textContent='mÃ©dia por pedido';
 }
 
 function getISODate(offset=0){
@@ -2528,7 +2528,7 @@ function getISODate(offset=0){
 }
 
 async function loadDashChart(){
-  // Últimos 7 dias
+  // Ãšltimos 7 dias
   const dias=[];
   for(let i=6;i>=0;i--)dias.push(getISODate(-i));
   const inicio=localDayStartISO(-6);
@@ -2609,7 +2609,7 @@ async function loadDashRecentes(){
 }
 
 async function loadDashTopProds(){
-  // Buscar pedidos não cancelados
+  // Buscar pedidos nÃ£o cancelados
   const {data:pedidos}=await sb.from('pedidos').select('id,status');
   const pedIds=(pedidos||[]).filter(p=>!isPedidoCancelado(p)).map(p=>p.id);
   if(!pedIds.length){document.getElementById('dm-top-prods').innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
@@ -2740,9 +2740,9 @@ async function initConfig(){
 
 async function initClientes(){
   await renderUsers();
-  // Limpar histórico ao entrar
+  // Limpar histÃ³rico ao entrar
   const el = document.getElementById('ped-cliente-lista');
-  if(el) el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>';
+  if(el) el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou cÃ³digo de pedido acima.</div>';
   const inp = document.getElementById('ped-busca-cliente');
   if(inp) inp.value='';
 }
@@ -2754,7 +2754,7 @@ async function buscarPedidosCliente(){
   const termo=(inp.value||'').trim();
   if(!termo){
     if(loading)loading.classList.add('hidden');
-    lista.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>';
+    lista.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou cÃ³digo de pedido acima.</div>';
     return;
   }
   if(loading)loading.classList.remove('hidden');
@@ -2825,12 +2825,12 @@ async function salvarRedes(){
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
   if(wpp)window._WHATSAPP_NUM_DB=wpp;
   if(ig)INSTAGRAM_URL=ig;
-  // Atualiza ícones imediatamente
+  // Atualiza Ã­cones imediatamente
   const wppBtn=document.querySelector('.dd-icon-btn.wpp');
   if(wppBtn&&wpp)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${wpp}','_blank')`);
   const igBtn=document.querySelector('.dd-icon-btn.ig');
   if(igBtn&&ig)igBtn.setAttribute('onclick',`fecharDropdown();window.open('${ig}','_blank')`);
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Redes sociais atualizadas!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Redes sociais atualizadas!';
   setTimeout(()=>msg.textContent='',3000);
 }
 async function salvarMsgWpp(){
@@ -2839,7 +2839,7 @@ async function salvarMsgWpp(){
   const {error}=await sb.from('configuracoes').upsert({chave:'wpp_msg_template',valor:template},{onConflict:'chave'});
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
   WPP_MSG_TEMPLATE=template;
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Mensagem salva!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Mensagem salva!';
   setTimeout(()=>msg.textContent='',3000);
 }
 async function salvarMsgsStatus(){
@@ -2855,13 +2855,13 @@ async function salvarMsgsStatus(){
   }));
   const {error}=await sb.from('configuracoes').upsert(upserts,{onConflict:'chave'});
   if(error){toast('Erro: '+error.message,'err');return;}
-  // Atualizar em memória
+  // Atualizar em memÃ³ria
   WPP_STATUS_CUSTOM['Em preparo']         = upserts[0].valor||'';
   WPP_STATUS_CUSTOM['Saiu para entrega']  = upserts[1].valor||'';
   WPP_STATUS_CUSTOM['Entregue']           = upserts[2].valor||'';
   WPP_STATUS_CUSTOM['Cancelado']          = upserts[3].valor||'';
   const msg=document.getElementById('wpp-status-msg');
-  msg.textContent='✓ Mensagens salvas!';
+  msg.textContent='âœ“ Mensagens salvas!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Mensagens de status salvas!','ok');
 }
@@ -2869,14 +2869,14 @@ async function salvarMsgsStatus(){
 
 async function salvarPedidoMin(){
   const val=parseFloat(document.getElementById('dash-pedmin').value)||0;
-  if(val<0){toast('Valor inválido.','err');return}
+  if(val<0){toast('Valor invÃ¡lido.','err');return}
   const {error}=await sb.from('configuracoes').upsert({chave:'pedido_minimo',valor:String(val)},{onConflict:'chave'});
   if(error){toast('Erro: '+error.message,'err');return}
   PEDIDO_MIN=val;
   const msg=document.getElementById('dash-pedmin-msg');
-  msg.textContent=val>0?'✓ Mínimo R$ '+fp(val)+' para entrega.':'✓ Sem pedido mínimo.';
+  msg.textContent=val>0?'âœ“ MÃ­nimo R$ '+fp(val)+' para entrega.':'âœ“ Sem pedido mÃ­nimo.';
   setTimeout(()=>msg.textContent='',3000);
-  toast('Pedido mínimo atualizado!','ok');
+  toast('Pedido mÃ­nimo atualizado!','ok');
 }
 
 async function carregarTaxaRemota(){
@@ -2891,7 +2891,7 @@ async function carregarTaxaRemota(){
       if(r.chave==='instagram_url')INSTAGRAM_URL=r.valor;
       if(r.chave==='wpp_msg_template')WPP_MSG_TEMPLATE=r.valor;
     });
-    // Atualiza ícones com links do banco
+    // Atualiza Ã­cones com links do banco
     const wppBtn=document.querySelector('.dd-icon-btn.wpp');
     if(wppBtn&&window._WHATSAPP_NUM_DB)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${window._WHATSAPP_NUM_DB}','_blank')`);
     const igBtn=document.querySelector('.dd-icon-btn.ig');
@@ -2907,19 +2907,42 @@ function renderCupons(){
   if(!cupons.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Nenhum cupom.</div>';return}
   el.innerHTML=cupons.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
     <div><div style="font-size:12px;font-weight:800;font-family:monospace">${h(c.nome)}</div>
-    <div style="font-size:11px;color:var(--text2)">${c.desconto}% · ${c.usos_restantes} uso(s)</div></div>
+    <div style="font-size:11px;color:var(--text2)">${h(labelCupomAdm(c))} · ${Number(c.usos_restantes)||0} uso(s)</div></div>
     <button class="btn btn-r btn-sm" onclick="rmCupom(${c.id})">x</button>
   </div>`).join('');
 }
+function tipoCupomAdm(c){return String(c?.tipo||'porcentagem').toLowerCase();}
+function labelCupomAdm(c){
+  const tipo=tipoCupomAdm(c);
+  const valor=Number(c.valor)||Number(c.desconto)||0;
+  const min=Number(c.valor_minimo)||0;
+  const base=tipo==='frete_gratis'?'Frete grátis':tipo==='valor'?'R$ '+fp(valor):valor+'%';
+  return base+(min>0?' · mínimo R$ '+fp(min):'');
+}
+function toggleCupomTipoAdm(){
+  const tipo=document.getElementById('dash-cup-tipo')?.value||'porcentagem';
+  const wrap=document.getElementById('dash-cup-valor-wrap');
+  const label=document.getElementById('dash-cup-valor-label');
+  const input=document.getElementById('dash-cup-pct');
+  if(wrap)wrap.style.display=tipo==='frete_gratis'?'none':'';
+  if(label)label.textContent=tipo==='valor'?'Desconto (R$)':'Desconto (%)';
+  if(input){input.max=tipo==='porcentagem'?'100':'';input.placeholder=tipo==='valor'?'10.00':'10';}
+}
 async function criarCupom(){
   const nome=document.getElementById('dash-cup-nome').value.trim().toUpperCase();
-  const pct=parseInt(document.getElementById('dash-cup-pct').value);
+  const tipo=document.getElementById('dash-cup-tipo')?.value||'porcentagem';
+  const valor=tipo==='frete_gratis'?0:parseFloat(document.getElementById('dash-cup-pct').value);
+  const valorMin=parseFloat(document.getElementById('dash-cup-min')?.value)||0;
   const qty=parseInt(document.getElementById('dash-cup-qty').value);
-  if(!nome||isNaN(pct)||isNaN(qty)||pct<1||pct>100||qty<1){toast('Preencha todos os campos.','err');return}
-  const {data,error}=await sb.from('cupons').insert({nome,desconto:pct,usos_restantes:qty,ativo:true}).select().single();
+  const ativo=document.getElementById('dash-cup-ativo')?.checked!==false;
+  if(!nome||isNaN(qty)||qty<1||(tipo!=='frete_gratis'&&(isNaN(valor)||valor<=0))||(tipo==='porcentagem'&&valor>100)){toast('Preencha todos os campos.','err');return}
+  const desconto=tipo==='porcentagem'?valor:0;
+  const {data,error}=await sb.from('cupons').insert({nome,tipo,valor,valor_minimo:valorMin,desconto,usos_restantes:qty,ativo}).select().single();
   if(error){toast('Erro: '+error.message,'err');return}
   cupons.unshift(data);
-  ['dash-cup-nome','dash-cup-pct','dash-cup-qty'].forEach(id=>document.getElementById(id).value='');
+  ['dash-cup-nome','dash-cup-pct','dash-cup-min','dash-cup-qty'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const ativoEl=document.getElementById('dash-cup-ativo');if(ativoEl)ativoEl.checked=true;
+  const tipoEl=document.getElementById('dash-cup-tipo');if(tipoEl)tipoEl.value='porcentagem';toggleCupomTipoAdm();
   renderCupons();toast('Cupom criado!','ok');
 }
 async function rmCupom(id){
@@ -2935,28 +2958,28 @@ async function togDestaque(id){
   if(error){toast('Erro: '+error.message,'err');return}
   p.destaque=novo;
   renderProdList();
-  toast(novo?'★ Em destaque!':'Removido do destaque','ok');
+  toast(novo?'â˜… Em destaque!':'Removido do destaque','ok');
 }
 
 
-// ── RASTREAR PEDIDO ──
+// â”€â”€ RASTREAR PEDIDO â”€â”€
 function abrirRastrearPedido(){
-  popInput('📦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
+  popInput('ðŸ“¦','Acompanhar Pedido','Digite o nÃºmero do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
     const codigo=val.trim().toUpperCase();
-    if(!codigo){toast('Digite o código do pedido.','err');return}
+    if(!codigo){toast('Digite o cÃ³digo do pedido.','err');return}
     const {data,error}=await sb.from('pedidos')
       .select('codigo,id,status,total,created_at,cliente_nome,entrega,data_pedido')
       .or('codigo.eq.'+codigo+',id.eq.'+(parseInt(codigo)||0))
       .single();
-    if(error||!data){toast('Pedido não encontrado. Verifique o código.','err');return}
+    if(error||!data){toast('Pedido nÃ£o encontrado. Verifique o cÃ³digo.','err');return}
     const statusEmoji={
-      'Pendente':'⏳','Em preparo':'👨‍🍳','Saiu para entrega':'🛵','Entregue':'✅','Cancelado':'❌'
+      'Pendente':'â³','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Entregue':'âœ…','Cancelado':'âŒ'
     };
     const st=data.status||'Pendente';
-    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'—';
+    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'â€”';
     popTrackAlert(
-      (statusEmoji[st]||'📦')+' Pedido '+data.codigo,
-      'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'—')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
+      (statusEmoji[st]||'ðŸ“¦')+' Pedido '+data.codigo,
+      'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'â€”')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
     );
   });
 }
@@ -2997,9 +3020,9 @@ async function loginGoogle(){
   if(error)toast('Erro ao conectar com Google.','err');
 }
 function abrirEsqueceuSenha(){
-  popInput('🔑','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
+  popInput('ðŸ”‘','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefiniÃ§Ã£o:','seu@email.com','Enviar link',async(val)=>{
     const email=val.trim().toLowerCase();
-    if(!email||!email.includes('@')){toast('Digite um e-mail válido.','err');return}
+    if(!email||!email.includes('@')){toast('Digite um e-mail vÃ¡lido.','err');return}
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/loja?reset=1'});
     if(error){toast('Erro ao enviar.','err');return}
     toast('Link enviado! Verifique sua caixa de entrada','ok');
@@ -3020,7 +3043,7 @@ function abrirNovaSenha(){
   ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px 22px 20px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
     <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)">Nova senha</div>
     <div id="reset-msg" style="margin-bottom:8px"></div>
-    <input id="reset-pass1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
+    <input id="reset-pass1" type="password" placeholder="Nova senha (mÃ­n. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
     <input id="reset-pass2" type="password" placeholder="Confirmar nova senha" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:14px;box-sizing:border-box">
     <button onclick="salvarNovaSenha()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">Salvar nova senha</button>
   </div>`;
@@ -3030,21 +3053,21 @@ async function salvarNovaSenha(){
   const p1=document.getElementById('reset-pass1').value;
   const p2=document.getElementById('reset-pass2').value;
   const msg=document.getElementById('reset-msg');
-  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">Mínimo 6 caracteres.</div>';return}
-  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas não coincidem.</div>';return}
+  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">MÃ­nimo 6 caracteres.</div>';return}
+  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas nÃ£o coincidem.</div>';return}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.innerHTML='<div style="color:var(--red);font-size:12px">Erro: '+error.message+'</div>';return}
   document.getElementById('reset-ov').remove();
   toast('Senha atualizada!','ok');
 }
 
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LANDING PAGE EDITOR
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let _lpDepoimentos = [];
 
 async function initLanding(){
-  const opt = '<option value="">— Nenhum —</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${h(p.nome)}</option>`).join('');
+  const opt = '<option value="">â€” Nenhum â€”</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${h(p.nome)}</option>`).join('');
   ['lp-prod1','lp-prod2','lp-prod3'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerHTML = opt;
@@ -3099,7 +3122,7 @@ async function salvarLandingHero(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_hero',valor:JSON.stringify(hero)},{onConflict:'chave'});
   const msg = document.getElementById('lp-hero-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Hero salvo!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Hero salvo!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Hero da landing page salvo!','ok');
 }
@@ -3112,9 +3135,9 @@ async function salvarLandingStats(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_stats',valor:JSON.stringify(stats)},{onConflict:'chave'});
   const msg = document.getElementById('lp-stats-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Stats salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Stats salvos!';
   setTimeout(()=>msg.textContent='',3000);
-  toast('Estatísticas salvas!','ok');
+  toast('EstatÃ­sticas salvas!','ok');
 }
 
 async function salvarLandingDestaques(){
@@ -3125,7 +3148,7 @@ async function salvarLandingDestaques(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_destaques',valor:JSON.stringify(ids)},{onConflict:'chave'});
   const msg = document.getElementById('lp-prods-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Destaques salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Destaques salvos!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Produtos em destaque salvos!','ok');
 }
@@ -3151,9 +3174,9 @@ function renderLpDepoimentos(){
   }
   el.innerHTML = _lpDepoimentos.map((d,i)=>`
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
-      <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">×</button>
+      <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">Ã—</button>
       <div style="font-size:12px;font-weight:700;margin-bottom:4px">${h(d.nome)}</div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:6px">${d.local||'—'}</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:6px">${d.local||'â€”'}</div>
       <div style="font-size:11px;color:var(--text2);line-height:1.5">"${d.texto.slice(0,80)}${d.texto.length>80?'...':''}"</div>
     </div>`).join('');
 }
@@ -3174,7 +3197,7 @@ async function carregarPendentes(){
     _pedidosPendentes = data || [];
   }catch(e){
     _pedidosPendentes = [];
-    if(list) list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Não foi possível carregar notificações</div>';
+    if(list) list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">NÃ£o foi possÃ­vel carregar notificaÃ§Ãµes</div>';
   }
   atualizarBadge();
   renderBellList();
@@ -3209,7 +3232,7 @@ function renderBellList(){
       <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700;color:var(--text)">${h(p.cliente_nome || 'Cliente')}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:1px">${h(p.codigo || '#'+p.id)} · ${data} às ${hora}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${h(p.codigo || '#'+p.id)} Â· ${data} Ã s ${hora}</div>
       </div>
       <div style="font-size:12px;font-weight:800;color:var(--green-bright);white-space:nowrap">R$ ${fp(Number(p.total)||0)}</div>
     </div>`;
@@ -3233,7 +3256,7 @@ async function marcarTodosLidos(){
   if(!_pedidosPendentes.length) return;
   const ids = _pedidosPendentes.map(p => p.id);
   const {error} = await sb.from('pedidos').update({status:'Em preparo'}).in('id', ids);
-  if(error){toast('Não foi possível atualizar os pedidos','err');return}
+  if(error){toast('NÃ£o foi possÃ­vel atualizar os pedidos','err');return}
   _pedidosPendentes = [];
   atualizarBadge();
   renderBellList();
@@ -3250,14 +3273,14 @@ async function salvarLandingDepoimentos(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_depoimentos',valor:JSON.stringify(_lpDepoimentos)},{onConflict:'chave'});
   const msg = document.getElementById('lp-dep-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='✓ Depoimentos salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='âœ“ Depoimentos salvos!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Depoimentos salvos!','ok');
 }
 
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PIX COPIA E COLA + QR CODE
-// ══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function iniciarAdmin(){
   perfil = window.perfil;
