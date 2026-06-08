@@ -814,7 +814,7 @@ function renderShop(){
         ?`<div class="prod-qty-ctrl">
             <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">-</button>
             <span class="cqn" style="min-width:20px;text-align:center;font-size:14px;font-weight:800">${qty}</span>
-            <button class="cqb-lg" ${maxAtingido?'disabled':''} onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
+            <button class="cqb-lg" aria-disabled="${maxAtingido?'true':'false'}" onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
           </div>`
         :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
     const imgEl=p.imagem_url
@@ -903,7 +903,7 @@ function renderCart(){
     const thumb=p.imagem_url?`<img src="${h(p.imagem_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`:lucideIcon('sprout');
     const max=estoqueProduto(p);
     const maxAtingido=max!=null&&it.qty>=max;
-    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${h(p.nome)}</div><div class="cart-item-price">${h(p.peso||'')} &middot; R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" ${maxAtingido?'disabled':''} onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
+    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${h(p.nome)}</div><div class="cart-item-price">${h(p.peso||'')} &middot; R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" aria-disabled="${maxAtingido?'true':'false'}" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
   }).join('');
   refreshIcons();
   updSums();
@@ -1753,9 +1753,8 @@ async function acompanharPedidoToken(token,limparUrl=false){
     const result=await resp.json();
     if(!resp.ok)throw new Error(result?.error||'Pedido não encontrado.');
     const data=result.pedido||{},st=data.status||'Pendente';
-    const statusEmoji={'Pendente':'⏳','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Pronto para retirar':'ðŸª','Retirado':'?','Entregue':'?','Cancelado':'?'};
-    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'?';
-    popTrackAlert((statusEmoji[st]||'ðŸ“¦')+' Pedido #'+(data.codigo||''),'Data: '+dt+'\nModalidade: '+(data.entrega||'?')+'\n\nStatus atual:\n'+st);
+    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'--';
+    popTrackAlert('Pedido #'+(data.codigo||''),'Data: '+dt+'\\nModalidade: '+(data.entrega||'--')+'\\n\\nStatus atual:\\n'+st);
   }catch(e){toast(e.message||'Não foi possível acompanhar o pedido.','err');}
   finally{
     if(limparUrl&&history.replaceState){

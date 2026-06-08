@@ -1692,6 +1692,23 @@ async function salvarEditProd(){
 }
 async function togAtivo(id){const p=prods.find(x=>x.id===id);if(!p)return;await sb.from('produtos').update({ativo:!p.ativo}).eq('id',id);p.ativo=!p.ativo;renderProdList();renderAGrid();}
 
+function stripMojibakeIconPrefix(name){
+  let text=String(name||'').trimStart();
+  const mojibakeLead=String.fromCharCode(0xf0);
+  if(text.startsWith(mojibakeLead)){
+    text=text.replace(new RegExp('^'+mojibakeLead+'\\S*\\s*'),'').trimStart();
+  }
+  while(text){
+    const cp=text.codePointAt(0);
+    const ch=String.fromCodePoint(cp);
+    if((cp>=0x1f000&&cp<=0x1faff)||'?????????'.includes(ch)){
+      text=text.slice(ch.length).trimStart();
+      continue;
+    }
+    break;
+  }
+  return text.trim();
+}
 function renderEstoque(){
   const el=document.getElementById('estoque-list');
   if(!el)return;
@@ -1709,7 +1726,7 @@ function renderEstoque(){
   if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto.</div>';return}
   el.innerHTML=lista.map(p=>{
     const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">âˆž ilimitado</span>'
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">&infin; ilimitado</span>'
       :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
       :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
       :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
@@ -1718,8 +1735,8 @@ function renderEstoque(){
       :'';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'ðŸ”‡ ')+(p.nome)+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h(stripMojibakeIconPrefix(p.nome))+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' &middot; ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
       +bar
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
@@ -1745,7 +1762,7 @@ function filtrarEstoque(){
   if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto encontrado.</div>';return;}
   el.innerHTML=lista.map(p=>{
     const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">âˆž ilimitado</span>'
+    const label=est==null?'<span style="font-size:11px;color:var(--text3)">&infin; ilimitado</span>'
       :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
       :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
       :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
@@ -1754,8 +1771,8 @@ function filtrarEstoque(){
       :'';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.ativo?'':'ðŸ”‡ ')+(p.nome)+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' · ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h(stripMojibakeIconPrefix(p.nome))+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' &middot; ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
       +bar
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
