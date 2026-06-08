@@ -258,16 +258,29 @@ async function registrarPushAdmin(){
 
     log('Salvando inscrição...');
     setMsg('Salvando inscrição...');
+    const {data:{session}}=await withTimeout(sb.auth.getSession(),'Leitura da sessao admin');
+    const accessToken=session?.access_token;
+    if(!accessToken){
+      setMsg('Voc\u00ea precisa estar logado como administrador para ativar as notifica\u00e7\u00f5es.','err');
+      return;
+    }
     const saveRes=await withTimeout(
       fetch('/api/push-subscribe',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+accessToken
+        },
         body:JSON.stringify({subscription:sub.toJSON(),user_id:perfil?.id||null})
       }),
       'Salvamento da inscrição push'
     );
     if(!saveRes.ok){
       log('Erro ao salvar subscription',saveRes.status);
+      if(saveRes.status===401||saveRes.status===403){
+        setMsg('Voc\u00ea precisa estar logado como administrador para ativar as notifica\u00e7\u00f5es.','err');
+        return;
+      }
       setMsg('Erro ao salvar inscrição push.','err');
       return;
     }
