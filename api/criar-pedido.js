@@ -59,6 +59,8 @@ function perfilCompleto(profile) {
 
 function friendlyRpcError(message) {
   const text = String(message || '');
+  const estoqueData = text.match(/Estoque disponivel para esta data:\s*(\d+)/i);
+  if (estoqueData) return `Estoque dispon\u00edvel para esta data: ${estoqueData[1]} unidade(s).`;
   const known = new Map([
     ['Cupom invalido ou nao encontrado', 'Cupom inv\u00e1lido ou n\u00e3o encontrado.'],
     ['Cupom esgotado', 'Este cupom est\u00e1 esgotado.'],

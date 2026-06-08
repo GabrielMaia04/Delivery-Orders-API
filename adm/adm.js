@@ -13,7 +13,7 @@ let RAIO_MAX=5; // Raio máximo de entrega em km
 let zonas=[];
 let datasBloqueadasAdm=[];
 let INSTAGRAM_URL='https://instagram.com';
-let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
+let WPP_MSG_TEMPLATE=''; // vazio = usa padrao do código
 const PER=15;
 
 
@@ -33,11 +33,11 @@ function fdLabel(iso){
   const dt=new Date(y,m-1,d);
   return DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
 }
-/* ?? DATAS DE ENTREGA ??
-   Produção: Segunda(1), Quinta(4), Sexta(5)
-   Entrega:  Terça(2) ? Segunda | Sábado(6) ? Quinta+Sexta
-   Regras: sem entrega no mesmo dia, sem datas passadas           */
-const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+// DATAS DE ENTREGA
+// Producao: Segunda(1), Quinta(4), Sexta(5)
+// Entrega: Terca(2) via Segunda | Sabado(6) via Quinta+Sexta
+// Regras: sem entrega no mesmo dia, sem datas passadas
+const DIAS_NOME_LONG=['Domingo','Segunda','Ter\u00e7a','Quarta','Quinta','Sexta','S\u00e1bado'];
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
 function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
@@ -145,35 +145,14 @@ async function carregarPedidoStatusItens(id){
 }
 
 async function restaurarEstoqueItensPedido(pedido){
-  const qtdPorProduto={};
-  (pedido?.itens_pedido||[]).forEach(it=>{
-    const produtoId=it.produto_id;
-    const qtd=Number(it.quantidade)||0;
-    if(!produtoId||qtd<=0)return;
-    qtdPorProduto[produtoId]=(qtdPorProduto[produtoId]||0)+qtd;
-  });
-  for(const [produtoId,qtd] of Object.entries(qtdPorProduto)){
-    const {data:rows,error}=await sb.from('produtos')
-      .select('id,estoque')
-      .eq('id',produtoId)
-      .limit(1);
-    if(error)throw new Error('Erro ao carregar estoque do produto.');
-    const prod=rows?.[0];
-    if(!prod||prod.estoque==null)continue;
-    const novo=(Number(prod.estoque)||0)+qtd;
-    const {error:updErr}=await sb.from('produtos').update({estoque:novo}).eq('id',produtoId);
-    if(updErr)throw new Error('Erro ao restaurar estoque do produto.');
-    const local=prods.find(p=>String(p.id)===String(produtoId));
-    if(local)local.estoque=novo;
-  }
+  // Deprecated: stock restoration now happens in the database trigger.
+  return false;
 }
 
 async function restaurarEstoqueSeCancelando(id,status){
-  if(!isStatusCancelado(status))return false;
-  const pedido=await carregarPedidoStatusItens(id);
-  if(isStatusCancelado(pedido.status))return false;
-  await restaurarEstoqueItensPedido(pedido);
-  return true;
+  // Stock restoration is handled by the database trigger on pedidos.status.
+  // Keep this no-op so existing status-update flows do not double-restore stock.
+  return false;
 }
 
 function urlBase64ToUint8Array(base64String){
@@ -304,7 +283,7 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Geocodificar endereço via Nominatim (OpenStreetMap) ? gratuito, sem API key
+// Geocodificar endereco via Nominatim - gratuito, sem API key
 async function distanciaRota(lat1,lng1,lat2,lng2){
   return haversine(lat1,lng1,lat2,lng2) * 1.35;
 }
@@ -316,7 +295,7 @@ async function geocodificar(endereco){
     const r=await fetch(url,{headers:{'Accept-Language':'pt-BR','User-Agent':'HortifrutiApp/1.0'}});
     const d=await r.json();
     if(!d.length)return null;
-    // Prefere resultado com maior importância
+    // Prefere resultado com maior importancia
     d.sort((a,b)=>(b.importance||0)-(a.importance||0));
     return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
   }catch(e){return null}
@@ -330,7 +309,7 @@ async function geocodificarCEP(cep){
     const dv = await rv.json();
     if(dv.erro) return null;
 
-    // 2. BrasilAPI v2 ? retorna centroide do polígono do CEP (mais preciso)
+    // 2. BrasilAPI v2 - retorna centroide do poligono do CEP (mais preciso)
     try{
       const rb = await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
       if(rb.ok){
@@ -353,7 +332,7 @@ async function geocodificarCEP(cep){
       }
     }catch(e3){}
 
-    // 4. Nominatim fallback por bairro + cidade (NN?O por rua ? evita resultados errados)
+    // 4. Nominatim fallback por bairro + cidade (NAO por rua - evita resultados errados)
     try{
       const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
       const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
@@ -371,7 +350,7 @@ async function geocodificarCEP(cep){
 }
 
 
-// Calcular zona do cliente baseado na distância
+// Calcular zona do cliente baseado na distancia
 function calcularZona(distKm){
   if(!zonas.length)return null;
   const ativos=zonas.filter(z=>z.ativo);
@@ -384,7 +363,7 @@ async function carregarZonas(){
   zonas=data||[];
 }
 
-// Geocodificação e zonas de entrega para configuração administrativa
+// Geocodificaçao e zonas de entrega para configuraçao administrativa
 
 async function salvarConfigLoja(){
   const end=document.getElementById('dash-loja-end').value.trim();
@@ -424,11 +403,11 @@ async function renderZonas(){
   el.innerHTML=zonas.map(z=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">'
     +'<div style="flex:1">'
     +'<div style="font-size:12px;font-weight:700">'+z.nome+'</div>'
-    +'<div style="font-size:11px;color:var(--text2)">'+z.km_min+' ? '+z.km_max+' km · R$ '+fp(z.taxa)+'</div>'
+    +'<div style="font-size:11px;color:var(--text2)">'+z.km_min+' - '+z.km_max+' km · R$ '+fp(z.taxa)+'</div>'
     +'</div>'
     +'<span class="badge '+(z.ativo?'bg-green':'bg-gray')+'">'+(z.ativo?'Ativa':'Off')+'</span>'
     +'<input type="number" step="0.5" value="'+z.taxa+'" style="width:70px;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--font)" onchange="editarZonaTaxa('+z.id+',this.value)">'
-    +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">?</button>'
+    +'<button class="btn btn-r btn-sm" onclick="rmZona('+z.id+')">Remover</button>'
     +'</div>').join('');
 }
 
@@ -447,20 +426,20 @@ async function testarCEP(){
   const zona=dist?calcularZona(dist):null;
 
   let html='<div style="line-height:1.8">';
-  html+='<div>ðŸ“ <strong>'+(dv.logradouro||dv.bairro)+', '+dv.bairro+'</strong></div>';
-  html+='<div>ðŸ™ï¸ '+dv.localidade+' / '+dv.uf+'</div>';
-  html+='<div>ðŸŒ Lat: '+result.lat.toFixed(5)+' · Lng: '+result.lng.toFixed(5)+'</div>';
+  html+='<div><strong>'+(dv.logradouro||dv.bairro)+', '+dv.bairro+'</strong></div>';
+  html+='<div>'+dv.localidade+' / '+dv.uf+'</div>';
+  html+='<div>Lat: '+result.lat.toFixed(5)+' - Lng: '+result.lng.toFixed(5)+'</div>';
   if(dist!==null){
-    html+='<div>ðŸ“ Distância da loja: <strong>'+dist.toFixed(2)+'km</strong></div>';
+    html+='<div>Dist\u00e2ncia da loja: <strong>'+dist.toFixed(2)+'km</strong></div>';
     if(dist>RAIO_MAX){
-      html+='<div style="color:var(--red)">ðŸš« FORA DO RAIO (máx '+RAIO_MAX+'km)</div>';
+      html+='<div style="color:var(--red)">FORA DO RAIO (m\u00e1x '+RAIO_MAX+'km)</div>';
     }else if(zona){
-      html+='<div style="color:var(--green-bright)">? '+zona.nome+' ? Taxa: <strong>R$ '+fp(zona.taxa)+'</strong></div>';
+      html+='<div style="color:var(--green-bright)">'+zona.nome+' - Taxa: <strong>R$ '+fp(zona.taxa)+'</strong></div>';
     }else{
-      html+='<div style="color:var(--orange)">âš ï¸ Dentro do raio mas sem zona configurada para '+dist.toFixed(2)+'km</div>';
+      html+='<div style="color:var(--orange)">Dentro do raio mas sem zona configurada para '+dist.toFixed(2)+'km</div>';
     }
   }else{
-    html+='<div style="color:var(--orange)">âš ï¸ Endereço da loja não configurado. Configure acima primeiro.</div>';
+    html+='<div style="color:var(--orange)">Endere\u00e7o da loja n\u00e3o configurado. Configure acima primeiro.</div>';
   }
   html+='</div>';
   res.innerHTML=html;
@@ -632,7 +611,7 @@ async function salvarDataBloqueada(){
 
 async function desativarDataBloqueada(id){
   if(!id)return;
-  popConfirm('ðŸ“…','Remover data bloqueada?','A data voltará a ficar disponível se as regras normais permitirem.','Remover','pbtn-danger',async()=>{
+  popConfirm('calendar','Remover data bloqueada?','A data voltara a ficar disponivel se as regras normais permitirem.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('datas_bloqueadas').update({ativo:false}).eq('id',id);
     if(error){toast('Erro ao remover data.','err');return}
     toast('Data liberada.','ok');
@@ -677,7 +656,7 @@ function renderAGrid(){
       +'</div>';
   }).join('');
 }
-/* ?? CALENDAR PICKER ?? */
+/* CALENDAR PICKER */
 let calCtx=null; // 'co' | 'adm'
 let calAno,calMes;
 
@@ -783,7 +762,7 @@ function fecharSucesso(){
   _s.setAttribute('inert','');
 }
 
-/* ?? POPUP & TOAST ?? */
+/* POPUP & TOAST */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
@@ -796,7 +775,7 @@ function toast(msg,type='info',dur=3200){
 }
 function popup(icon,title,msg,btns){
   // btns: [{label, cls:'pbtn-ok'|'pbtn-cancel'|'pbtn-danger', cb}]
-  const iconMap={'?':'circle-x','âš ï¸':'triangle-alert','ðŸš«':'ban','ðŸšš':'truck','ðŸ“…':'calendar','ðŸ’µ':'banknote','ðŸ—‘ï¸':'trash-2','ðŸ‘¤':'user','ðŸ“‹':'clipboard-list'};
+  const iconMap={'circle-x':'circle-x','triangle-alert':'triangle-alert','ban':'ban','truck':'truck','calendar':'calendar','banknote':'banknote','trash-2':'trash-2','user':'user','clipboard-list':'clipboard-list','package':'package'};
   document.getElementById('g-popup-icon').innerHTML=lucideIcon(iconMap[icon]||icon||'info');
   document.getElementById('g-popup-title').textContent=title;
   document.getElementById('g-popup-msg').textContent=msg;
@@ -886,7 +865,7 @@ function renderAOrder(){
       <div class="oi-q"><button class="qb" onclick="aChgQ(${i},-1)">-</button><span class="qn">${it.qty}</span><button class="qb" onclick="aChgQ(${i},1)">+</button></div>
       <div class="oi-p">R$ ${fp(p.preco)}</div>
       <div class="oi-v">R$ ${fp(sub)}</div>
-      <button class="db" onclick="aRm(${i})">?</button>
+      <button class="db" onclick="aRm(${i})">Remover</button>
     </div>`;
   }).join('');
   const sub=aCalcSub(),tot=aCalcTot();
@@ -974,7 +953,7 @@ async function gerarCodigo(dataPed){
   return yy+String(maxSeq+1).padStart(3,'0')+ddmm;
 }
 function aLimpar(){
-  if(ap.itens.length){popConfirm('ðŸ—‘ï¸','Limpar pedido?','Todos os itens serão removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
+  if(ap.itens.length){popConfirm('trash-2','Limpar pedido?','Todos os itens ser\u00e3o removidos.','Limpar','pbtn-danger',()=>_aLimparExec());return}
   _aLimparExec();
 }
 function _aLimparExec(){
@@ -986,13 +965,19 @@ function _aLimparExec(){
   if(adb){adb.textContent='Selecionar data de entrega';adb.classList.remove('selected');}
   setAE('Entrega');renderAOrder();
 }
+async function reservarEstoqueDataAdmin(produtoId,dataEntrega,quantidade){
+  // Deprecated: admin manual orders now reserve stock atomically in criar_pedido_admin_seguro().
+  return false;
+}
 async function aSalvar(){
   const nome=document.getElementById('a-nome').value.trim();
   if(!nome){toast('Informe o nome do cliente.','err');return}
   if(!ap.itens.length){toast('Adicione ao menos um produto.','err');return}
+  const dataPedCheck=document.getElementById('a-data').value;
+  if(!dataPedCheck){toast('Selecione a data do pedido.','err');return}
   if(ap.entrega==='Entrega'){
     const endereco=document.getElementById('a-end').value.trim();
-    if(!endereco){toast('Informe o endereço de entrega.','err');return}
+    if(!endereco){toast('Informe o endere\u00e7o de entrega.','err');return}
     const taxaManual=(document.getElementById('a-taxa-input')?.value||'').trim();
     if(taxaManual&&Number.isNaN(parseFloat(taxaManual.replace(',','.')))){toast('Confira a taxa de entrega.','err');return}
   }
@@ -1000,35 +985,21 @@ async function aSalvar(){
   btn.disabled=true;btn.innerHTML='<i data-lucide="loader-2"></i> Criando...';refreshIcons();
   try{
     const dataPed=document.getElementById('a-data').value;
-    const codigo=await gerarCodigo(dataPed);
-    const sub=aCalcSub(),total=aCalcTot(),taxa=aTaxaEntrega();
-    const insertData={
-      user_id:perfil.id,cliente_nome:nome,
+    const taxa=aTaxaEntrega();
+    const pedidoData={
+      cliente_nome:nome,
       cliente_contato:document.getElementById('a-tel').value,
       cliente_endereco:document.getElementById('a-end').value,
       cliente_numero:document.getElementById('a-num').value,
-      entrega:ap.entrega,taxa_entrega:taxa,
+      entrega:ap.entrega,
+      taxa_entrega:taxa,
       pagamento:document.getElementById('a-pag').value,
       observacoes:document.getElementById('a-obs').value,
-      subtotal:sub,total,data_pedido:dataPed
+      data_pedido:dataPed
     };
-    if(codigo)insertData.codigo=codigo;
-    const {data:ped,error}=await sb.from('pedidos').insert(insertData).select().single();
+    const itens=ap.itens.map(it=>({produto_id:it.prodId,quantidade:it.qty}));
+    const {error}=await sb.rpc('criar_pedido_admin_seguro',{p_pedido:pedidoData,p_itens:itens});
     if(error)throw error;
-    await sb.from('itens_pedido').insert(ap.itens.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);
-      return{pedido_id:ped.id,produto_id:p.id,nome_produto:p.nome,peso_produto:p.peso||'',preco_unitario:p.preco,quantidade:it.qty,subtotal:p.preco*it.qty};
-    }));
-    // Decrementar estoque
-    await Promise.all(ap.itens.map(it=>{
-      const p=prods.find(x=>x.id===it.prodId);
-      if(!p||p.estoque==null)return Promise.resolve();
-      const novo=Math.max(0,p.estoque-it.qty);
-      p.estoque=novo;
-      const upd8={estoque:novo};
-      if(novo<=0){upd8.ativo=false;p.ativo=false;}
-      return sb.from('produtos').update(upd8).eq('id',p.id);
-    }));
     toast('Pedido criado!','ok');_aLimparExec();
   }catch(e){toast('Erro: '+e.message,'err')}
   btn.disabled=false;btn.innerHTML='<i data-lucide="save"></i> Criar pedido';refreshIcons();
@@ -1047,7 +1018,7 @@ function aObj(){
 function aImprimir(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}const w=window.open('','_blank','width=400,height=600');w.document.write('<html><body style="font-family:monospace;font-size:12px;width:72mm;margin:0 auto;padding:8px"><pre style="white-space:pre-wrap">'+bldTxt(o)+'<\/pre><script>window.onload=()=>window.print()<\/script><\/body><\/html>');w.document.close()}
 function aCopiar(){const o=aObj();if(!o.cliente_nome||!ap.itens.length){toast('Complete o pedido primeiro.','err');return}navigator.clipboard.writeText(bldTxt(o)).then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar.','err'))}
 
-/* ?? ENTREGAS ?? */
+/* ENTREGAS */
 async function renderEntregas(){
   const data=document.getElementById('e-data').value;
   const pedEl=document.getElementById('e-pedidos');
@@ -1121,7 +1092,7 @@ async function alterarStatusE(id,status){
   }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return;}
-  // WhatsApp automático
+  // WhatsApp automatico
   const p=(window._entCache||[]).find(x=>x.id===id);
   if(p&&(WPP_STATUS_MSGS[status]||(isRetiradaPedido(p)&&isStatusProntoRetirada(status)))){
     p.status=status;
@@ -1138,7 +1109,7 @@ function imprimirPedidosLista(lista,emptyMsg){
       const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
     const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
     const _comp=p.cliente_complemento||'';
-    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX ? AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
+    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX - AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
     const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
@@ -1175,8 +1146,8 @@ function imprimirPedidosLista(lista,emptyMsg){
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'?')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDERE?O: </span><span class="val">${h(_end)}</span></div>`:''}
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} - ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDERE\u00c7O: </span><span class="val">${h(_end)}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
@@ -1188,7 +1159,7 @@ function imprimirPedidosLista(lista,emptyMsg){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVA?N?O: </span><span class="val">${h(p.observacoes||'')}</span></div>
+    <div class="obs"><span class="lbl">OBS.: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();setTimeout(()=>window.close(),1500)}<\/script>
@@ -1202,7 +1173,6 @@ function imprimirPedidosLista(lista,emptyMsg){
     }, idx*3500);
   });
 }
-
 function imprimirPedidosEntrega(){
   const lista=(window._entCache||[]).filter(p=>!isRetiradaPedido(p));
   imprimirPedidosLista(lista,'Nenhum pedido de entrega para imprimir.');
@@ -1430,7 +1400,7 @@ function imprimirPedido(id){
   const _sub=(p.itens_pedido||[]).reduce((s,it)=>s+it.subtotal,0);
     const _end=[p.cliente_endereco,p.cliente_numero].filter(Boolean).join(', n. ');
     const _comp=p.cliente_complemento||'';
-    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX ? AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
+    const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX - AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
     const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
@@ -1467,8 +1437,8 @@ function imprimirPedido(id){
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'?')}</span></div>
       <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDERE?O: </span><span class="val">${h(_end)}</span></div>`:''}
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} - ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDERE\u00c7O: </span><span class="val">${h(_end)}</span></div>`:''}
       ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
@@ -1480,7 +1450,7 @@ function imprimirPedido(id){
       <div class="tr main"><span class="tl">TOTAL DO PEDIDO:</span><span class="tv">R$ ${fp(p.total)}</span></div>
     </div>
     <div class="pgto">${_pago}</div>
-    <div class="obs"><span class="lbl">OBSERVA?N?O: </span><span class="val">${h(p.observacoes||'')}</span></div>
+    <div class="obs"><span class="lbl">OBS.: </span><span class="val">${h(p.observacoes||'')}</span></div>
     <hr class="sep">
     <div class="footer">Seu pedido foi preparado com cuidado!</div>
     ${'<script>'}window.onload=function(){window.print();}<\/script>
@@ -1494,71 +1464,70 @@ function imprimirPedido(id){
 }
 
 
+// WHATSAPP AUTOMATICO POR STATUS
 // ----------------------------------------------------------------
-// WHATSAPP AUTOMÁTICO POR STATUS
-// ----------------------------------------------------------------
-// Mensagens padrão (usadas se não houver customização)
+// Mensagens padrao (usadas se nao houver customizacao)
 const WPP_STATUS_MSGS_DEFAULT = {
   'Em preparo': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸ‘‹\n\n`+
-    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! ðŸŒ¿\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* est\u00e1 sendo preparado com carinho!\n`+
     `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
-    `Qualquer dúvida estamos aqui! ðŸ˜Š`,
+    `Qualquer d\u00favida estamos aqui!`,
   'Saiu para entrega': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸšš\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
-    `Fique de olho, está a caminho! ðŸŒ±\n\n`+
-    `Qualquer dúvida estamos aqui! ðŸ˜Š`,
+    `Fique de olho, est\u00e1 a caminho!\n\n`+
+    `Qualquer d\u00favida estamos aqui!`,
   'Entregue': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ?\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
-    `Obrigado pela preferência e até a próxima! ðŸ’š\n\n`+
-    `*Cortadinhos com Carinho* ðŸŒ¿`,
+    `Obrigado pela prefer\u00eancia e at\u00e9 a pr\u00f3xima!\n\n`+
+    `*Cortadinhos com Carinho*`,
   'Cancelado': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸ˜”\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
-    `Em caso de dúvidas, entre em contato conosco.\n\n`+
-    `*Cortadinhos com Carinho* ðŸŒ¿`
+    `Em caso de d\u00favidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho*`
 };
 
-// Mensagens customizadas salvas no banco (sobrescrevem as padrão)
+// Mensagens customizadas salvas no banco (sobrescrevem as padrao)
 let WPP_STATUS_CUSTOM = {};
 
 const WPP_STATUS_MSGS = {
   'Em preparo': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸ‘‹\n\n`+
-    `Seu pedido *${p.codigo||'#'+p.id}* está sendo preparado com carinho! ðŸŒ¿\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
+    `Seu pedido *${p.codigo||'#'+p.id}* est\u00e1 sendo preparado com carinho!\n`+
     `Entrega prevista: *${fdLabel(p.data_pedido)}*\n\n`+
-    `Qualquer dúvida estamos aqui! ðŸ˜Š`,
+    `Qualquer d\u00favida estamos aqui!`,
 
   'Saiu para entrega': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸšš\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* saiu para entrega agora!\n`+
-    `Fique de olho, está a caminho! ðŸŒ±\n\n`+
-    `Qualquer dúvida estamos aqui! ðŸ˜Š`,
+    `Fique de olho, est\u00e1 a caminho!\n\n`+
+    `Qualquer d\u00favida estamos aqui!`,
 
   'Entregue': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ?\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Seu pedido *${p.codigo||'#'+p.id}* foi entregue!\n`+
-    `Obrigado pela preferência e até a próxima! ðŸ’š\n\n`+
-    `*Cortadinhos com Carinho* ðŸŒ¿`,
+    `Obrigado pela prefer\u00eancia e at\u00e9 a pr\u00f3xima!\n\n`+
+    `*Cortadinhos com Carinho*`,
 
   'Cancelado': (p) =>
-    `Olá, ${p.cliente_nome.split(' ')[0]}! ðŸ˜”\n\n`+
+    `Ol\u00e1, ${p.cliente_nome.split(' ')[0]}!\n\n`+
     `Infelizmente seu pedido *${p.codigo||'#'+p.id}* foi cancelado.\n`+
-    `Em caso de dúvidas, entre em contato conosco.\n\n`+
-    `*Cortadinhos com Carinho* ðŸŒ¿`
+    `Em caso de d\u00favidas, entre em contato conosco.\n\n`+
+    `*Cortadinhos com Carinho*`
 };
 
 function dispararWppStatus(pedido, status){
-  // Prioridade: mensagem customizada ? mensagem padrão
+  // Prioridade: mensagem customizada - mensagem padrao
   let msg;
   if(isRetiradaPedido(pedido)&&isStatusProntoRetirada(status)){
-    msg = `Seu pedido ${pedido.codigo||'#'+pedido.id} está pronto para retirada! ðŸŒ±\n`+
-      `Estaremos na barraca até 12h.\n`+
-      `Qualquer dúvida, estamos por aqui! ðŸ˜Š`;
+    msg = `Seu pedido ${pedido.codigo||'#'+pedido.id} est\u00e1 pronto para retirada!\n`+
+      `Estaremos na barraca at\u00e9 12h.\n`+
+      `Qualquer d\u00favida, estamos por aqui!`;
   }else if(WPP_STATUS_CUSTOM[status]){
-    // Substituir variáveis na mensagem customizada
+    // Substituir variaveis na mensagem customizada
     msg = WPP_STATUS_CUSTOM[status]
       .replace(/{nome}/g, pedido.cliente_nome.split(' ')[0])
       .replace(/{nomeCompleto}/g, pedido.cliente_nome)
@@ -1574,7 +1543,7 @@ function dispararWppStatus(pedido, status){
     toast('Sem telefone do cliente para enviar WhatsApp.','err',3000);
     return;
   }
-  // Adicionar DDI 55 se não tiver
+  // Adicionar DDI 55 se nao tiver
   const telFull = tel.startsWith('55') ?tel : '55'+tel;
   const url = 'https://wa.me/'+telFull+'?text='+encodeURIComponent(msg);
   window.open(url, '_blank');
@@ -1701,7 +1670,7 @@ function stripMojibakeIconPrefix(name){
   while(text){
     const cp=text.codePointAt(0);
     const ch=String.fromCodePoint(cp);
-    if((cp>=0x1f000&&cp<=0x1faff)||'?????????'.includes(ch)){
+    if((cp>=0x1f000&&cp<=0x1faff)||'IlimitadoIlimitado'.includes(ch)){
       text=text.slice(ch.length).trimStart();
       continue;
     }
@@ -1741,7 +1710,7 @@ function renderEstoque(){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
       +label
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque" style="padding:4px 8px"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -1777,7 +1746,7 @@ function filtrarEstoque(){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
       +label
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque" style="padding:4px 8px"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -1785,7 +1754,7 @@ function filtrarEstoque(){
 }
 
 async function rmProd(id){
-  popConfirm('ðŸ—‘ï¸','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
+  popConfirm('trash-2','Remover produto?','Esta ação não pode ser desfeita.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('produtos').delete().eq('id',id);
     if(error){toast('Erro: '+error.message,'err');return}
     prods=prods.filter(p=>p.id!==id);
@@ -1847,7 +1816,7 @@ async function addCat(){
   if(!nome)return;
   const saveBtn=document.querySelector('#ap-categorias .btn-g');
   const origLabel=saveBtn?saveBtn.textContent:'';
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando?';}
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando...';}
   try{
     let imagem_url=null;
     const imgFile=document.getElementById('cat-img-file')?.files[0];
@@ -1881,7 +1850,7 @@ async function rmCat(id){
   const {data:pVinc} = await sb.from('produtos').select('id').eq('cat_id',id).limit(1);
   const cat = cats.find(c=>c.id===id);
   if(pVinc && pVinc.length > 0){
-    popConfirm('âš ï¸','Categoria com produtos',
+    popConfirm('triangle-alert','Categoria com produtos',
       '"'+(cat?.nome||'Categoria')+'" tem produtos vinculados.\n\nRemovê-la irá desvincular todos os produtos desta categoria. Deseja continuar?',
       'Sim, remover','pbtn-danger',async()=>{
         // Desvincular produtos primeiro (setar cat_id = null)
@@ -1895,7 +1864,7 @@ async function rmCat(id){
       });
     return;
   }
-  popConfirm('ðŸ—‘ï¸','Remover categoria?','"'+(cat?.nome||'Categoria')+'" será removida permanentemente.','Remover','pbtn-danger',async()=>{
+  popConfirm('trash-2','Remover categoria?','"'+(cat?.nome||'Categoria')+'" será removida permanentemente.','Remover','pbtn-danger',async()=>{
     const {error}=await sb.from('categorias').delete().eq('id',id);
     if(error){toast('Erro: '+error.message,'err');return}
     cats=cats.filter(c=>c.id!==id);
@@ -1919,7 +1888,7 @@ async function addProd(){
 
   const saveBtn=document.querySelector('#ap-produtos .btn-g[onclick="addProd()"]');
   const origLabel=saveBtn?saveBtn.textContent:'';
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando?';}
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando...';}
 
   try{
     let imagem_url=null;
@@ -1928,7 +1897,7 @@ async function addProd(){
       if(imgFile.size>5*1024*1024){toast('Imagem muito grande. Máx 5 MB.','err');return}
       const ext=imgFile.name.split('.').pop().toLowerCase();
       const path='produtos/'+Date.now()+'.'+ext;
-      toast('Enviando imagem?','ok');
+      toast('Enviando imagem...','ok');
       const {error:upErr}=await sb.storage.from('imagens').upload(path,imgFile,{upsert:true});
       if(upErr){
         console.error('Upload error:',upErr);
@@ -2007,7 +1976,7 @@ function renderProdList(){
       +'</div>'
       +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
       +'<button class="btn btn-o btn-sm" onclick="abrirEditProd('+p.id+')" title="Editar produto">&#9999;</button>'
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'âˆž')+'</button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
       +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
       +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
       +'</div>';
@@ -2038,7 +2007,7 @@ function filtrarProdListInline(){
       +'</div>'
       +'<span class="badge '+(p.ativo?'bg-green':'bg-gray')+'">'+(p.ativo?'Ativo':'Inativo')+'</span>'
       +'<button class="btn btn-o btn-sm" onclick="abrirEditProd('+p.id+')" title="Editar produto">&#9999;</button>'
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'\u221e')+'</button>'
+      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
       +'<button class="btn btn-o btn-sm" onclick="togAtivo('+p.id+')">'+(p.ativo?'Off':'On')+'</button>'
       +'<button class="btn btn-r btn-sm" onclick="rmProd('+p.id+')">x</button>'
       +'</div>';
@@ -2096,8 +2065,8 @@ function renderUPagina(q){
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="badge ${u.role==='admin'?'bg-orange':'bg-blue'}">${u.role==='admin'?'Admin':'Cliente'}</span>
-          ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'?Cliente':'?Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Você</span>'}
-          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">â–¾ Pedidos (${peds.length})</button>
+          ${u.id!==perfil?.id?`<button class="btn btn-o btn-sm" onclick="togRole('${u.id}','${u.role}')">${u.role==='admin'?'Cliente':'Admin'}</button>`:'<span style="font-size:11px;color:var(--text3)">Voce</span>'}
+          <button class="btn btn-o btn-sm" onclick="toggleUserInfo('u-inf-${u.id}')">Pedidos (${peds.length})</button>
           <button class="btn btn-o btn-sm ico-gap" onclick="toggleUserInfo('u-dados-${u.id}')">${lucideIcon('user')} Info</button>
         </div>
       </div>
@@ -2110,17 +2079,17 @@ function renderUPagina(q){
           <div><span style="color:var(--text3)">Telefone: </span><strong>${u.telefone||'?'}</strong></div>
           <div><span style="color:var(--text3)">Cadastro: </span><strong>${new Date(u.created_at).toLocaleDateString('pt-BR')}</strong></div>
           <div><span style="color:var(--text3)">Perfil: </span><strong>${u.role==='admin'?'Admin':'Cliente'}</strong></div>
-          ${u.endereco?`<div style="grid-column:1/-1"><span style="color:var(--text3)">Endereço: </span><strong>${u.endereco}${u.endereco_num?', '+u.endereco_num:''} ? ${u.bairro||''} ? ${u.cidade||''}</strong></div>`:''}
+          ${u.endereco?`<div style="grid-column:1/-1"><span style="color:var(--text3)">Endereço: </span><strong>${u.endereco}${u.endereco_num?', '+u.endereco_num:''} - ${u.bairro||''} - ${u.cidade||''}</strong></div>`:''}
         </div>
       </div>
     </div>`;
   }).join('');
-  // Paginação
+  // Paginaçao
   const pag=document.getElementById('u-pag');
   if(total<=1){pag.innerHTML='';return}
-  let html='<button class="pag-btn"'+(uPage===1?' disabled':'')+` onclick="uPage--;renderUPagina()">? Ant</button>`;
+  let html='<button class="pag-btn"'+(uPage===1?' disabled':'')+` onclick="uPage--;renderUPagina()">Anterior</button>`;
   for(let i=1;i<=total;i++)html+=`<button class="pag-btn${i===uPage?' active':''}" onclick="uPage=${i};renderUPagina()">${i}</button>`;
-  html+=`<button class="pag-btn"${uPage===total?' disabled':''} onclick="uPage++;renderUPagina()">Prox ?</button>`;
+  html+=`<button class="pag-btn"${uPage===total?' disabled':''} onclick="uPage++;renderUPagina()">Proximo</button>`;
   html+=`<span style="padding:4px 8px;font-size:11px;color:var(--text3)">${filtrado.length} usuário(s)</span>`;
   pag.innerHTML=html;
 }
@@ -2131,7 +2100,7 @@ function toggleUserInfo(id){
 }
 async function togRole(uid,cur){
   const nr=cur==='admin'?'cliente':'admin';
-  popConfirm('ðŸ‘¤','Alterar função?','Alterar para "'+nr+'"?','Confirmar','pbtn-ok',async()=>{
+  popConfirm('user-cog','Alterar função?','Alterar para "'+nr+'"?','Confirmar','pbtn-ok',async()=>{
     await sb.from('profiles').update({role:nr}).eq('id',uid);
     renderUsers();
     toast('Função alterada para '+nr+'.','ok');
@@ -2149,22 +2118,22 @@ function tErr(msg){
 document.getElementById('a-qty')?.addEventListener('keydown',e=>{if(e.key==='Enter')confQty()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('a-modal')?.classList.remove('open')});
 
-/* ?? PRODUCT MODAL ?? */
+/* PRODUCT MODAL */
 
 
 
 
-/* ?? LOCAIS DE RETIRADA ?? */
+/* LOCAIS DE RETIRADA */
 
 
-/* ?? MOBILE CART BAR ?? */
+/* MOBILE CART BAR */
 
 
-/* ?? DASHBOARD ?? */
+/* DASHBOARD */
 let cupons=[];
 
 
-// ?? PAGE PEDIDOS ??
+// PAGE PEDIDOS
 let rpPage=1, rpTotal=0, rpCache=[];
 
 function toggleRPFiltro(){
@@ -2214,7 +2183,7 @@ async function renderPedidos(){
           <span style="font-weight:700;font-size:12px">${h(p.cliente_nome)}</span>
           ${p.codigo?`<span style="font-size:9px;font-weight:700;font-family:monospace;color:var(--text3)">${h(p.codigo)}</span>`:''}
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`ðŸ“ ${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`${modalidadePedidoAdmin(p)} · ${fdLabel(p.data_pedido)}`:''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${dataPedido?`${dataPedido} ${horaPedido}`:''} ${fdLabel(p.data_pedido)?`${modalidadePedidoAdmin(p)} · ${fdLabel(p.data_pedido)}`:''}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${its}</div>
       </div>
       <div style="font-weight:700;color:var(--green-bright);font-size:12px;white-space:nowrap">R$ ${fp(p.total)}</div>
@@ -2255,23 +2224,23 @@ function renderRPPag(){
   const total=Math.ceil(rpTotal/PER);
   const el=document.getElementById('rp-pag');if(!el)return;
   if(total<=1){el.innerHTML='';return}
-  let html='<button class="pag-btn"'+(rpPage===1?' disabled':'')+' onclick="goRPPage('+(rpPage-1)+')">? Ant</button>';
+  let html='<button class="pag-btn"'+(rpPage===1?' disabled':'')+' onclick="goRPPage('+(rpPage-1)+')">Anterior</button>';
   let start=Math.max(1,rpPage-3),end=Math.min(total,start+6);
   if(start>1)html+='<button class="pag-btn" onclick="goRPPage(1)">1</button><span style="padding:4px;color:var(--text3)">...</span>';
   for(let i=start;i<=end;i++)html+='<button class="pag-btn'+(i===rpPage?' active':'')+'" onclick="goRPPage('+i+')">'+i+'</button>';
   if(end<total)html+='<span style="padding:4px;color:var(--text3)">...</span><button class="pag-btn" onclick="goRPPage('+total+')">'+total+'</button>';
-  html+='<button class="pag-btn"'+(rpPage===total?' disabled':'')+' onclick="goRPPage('+(rpPage+1)+')">Prox ?</button>';
+  html+='<button class="pag-btn"'+(rpPage===total?' disabled':'')+' onclick="goRPPage('+(rpPage+1)+')">Proximo</button>';
   html+='<span style="padding:4px 8px;font-size:11px;color:var(--text3)">'+rpTotal+' pedido(s)</span>';
   el.innerHTML=html;
 }
 function goRPPage(p){const t=Math.ceil(rpTotal/PER);rpPage=Math.max(1,Math.min(t,p));renderRPPage();renderRPPag();}
 
 
-// ?? PAGE FINANCEIRO ??
+// PAGE FINANCEIRO
 let _finChart=null, _finPie=null;
 
 async function initFinanceiro(){
-  // Datas padrão: mês atual
+  // Datas padrao: mes atual
   const hoje=new Date();
   const de=hoje.toISOString().slice(0,7)+'-01';
   const ate=hoje.toISOString().split('T')[0];
@@ -2294,10 +2263,10 @@ async function renderFinanceiro(){
 
   document.getElementById('fin-total').textContent='R$ '+fp(total);
   document.getElementById('fin-ticket').textContent='R$ '+fp(ticket);
-  const label=de.split('-').reverse().slice(0,2).join('/')+'?'+ate.split('-').reverse().slice(0,2).join('/');
+  const label=de.split('-').reverse().slice(0,2).join('/')+' - '+ate.split('-').reverse().slice(0,2).join('/');
   if(document.getElementById('fin-chart-label'))document.getElementById('fin-chart-label').textContent=label;
 
-  // Gráfico de linha por dia
+  // Grafico de linha por dia
   const diasMap={};
   ativos.forEach(p=>{if(!diasMap[p.data_pedido])diasMap[p.data_pedido]=0;diasMap[p.data_pedido]+=p.total;});
   const dias=Object.keys(diasMap).sort();
@@ -2327,13 +2296,13 @@ async function carregarGastos(){
   if(sel){
     sel.innerHTML=catsData.length
       ?catsData.map(c=>'<option value="'+c.id+'">'+h(c.nome)+'</option>').join('')
-      :'<option value="">? Crie uma categoria acima primeiro ?</option>';
+      :'<option value="">Crie uma categoria acima primeiro</option>';
   }
   // Renderizar select customizado de categorias
   _renderCatDropdown(catsData);
 }
 
-// ?? SELECT CUSTOMIZADO DE CATEGORIAS DE GASTO ??
+// SELECT CUSTOMIZADO DE CATEGORIAS DE GASTO
 let _catDropdownOpen=false;
 
 function _renderCatDropdown(cats){
@@ -2350,7 +2319,7 @@ function _renderCatDropdown(cats){
     const div=document.createElement('div');
     div.className='fin-cat-opt'+(curVal===String(c.id)?' selected':'');
     div.innerHTML='<span class="fin-cat-opt-nome">'+h(c.nome)+'</span>'
-      +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">?</button>';
+      +'<button class="fin-cat-opt-rm" title="Remover categoria" data-catid="'+c.id+'" data-catnome="'+encodeURIComponent(c.nome)+'">Remover</button>';
     div.querySelector('.fin-cat-opt-nome').onclick=()=>{
       if(hiddenInput)hiddenInput.value=c.id;
       const lbl=document.getElementById('fin-cat-label');
@@ -2386,7 +2355,7 @@ document.addEventListener('click',e=>{
 });
 
 async function rmCategGasto(id,nome){
-  popConfirm('ðŸ—‘ï¸','Remover categoria?',
+  popConfirm('trash-2','Remover categoria?',
     '"'+nome+'" será removida. Os gastos vinculados ficam sem categoria.',
     'Remover','pbtn-danger',async()=>{
       const {error}=await sb.from('categorias_gasto').delete().eq('id',id);
@@ -2440,7 +2409,7 @@ function renderGastos(lista){
     +'<div><div style="font-weight:600">'+g.descricao+'</div><div style="font-size:10px;color:var(--text3)">'+fd(g.data)+'</div></div>'
     +'<div style="display:flex;align-items:center;gap:8px">'
     +'<span style="font-weight:700;color:var(--red)">R$ '+fp(g.valor)+'</span>'
-    +'<button onclick="rmGasto('+g.id+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">?</button>'
+    +'<button onclick="rmGasto('+g.id+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">Remover</button>'
     +'</div></div>').join('');
 }
 
@@ -2496,7 +2465,7 @@ function renderPieGastos(lista){
 }
 
 // ----------------------------------------------------------------
-// DASHBOARD ? métricas, gráfico, top produtos
+// DASHBOARD - metricas, grafico, top produtos
 // ----------------------------------------------------------------
 let _dashChart=null, _dashPie=null;
 
@@ -2506,7 +2475,7 @@ async function loadDashMetrics(){
   const ontemInicio=localDayStartISO(-1);
   const mesInicio=localMonthStartISO();
 
-  // Buscar pedidos de hoje e do mês
+  // Buscar pedidos de hoje e do mes
   const [{data:pedHoje},{data:pedMes},{data:pedOntem}]=await Promise.all([
     sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',hojeInicio).lt('created_at',amanhaInicio),
     sb.from('pedidos').select('id,total,status,created_at,data_pedido').gte('created_at',mesInicio).lt('created_at',amanhaInicio),
@@ -2523,7 +2492,7 @@ async function loadDashMetrics(){
   const qtdMes=(pedMes||[]).filter(ativos).length;
   const ticket=qtdMes>0?totMes/qtdMes:0;
 
-  // Variação vs ontem
+  // Variaçao vs ontem
   const varFat=totOntem>0?((totHoje-totOntem)/totOntem*100):0;
   const varSub=varFat>=0?`+${varFat.toFixed(0)}% vs ontem`:`${varFat.toFixed(0)}% vs ontem`;
   const varCls=varFat>=0?'up':'down';
@@ -2545,7 +2514,7 @@ function getISODate(offset=0){
 }
 
 async function loadDashChart(){
-  // ?ltimos 7 dias
+  // Ultimos 7 dias
   const dias=[];
   for(let i=6;i>=0;i--)dias.push(getISODate(-i));
   const inicio=localDayStartISO(-6);
@@ -2626,7 +2595,7 @@ async function loadDashRecentes(){
 }
 
 async function loadDashTopProds(){
-  // Buscar pedidos não cancelados
+  // Buscar pedidos nao cancelados
   const {data:pedidos}=await sb.from('pedidos').select('id,status');
   const pedIds=(pedidos||[]).filter(p=>!isPedidoCancelado(p)).map(p=>p.id);
   if(!pedIds.length){document.getElementById('dm-top-prods').innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
@@ -2757,7 +2726,7 @@ async function initConfig(){
 
 async function initClientes(){
   await renderUsers();
-  // Limpar histórico ao entrar
+  // Limpar historico ao entrar
   const el = document.getElementById('ped-cliente-lista');
   if(el) el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">Busque por um cliente ou código de pedido acima.</div>';
   const inp = document.getElementById('ped-busca-cliente');
@@ -2842,12 +2811,12 @@ async function salvarRedes(){
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
   if(wpp)window._WHATSAPP_NUM_DB=wpp;
   if(ig)INSTAGRAM_URL=ig;
-  // Atualiza ícones imediatamente
+  // Atualiza icones imediatamente
   const wppBtn=document.querySelector('.dd-icon-btn.wpp');
   if(wppBtn&&wpp)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${wpp}','_blank')`);
   const igBtn=document.querySelector('.dd-icon-btn.ig');
   if(igBtn&&ig)igBtn.setAttribute('onclick',`fecharDropdown();window.open('${ig}','_blank')`);
-  msg.style.color='var(--green-bright)';msg.textContent='? Redes sociais atualizadas!';
+  msg.style.color='var(--green-bright)';msg.textContent='Redes sociais atualizadas!';
   setTimeout(()=>msg.textContent='',3000);
 }
 async function salvarMsgWpp(){
@@ -2856,7 +2825,7 @@ async function salvarMsgWpp(){
   const {error}=await sb.from('configuracoes').upsert({chave:'wpp_msg_template',valor:template},{onConflict:'chave'});
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return}
   WPP_MSG_TEMPLATE=template;
-  msg.style.color='var(--green-bright)';msg.textContent='? Mensagem salva!';
+  msg.style.color='var(--green-bright)';msg.textContent='Mensagem salva!';
   setTimeout(()=>msg.textContent='',3000);
 }
 async function salvarMsgsStatus(){
@@ -2872,13 +2841,13 @@ async function salvarMsgsStatus(){
   }));
   const {error}=await sb.from('configuracoes').upsert(upserts,{onConflict:'chave'});
   if(error){toast('Erro: '+error.message,'err');return;}
-  // Atualizar em memória
+  // Atualizar em memoria
   WPP_STATUS_CUSTOM['Em preparo']         = upserts[0].valor||'';
   WPP_STATUS_CUSTOM['Saiu para entrega']  = upserts[1].valor||'';
   WPP_STATUS_CUSTOM['Entregue']           = upserts[2].valor||'';
   WPP_STATUS_CUSTOM['Cancelado']          = upserts[3].valor||'';
   const msg=document.getElementById('wpp-status-msg');
-  msg.textContent='? Mensagens salvas!';
+  msg.textContent='Mensagens salvas!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Mensagens de status salvas!','ok');
 }
@@ -2891,7 +2860,7 @@ async function salvarPedidoMin(){
   if(error){toast('Erro: '+error.message,'err');return}
   PEDIDO_MIN=val;
   const msg=document.getElementById('dash-pedmin-msg');
-  msg.textContent=val>0?'? Mínimo R$ '+fp(val)+' para entrega.':'? Sem pedido mínimo.';
+  msg.textContent=val>0?'Minimo R$ '+fp(val)+' para entrega.':'Sem pedido minimo.';
   setTimeout(()=>msg.textContent='',3000);
   toast('Pedido mínimo atualizado!','ok');
 }
@@ -2908,7 +2877,7 @@ async function carregarTaxaRemota(){
       if(r.chave==='instagram_url')INSTAGRAM_URL=r.valor;
       if(r.chave==='wpp_msg_template')WPP_MSG_TEMPLATE=r.valor;
     });
-    // Atualiza ícones com links do banco
+    // Atualiza icones com links do banco
     const wppBtn=document.querySelector('.dd-icon-btn.wpp');
     if(wppBtn&&window._WHATSAPP_NUM_DB)wppBtn.setAttribute('onclick',`fecharDropdown();window.open('https://wa.me/${window._WHATSAPP_NUM_DB}','_blank')`);
     const igBtn=document.querySelector('.dd-icon-btn.ig');
@@ -2975,13 +2944,13 @@ async function togDestaque(id){
   if(error){toast('Erro: '+error.message,'err');return}
   p.destaque=novo;
   renderProdList();
-  toast(novo?'? Em destaque!':'Removido do destaque','ok');
+  toast(novo?'Em destaque!':'Removido do destaque','ok');
 }
 
 
-// ?? RASTREAR PEDIDO ??
+// RASTREAR PEDIDO
 function abrirRastrearPedido(){
-  popInput('ðŸ“¦','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
+  popInput('package','Acompanhar Pedido','Digite o número do seu pedido:','Ex: 260012205','Consultar',async(val)=>{
     const codigo=val.trim().toUpperCase();
     if(!codigo){toast('Digite o código do pedido.','err');return}
     const {data,error}=await sb.from('pedidos')
@@ -2990,12 +2959,12 @@ function abrirRastrearPedido(){
       .single();
     if(error||!data){toast('Pedido não encontrado. Verifique o código.','err');return}
     const statusEmoji={
-      'Pendente':'⏳','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Entregue':'?','Cancelado':'?'
+      'Pendente':'Pendente','Em preparo':'Em preparo','Saiu para entrega':'Saiu para entrega','Entregue':'Entregue','Cancelado':'Cancelado'
     };
     const st=data.status||'Pendente';
     const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'?';
     popTrackAlert(
-      (statusEmoji[st]||'ðŸ“¦')+' Pedido '+data.codigo,
+      (statusEmoji[st]||'Pedido')+' Pedido '+data.codigo,
       'Cliente: '+(data.cliente_nome||'Cliente')+'\n'+'Data: '+dt+'\nModalidade: '+(data.entrega||'?')+'\nTotal: R$ '+fp(data.total)+'\n\nStatus atual:\n'+st
     );
   });
@@ -3037,7 +3006,7 @@ async function loginGoogle(){
   if(error)toast('Erro ao conectar com Google.','err');
 }
 function abrirEsqueceuSenha(){
-  popInput('ðŸ”‘','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
+  popInput('key','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
     const email=val.trim().toLowerCase();
     if(!email||!email.includes('@')){toast('Digite um e-mail válido.','err');return}
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/loja?reset=1'});
@@ -3084,7 +3053,7 @@ async function salvarNovaSenha(){
 let _lpDepoimentos = [];
 
 async function initLanding(){
-  const opt = '<option value="">? Nenhum ?</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${h(p.nome)}</option>`).join('');
+  const opt = '<option value="">Nenhum</option>' + prods.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${h(p.nome)}</option>`).join('');
   ['lp-prod1','lp-prod2','lp-prod3'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerHTML = opt;
@@ -3139,7 +3108,7 @@ async function salvarLandingHero(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_hero',valor:JSON.stringify(hero)},{onConflict:'chave'});
   const msg = document.getElementById('lp-hero-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='? Hero salvo!';
+  msg.style.color='var(--green-bright)';msg.textContent='Hero salvo!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Hero da landing page salvo!','ok');
 }
@@ -3152,7 +3121,7 @@ async function salvarLandingStats(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_stats',valor:JSON.stringify(stats)},{onConflict:'chave'});
   const msg = document.getElementById('lp-stats-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='? Stats salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='Stats salvos!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Estatísticas salvas!','ok');
 }
@@ -3165,7 +3134,7 @@ async function salvarLandingDestaques(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_destaques',valor:JSON.stringify(ids)},{onConflict:'chave'});
   const msg = document.getElementById('lp-prods-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='? Destaques salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='Destaques salvos!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Produtos em destaque salvos!','ok');
 }
@@ -3191,7 +3160,7 @@ function renderLpDepoimentos(){
   }
   el.innerHTML = _lpDepoimentos.map((d,i)=>`
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
-      <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">?</button>
+      <button onclick="_lpDepoimentos.splice(${i},1);renderLpDepoimentos()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;font-weight:700">Remover</button>
       <div style="font-size:12px;font-weight:700;margin-bottom:4px">${h(d.nome)}</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:6px">${d.local||'?'}</div>
       <div style="font-size:11px;color:var(--text2);line-height:1.5">"${d.texto.slice(0,80)}${d.texto.length>80?'...':''}"</div>
@@ -3249,7 +3218,7 @@ function renderBellList(){
       <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700;color:var(--text)">${h(p.cliente_nome || 'Cliente')}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:1px">${h(p.codigo || '#'+p.id)} · ${data} às ${hora}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${h(p.codigo || '#'+p.id)} - ${data} as ${hora}</div>
       </div>
       <div style="font-size:12px;font-weight:800;color:var(--green-bright);white-space:nowrap">R$ ${fp(Number(p.total)||0)}</div>
     </div>`;
@@ -3290,7 +3259,7 @@ async function salvarLandingDepoimentos(){
   const {error} = await sb.from('configuracoes').upsert({chave:'landing_depoimentos',valor:JSON.stringify(_lpDepoimentos)},{onConflict:'chave'});
   const msg = document.getElementById('lp-dep-msg');
   if(error){msg.style.color='var(--red)';msg.textContent='Erro: '+error.message;return;}
-  msg.style.color='var(--green-bright)';msg.textContent='? Depoimentos salvos!';
+  msg.style.color='var(--green-bright)';msg.textContent='Depoimentos salvos!';
   setTimeout(()=>msg.textContent='',3000);
   toast('Depoimentos salvos!','ok');
 }
