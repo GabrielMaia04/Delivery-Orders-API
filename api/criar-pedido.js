@@ -62,7 +62,6 @@ function friendlyRpcError(message) {
   const known = new Map([
     ['Cupom invalido ou nao encontrado', 'Cupom inv\u00e1lido ou n\u00e3o encontrado.'],
     ['Cupom esgotado', 'Este cupom est\u00e1 esgotado.'],
-    ['Cupom ja utilizado por este cliente', 'Voc\u00ea j\u00e1 utilizou este cupom.'],
     ['Este cupom e valido para pedidos acima de R$', 'Este cupom \u00e9 v\u00e1lido para pedidos acima do valor m\u00ednimo.'],
     ['Cupom de frete gratis valido apenas para entrega', 'Este cupom \u00e9 v\u00e1lido apenas para entrega.'],
     ['Produto nao encontrado', 'Um produto do carrinho n\u00e3o foi encontrado.'],

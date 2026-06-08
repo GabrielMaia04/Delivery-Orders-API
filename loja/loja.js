@@ -9,15 +9,15 @@ const PIX_CIDADE = CONFIG.PIX_CIDADE || '';
 let TAXA=2.50;
 let PEDIDO_MIN=0;
 let LOJA_LAT=null;
-let _freteCalculado=false; // true somente apÃ³s calcular CEP no carrinho // Latitude da loja (configurado no painel)
+let _freteCalculado=false; // true somente após calcular CEP no carrinho // Latitude da loja (configurado no painel)
 let LOJA_LNG=null; // Longitude da loja
-let LOJA_ENDERECO=''; // EndereÃ§o da loja para geocoding
-let RAIO_MAX=5; // Raio mÃ¡ximo de entrega em km
+let LOJA_ENDERECO=''; // Endereço da loja para geocoding
+let RAIO_MAX=5; // Raio máximo de entrega em km
 let zonas=[];
 let datasBloqueadas=[];
 let _freteEstimado=false;
 let INSTAGRAM_URL='https://instagram.com';
-let WPP_MSG_TEMPLATE=''; // vazio = usa padrÃ£o do cÃ³digo
+let WPP_MSG_TEMPLATE=''; // vazio = usa padrão do código
 const PER=15;
 
 
@@ -39,18 +39,18 @@ const h = v => window.escapeHTML
       '"':'&quot;',
       "'":'&#039;'
     }[c]));
-// Exibe "TerÃ§a, 20/mai" para datas de entrega
+// Exibe "Terça, 20/mai" para datas de entrega
 function fdLabel(iso){
   if(!iso)return'';
   const [y,m,d]=iso.split('-').map(Number);
   const dt=new Date(y,m-1,d);
   return DIAS_NOME_LONG[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES[m-1];
 }
-/* â”€â”€ DATAS DE ENTREGA â”€â”€
-   ProduÃ§Ã£o: Segunda(1), Quinta(4), Sexta(5)
-   Entrega:  TerÃ§a(2) â†’ Segunda | SÃ¡bado(6) â†’ Quinta+Sexta
+/* ?? DATAS DE ENTREGA ??
+   Produção: Segunda(1), Quinta(4), Sexta(5)
+   Entrega:  Terça(2) ? Segunda | Sábado(6) ? Quinta+Sexta
    Regras: sem entrega no mesmo dia, sem datas passadas           */
-const DIAS_NOME_LONG=['Domingo','Segunda','TerÃ§a','Quarta','Quinta','Sexta','SÃ¡bado'];
+const DIAS_NOME_LONG=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
 function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
@@ -90,12 +90,12 @@ async function salvarPerfilObrigatorio(){
   const msg=document.getElementById('complete-profile-msg');
   const btn=document.getElementById('complete-profile-save');
   if(!nomePerfilCompleto(nome)){showMsg(msg,'Informe seu nome completo.','error');return;}
-  if(!telefonePerfilCompleto(telefone)){showMsg(msg,'Informe um WhatsApp vÃ¡lido.','error');return;}
+  if(!telefonePerfilCompleto(telefone)){showMsg(msg,'Informe um WhatsApp válido.','error');return;}
   if(!perfil?.id){showMsg(msg,'Entre novamente para salvar seus dados.','error');return;}
   btn.disabled=true;btn.textContent='Salvando...';
   const {data,error}=await sb.from('profiles').update({nome,telefone}).eq('id',perfil.id).select().single();
   btn.disabled=false;btn.textContent='Salvar e continuar';
-  if(error){console.error('[PERFIL] Falha ao completar cadastro:',error);showMsg(msg,'NÃ£o foi possÃ­vel salvar. Tente novamente.','error');return;}
+  if(error){console.error('[PERFIL] Falha ao completar cadastro:',error);showMsg(msg,'Não foi possível salvar. Tente novamente.','error');return;}
   perfil=data||{...perfil,nome,telefone};
   const modal=document.getElementById('complete-profile-modal');
   modal.classList.remove('open');modal.style.display='none';modal.setAttribute('aria-hidden','true');
@@ -126,14 +126,14 @@ async function buscarCep(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){toast('CEP nÃ£o encontrado.','err');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('co-rua').value=d.logradouro||'';
     document.getElementById('co-bairro').value=d.bairro||'';
     document.getElementById('co-cidade').value=(d.localidade||'')+' / '+(d.uf||'');
     document.getElementById('co-end').value=(d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
     document.getElementById('co-end-fields').classList.remove('hidden');
     document.getElementById('co-num').focus();
-    // Verificar zona de entrega automaticamente apÃ³s preencher CEP
+    // Verificar zona de entrega automaticamente após preencher CEP
     setTimeout(verificarZonaEntrega, 500);
   }catch(e){toast('Erro ao buscar CEP.','err')}
   spin.classList.add('hidden');
@@ -147,7 +147,7 @@ async function buscarCepPerfil(){
   try{
     const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d=await r.json();
-    if(d.erro){toast('CEP nÃ£o encontrado.','err');spin.classList.add('hidden');return}
+    if(d.erro){toast('CEP não encontrado.','err');spin.classList.add('hidden');return}
     document.getElementById('p-rua-edit').value=d.logradouro||'';
     document.getElementById('p-bairro-edit').value=d.bairro||'';
     document.getElementById('p-cidade-edit').value=(d.localidade||'')+' / '+(d.uf||'');
@@ -187,7 +187,7 @@ function cancelarAlterarTel(){
 }
 async function salvarTelefone(){
   const tel=document.getElementById('p-tel-edit').value.trim();
-  if(tel.length<14){toast('Informe um telefone vÃ¡lido.','err');return}
+  if(tel.length<14){toast('Informe um telefone válido.','err');return}
   const {error}=await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
   if(error){toast('Erro: '+error.message,'err');return}
   perfil.telefone=tel;
@@ -251,8 +251,8 @@ async function carregarHistoricoCliente(){
   window._histCache=lista;
 }
 
-// â”€â”€ TIMELINE DE STATUS â”€â”€
-// VersÃ£o correta da timeline com linhas de progresso
+// ?? TIMELINE DE STATUS ??
+// Versão correta da timeline com linhas de progresso
 function buildTimelineHtml(status,entrega){
   const retirada=modalidadePedidoLabel(entrega)==='RETIRADA';
   const STEPS=retirada?[
@@ -327,11 +327,11 @@ function verPedCliente(id){
   document.getElementById('ped-det-body').innerHTML=`
     <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
       ${end?`<div class="ico-gap">${lucideIcon('map-pin')} ${h(end)}</div>`:''}
-      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento)} Â· ${modalidadePedidoLabel(p.entrega)}</div>
+      <div class="ico-gap">${lucideIcon('credit-card')} ${h(p.pagamento)} · ${modalidadePedidoLabel(p.entrega)}</div>
       ${p.observacoes?`<div class="ico-gap">${lucideIcon('notebook-pen')} ${h(p.observacoes)}</div>`:''}
     </div>
     <div>${its}${taxa}${total}</div>`;
-  // BotÃµes conforme status
+  // Botões conforme status
   const btns=document.getElementById('ped-det-btns');
   if(status==='Pendente'){
     btns.innerHTML=`<button class="btn btn-r" style="width:100%;padding:11px" onclick="cancelarPedidoCliente(${id})">Cancelar pedido</button>`;
@@ -360,12 +360,12 @@ async function cancelarPedidoCliente(id){
 
 function solicitarCancelamento(id,codigo){
   const num=codigo||('#'+id);
-  const msg=`OlÃ¡! Tudo bem?\n\nGostaria de solicitar o cancelamento do meu pedido, por favor.\nNÃºmero do pedido: ${num}.`;
+  const msg=`Olá! Tudo bem?\n\nGostaria de solicitar o cancelamento do meu pedido, por favor.\nNúmero do pedido: ${num}.`;
   window.open('https://wa.me/'+WHATSAPP_NUM+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 
-// â”€â”€ NOTIFICACOES REALTIME â”€â”€
+// ?? NOTIFICACOES REALTIME ??
 
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371;
@@ -377,7 +377,7 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Geocodificar endereÃ§o via Nominatim (OpenStreetMap) â€” gratuito, sem API key
+// Geocodificar endereço via Nominatim (OpenStreetMap) ? gratuito, sem API key
 async function geocodificar(endereco){
   try{
     // Tenta busca direta
@@ -385,7 +385,7 @@ async function geocodificar(endereco){
     const r=await fetch(url,{headers:{'Accept-Language':'pt-BR','User-Agent':'HortifrutiApp/1.0'}});
     const d=await r.json();
     if(!d.length)return null;
-    // Prefere resultado com maior importÃ¢ncia
+    // Prefere resultado com maior importância
     d.sort((a,b)=>(b.importance||0)-(a.importance||0));
     return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
   }catch(e){return null}
@@ -394,12 +394,12 @@ async function geocodificar(endereco){
 async function geocodificarCEP(cep){
   const cepLimpo = cep.replace(/\D/g,'');
   try{
-    // 1. ViaCEP para dados do endereÃ§o (nome da rua, bairro, cidade)
+    // 1. ViaCEP para dados do endereço (nome da rua, bairro, cidade)
     const rv = await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
     const dv = await rv.json();
     if(dv.erro) return null;
 
-    // 2. BrasilAPI v2 â€” retorna centroide do polÃ­gono do CEP (mais preciso)
+    // 2. BrasilAPI v2 ? retorna centroide do polígono do CEP (mais preciso)
     try{
       const rb = await fetch('https://brasilapi.com.br/api/cep/v2/'+cepLimpo);
       if(rb.ok){
@@ -422,7 +422,7 @@ async function geocodificarCEP(cep){
       }
     }catch(e3){}
 
-    // 4. Nominatim fallback por bairro + cidade (NÃƒO por rua â€” evita resultados errados)
+    // 4. Nominatim fallback por bairro + cidade (NN?O por rua ? evita resultados errados)
     try{
       const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
       const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
@@ -440,7 +440,7 @@ async function geocodificarCEP(cep){
 }
 
 
-// Calcular zona do cliente baseado na distÃ¢ncia
+// Calcular zona do cliente baseado na distância
 function calcularZona(distKm){
   if(!zonas.length)return null;
   const ativos=zonas.filter(z=>z.ativo);
@@ -476,7 +476,7 @@ function dataBloqueada(iso,modalidade){
   return datasBloqueadas.find(d=>d.data===iso&&(d.tipo==='ambos'||d.tipo===tipo))||null;
 }
 
-// Verificar distÃ¢ncia e aplicar taxa no checkout
+// Verificar distância e aplicar taxa no checkout
 let _clienteLat=null,_clienteLng=null,_zonaAtiva=null;
 
 async function verificarZonaEntrega(){
@@ -491,13 +491,13 @@ async function verificarZonaEntrega(){
   const numCliente=document.getElementById('co-num').value.trim();
   if(!endCliente){el.style.display='none';return}
 
-  el.innerHTML='<div style="color:var(--text2);font-size:12px">ðŸ“ Calculando distÃ¢ncia...</div>';
+  el.innerHTML='<div style="color:var(--text2);font-size:12px">ðŸ“ Calculando distância...</div>';
   el.style.display='block';
 
   const endFull=endCliente+(numCliente?', '+numCliente:'')+', Rio de Janeiro';
   const coords=await geocodificar(endFull);
   if(!coords){
-    el.innerHTML='<div style="color:var(--orange);font-size:12px">âš ï¸ NÃ£o foi possÃ­vel calcular a distÃ¢ncia. Prossiga normalmente.</div>';
+    el.innerHTML='<div style="color:var(--orange);font-size:12px">âš ï¸ Não foi possível calcular a distância. Prossiga normalmente.</div>';
     _zonaAtiva=null;
     return;
   }
@@ -523,7 +523,7 @@ async function verificarZonaEntrega(){
   updCoResumo();
 }
 
-// Salvar endereÃ§o da loja
+// Salvar endereço da loja
 
 async function carregarConfigLoja(configs){
   configs.forEach(r=>{
@@ -557,7 +557,7 @@ async function init(){
   carregarTaxaRemota();
   carregarZonas();
   await carregarDatasBloqueadas();
-  // r-data intencionalmente em branco â€” relatÃ³rio comeÃ§a sem filtro de data
+  // r-data intencionalmente em branco ? relatório começa sem filtro de data
 
   // Verifica sessao primeiro, depois carrega catalogo
   const {data:{session}}=await sb.auth.getSession();
@@ -576,6 +576,7 @@ async function loadCatalog(){
       sb.from('produtos').select('*').order('nome')
     ]);
     cats=c.data||[];prods=p.data||[];
+    normalizarCarrinhoEstoque();
     // Se nao carregou, tenta novamente em 2s
     if(!cats.length && !prods.length){
       setTimeout(async()=>{
@@ -585,6 +586,7 @@ async function loadCatalog(){
         ]);
         if(c2.data?.length||p2.data?.length){
           cats=c2.data||[];prods=p2.data||[];
+          normalizarCarrinhoEstoque();
           renderShopCats();renderShop();
         }
       },2000);
@@ -594,6 +596,28 @@ async function loadCatalog(){
     // Tenta novamente em 3s
     setTimeout(()=>loadCatalog().then(()=>{renderShopCats();renderShop()}),3000);
   }
+}
+
+function estoqueProduto(p){
+  if(!p||p.estoque==null)return null;
+  const n=Number(p.estoque);
+  return Number.isFinite(n)?Math.max(0,Math.floor(n)):null;
+}
+function normalizarCarrinhoEstoque(){
+  let mudou=false;
+  cart.itens=cart.itens.map(it=>{
+    const p=prods.find(x=>x.id===it.prodId);
+    const max=estoqueProduto(p);
+    const qty=Math.max(0,Math.floor(Number(it.qty)||0));
+    if(max!=null&&qty>max){mudou=true;return {...it,qty:max};}
+    if(qty!==it.qty)mudou=true;
+    return {...it,qty};
+  }).filter(it=>it.qty>0);
+  if(mudou)updCartBadge();
+  return mudou;
+}
+function estoqueMaxMsg(){
+  toast('Estoque máximo disponível para este produto.','err');
 }
 
 async function loadProfile(uid,user){
@@ -619,7 +643,7 @@ async function loadProfile(uid,user){
 }
 
 
-// â”€â”€ DROPDOWN MENU â”€â”€
+// ?? DROPDOWN MENU ??
 function toggleDropdown(){
   if(!perfil){abrirAuth();return}
   const dd=document.getElementById('user-dropdown');
@@ -693,7 +717,7 @@ async function fazerCadastro(){
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
   const aceitou=document.getElementById('aceito-termos')?.checked;
-  if(!aceitou){showMsg(msg,'VocÃª precisa aceitar os Termos de Uso para criar uma conta.','error');return}
+  if(!aceitou){showMsg(msg,'Você precisa aceitar os Termos de Uso para criar uma conta.','error');return}
   if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
   if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
@@ -740,7 +764,7 @@ function renderShopCats(){
   const imgMap={
     'Alhos':'alhos.png','Bandejas':'bandejas.png','Bolos':'bolos.png',
     'Massas':'massas.png','Verduras':'verduras.png','Macarroes':'massas.png',
-    'MacarrÃµes':'massas.png'
+    'Macarrões':'massas.png'
   };
   const iconMap={
     'Alhos':'badge-plus','Bandejas':'package','Bolos':'cake-slice',
@@ -781,14 +805,16 @@ function renderShop(){
   el.innerHTML=ps.map(p=>{
     const it=cart.itens.find(i=>i.prodId===p.id);
     const qty=it?it.qty:0;
-    const semEstoque=p.estoque!=null&&p.estoque<=0;
+    const maxEstoque=estoqueProduto(p);
+    const semEstoque=maxEstoque!=null&&maxEstoque<=0;
+    const maxAtingido=maxEstoque!=null&&qty>=maxEstoque;
     const ctrl=semEstoque
       ?`<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-soft);padding:4px 10px;border-radius:20px;white-space:nowrap">Esgotado</span>`
       :qty>0
         ?`<div class="prod-qty-ctrl">
             <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},-1)">-</button>
             <span class="cqn" style="min-width:20px;text-align:center;font-size:14px;font-weight:800">${qty}</span>
-            <button class="cqb-lg" onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
+            <button class="cqb-lg" ${maxAtingido?'disabled':''} onclick="event.stopPropagation();cQtyCard(${p.id},1)">+</button>
           </div>`
         :`<button class="add-btn-lg" onclick="event.stopPropagation();addCart(${p.id})">+</button>`;
     const imgEl=p.imagem_url
@@ -814,8 +840,9 @@ function addCart(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   const ex=cart.itens.find(i=>i.prodId===id);
   const qAtual=ex?ex.qty:0;
-  if(p.estoque!=null&&qAtual>=p.estoque){
-    toast(p.estoque===0?'Produto esgotado.':'Quantidade mÃ¡xima disponÃ­vel: '+p.estoque+'.','err');
+  const max=estoqueProduto(p);
+  if(max!=null&&qAtual>=max){
+    toast(max===0?'Produto esgotado.':'Estoque máximo disponível para este produto.','err');
     return;
   }
   if(ex)ex.qty++;else cart.itens.push({prodId:id,qty:1});
@@ -826,9 +853,10 @@ function addCart(id){
 function cQtyCard(id,d){
   const p=prods.find(x=>x.id===id);
   const ex=cart.itens.find(i=>i.prodId===id);
-  if(d>0&&p&&p.estoque!=null){
+  const max=estoqueProduto(p);
+  if(d>0&&max!=null){
     const qAtual=ex?ex.qty:0;
-    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'MÃ¡ximo disponÃ­vel: '+p.estoque+'.','err');return;}
+    if(qAtual>=max){estoqueMaxMsg();return;}
   }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
@@ -852,7 +880,7 @@ function abrirCart(){
   atualizarBtnContinuar();
   setOverlayState('cart-ov',true);
   setTimeout(()=>document.getElementById('cart-drawer').classList.add('open'),10);
-  // Esconde barra mobile para nÃ£o atrapalhar
+  // Esconde barra mobile para não atrapalhar
   const bar=document.getElementById('mobile-cart-bar');
   if(bar)bar.classList.remove('show');
 }
@@ -865,6 +893,7 @@ function fecharCart(){
 function fecharCartOv(e){if(e.target===document.getElementById('cart-ov'))fecharCart()}
 
 function renderCart(){
+  normalizarCarrinhoEstoque();
   const el=document.getElementById('cart-list');
   if(!cart.itens.length){el.innerHTML='<div class="empty">Carrinho vazio</div>';updSums();return}
   let sub=0,qtd=0;
@@ -872,14 +901,25 @@ function renderCart(){
     const p=prods.find(x=>x.id===it.prodId);if(!p)return'';
     const s=p.preco*it.qty;sub+=s;qtd+=it.qty;
     const thumb=p.imagem_url?`<img src="${h(p.imagem_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`:lucideIcon('sprout');
-    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${h(p.nome)}</div><div class="cart-item-price">${h(p.peso||'')} &middot; R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
+    const max=estoqueProduto(p);
+    const maxAtingido=max!=null&&it.qty>=max;
+    return`<div class="cart-item"><div class="cart-item-ico">${thumb}</div><div class="cart-item-info"><div class="cart-item-name">${h(p.nome)}</div><div class="cart-item-price">${h(p.peso||'')} &middot; R$ ${fp(p.preco)}</div></div><div class="cart-item-qty"><button class="cqb" onclick="cQty(${i},-1)">-</button><span class="cqn">${it.qty}</span><button class="cqb" ${maxAtingido?'disabled':''} onclick="cQty(${i},1)">+</button></div><div class="cart-item-sub">R$ ${fp(s)}</div></div>`;
   }).join('');
   refreshIcons();
   updSums();
 }
-function cQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();renderCart()}
+function cQty(i,d){
+  const it=cart.itens[i];if(!it)return;
+  const p=prods.find(x=>x.id===it.prodId);
+  const max=estoqueProduto(p);
+  if(d>0&&max!=null&&it.qty>=max){estoqueMaxMsg();return;}
+  it.qty=Math.max(0,it.qty+d);
+  if(max!=null&&it.qty>max)it.qty=max;
+  if(it.qty===0)cart.itens.splice(i,1);
+  updCartBadge();renderCart();
+}
 
-// â”€â”€ PROMOCAO AUTOMATICA â”€â”€
+// ?? PROMOCAO AUTOMATICA ??
 function calcPromoAuto(sub){
   return null;
 }
@@ -904,7 +944,7 @@ function updSums(){try{
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
   const promo=calcPromoAuto(sub);
   let freteGratis=promo?.freteGratis||false;
-  // SÃ³ aplica taxa se frete foi calculado pelo CEP
+  // Só aplica taxa se frete foi calculado pelo CEP
   const taxaBase=cart.entrega==='Entrega'&&!freteGratis&&_freteCalculado?TAXA:0;
   const cupomPrev=calcCupomPreview(cupomAtivo,sub,taxaBase,cart.entrega);
   freteGratis=freteGratis||(cupomAtivo&&cupomTipo(cupomAtivo)==='frete_gratis'&&cupomPrev.taxaFinal===0&&cart.entrega==='Entrega');
@@ -931,7 +971,7 @@ function updSums(){try{
     if(taxaVal)taxaVal.textContent='+ R$ '+fp(TAXA);
   }
 
-  // Aviso mÃ­nimo integrado no botÃ£o (via atualizarBtnContinuar)
+  // Aviso mínimo integrado no botão (via atualizarBtnContinuar)
 
   // Promo row
   let promoRow=document.getElementById('c-promo-row');
@@ -950,7 +990,7 @@ function updSums(){try{
     if(promo){
       promoRow.style.display='';
       document.getElementById('c-promo-label').textContent=promo.label;
-      document.getElementById('c-promo-val').textContent='- R$ '+fp(promo.desconto)+(freteGratis?' + Frete grÃ¡tis':'');
+      document.getElementById('c-promo-val').textContent='- R$ '+fp(promo.desconto)+(freteGratis?' + Frete grátis':'');
     }else{
       promoRow.style.display='none';
     }
@@ -962,7 +1002,7 @@ function updSums(){try{
     descRow.classList.toggle('hidden',!cupomAtivo);
     if(cupomAtivo){
       document.getElementById('c-desc-label').textContent='Cupom '+cupomAtivo.nome;
-      document.getElementById('c-desc-val').textContent=cupomTipo(cupomAtivo)==='frete_gratis'?'Frete grÃƒÂ¡tis':'- R$ '+fp(descCupom);
+      document.getElementById('c-desc-val').textContent=cupomTipo(cupomAtivo)==='frete_gratis'?'Frete gr?tis':'- R$ '+fp(descCupom);
     }
   }
   document.getElementById('c-total').textContent='R$ '+fp(Math.max(0,sub+taxa-descTotal));
@@ -978,7 +1018,7 @@ function limparCarrinho(){
 }
 
 
-// â”€â”€ CEP E FRETE NO CARRINHO â”€â”€
+// ?? CEP E FRETE NO CARRINHO ??
 let _cartZona = null; // zona calculada no carrinho
 
 async function calcularFreteCarrinho(){
@@ -987,7 +1027,7 @@ async function calcularFreteCarrinho(){
   if(cepInput.length!==8){
     info.style.display='block';
     info.style.color='var(--orange)';
-    info.textContent='Digite um CEP vÃ¡lido (8 dÃ­gitos).';
+    info.textContent='Digite um CEP válido (8 dígitos).';
     return;
   }
   info.style.display='block';
@@ -1000,7 +1040,7 @@ async function calcularFreteCarrinho(){
     const result = await geocodificarCEP(cepInput);
     if(!result||!result.viacep){
       info.style.color='var(--red)';
-      info.textContent='CEP nÃ£o encontrado. Verifique e tente novamente.';
+      info.textContent='CEP não encontrado. Verifique e tente novamente.';
       return;
     }
 
@@ -1009,7 +1049,7 @@ async function calcularFreteCarrinho(){
     window._cartCoords = {lat:result.lat, lng:result.lng};
 
     if(!LOJA_LAT||!LOJA_LNG||LOJA_LAT===0){
-      // Loja nÃ£o configurada â€” usa primeira zona disponÃ­vel
+      // Loja não configurada ? usa primeira zona disponível
       _cartZona = zonas[0]||null;
       if(_cartZona)TAXA=_cartZona.taxa;
       _freteEstimado=true;
@@ -1077,7 +1117,7 @@ function atualizarBtnContinuar(){
   const btn=document.getElementById('cart-continuar-btn');
   if(!btn)return;
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
-  // Sem bloqueio â€” aviso via balloon ao clicar
+  // Sem bloqueio ? aviso via balloon ao clicar
   btn.disabled=false;btn.style.opacity='1';
   const aviso=document.getElementById('cart-min-aviso');
   if(aviso)aviso.style.display='none';
@@ -1101,19 +1141,19 @@ function irCheckout(){
     const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     // Bloquear se nao atingiu pedido minimo
     if(PEDIDO_MIN>0&&sub<PEDIDO_MIN){
-      toast('Pedido mÃ­nimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
+      toast('Pedido mínimo para entrega: R$ '+fp(PEDIDO_MIN)+'. Faltam R$ '+fp(PEDIDO_MIN-sub),'err',5000);
       return;
     }
-    // ForÃ§ar CEP antes de prosseguir
+    // Forçar CEP antes de prosseguir
     if(!_freteCalculado){
       const cepEl=document.getElementById('cart-cep');
       if(cepEl)cepEl.focus();
       toast('Calcule o frete pelo CEP antes de continuar.','err',4000);
       return;
     }
-    // Bloquear se CEP foi calculado mas estÃ¡ fora do raio
+    // Bloquear se CEP foi calculado mas está fora do raio
     if(window._cartCoords===undefined&&LOJA_LAT){
-      toast('EndereÃ§o fora do raio de entrega. Escolha Retirada.','err',4000);
+      toast('Endereço fora do raio de entrega. Escolha Retirada.','err',4000);
       return;
     }
   }
@@ -1196,12 +1236,12 @@ function setCoE(v){
     TAXA=0;
     renderRetOpts();
   }else{
-    // Voltou para Entrega: resetar zona e coords para forÃ§ar novo cÃ¡lculo
+    // Voltou para Entrega: resetar zona e coords para forçar novo cálculo
     _zonaAtiva=null;_clienteLat=null;_clienteLng=null;TAXA=0;
     // Limpar info de zona e mostrar aviso
     const zi=document.getElementById('co-zona-info');
     if(zi){zi.style.display='block';zi.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:600">Preencha o CEP abaixo para calcular o frete de entrega.</div>';}
-    // Recalcular se jÃ¡ tem CEP
+    // Recalcular se já tem CEP
     const cepEl=document.getElementById('co-cep');
     if(cepEl&&cepEl.value.replace(/\D/g,'').length===8){
       setTimeout(verificarZonaEntrega,400);
@@ -1221,7 +1261,7 @@ function renderRetOpts(){
   const dow=new Date(y,m-1,d).getDay();
   const local=LOCAIS_RETIRADA[dow];
   if(!local){
-    info.innerHTML='<div style="font-size:12px;color:var(--red)">Sem retirada disponÃ­vel nesta data.</div>';
+    info.innerHTML='<div style="font-size:12px;color:var(--red)">Sem retirada disponível nesta data.</div>';
     document.getElementById('co-ret-local').value='';
     return;
   }
@@ -1247,13 +1287,6 @@ async function aplicarCupom(){
   if(c.usos_restantes<=0){
     msg.style.display='block';msg.style.color='var(--orange)';
     msg.textContent='Esse cupom fez sucesso e j\u00e1 esgotou!';return;
-  }
-
-  const {data:jaUsou}=await sb.from('pedidos')
-    .select('id').eq('user_id',perfil.id).eq('cupom',nome).limit(1);
-  if(jaUsou&&jaUsou.length>0){
-    msg.style.display='block';msg.style.color='var(--red)';
-    msg.textContent='Voc\u00ea j\u00e1 utilizou o cupom '+nome+' anteriormente.';return;
   }
 
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
@@ -1315,10 +1348,10 @@ function buildTextoWhatsApp(pedido,itens){
     if(trocoVal && trocoVal !== 'sem troco'){
       pagExtra = 'Troco: R$ ' + fp(parseFloat(trocoVal));
     } else {
-      pagExtra = 'Troco: NÃ£o';
+      pagExtra = 'Troco: Não';
     }
   } else {
-    pagLabel = 'CartÃ£o';
+    pagLabel = 'Cartão';
   }
 
   // Template personalizado (se existir)
@@ -1343,11 +1376,11 @@ function buildTextoWhatsApp(pedido,itens){
 
   // Template padrao formatado
   const partes = [];
-  partes.push('Tipo de serviÃ§o: ' + (isEntrega ?'Entrega' : 'Retirada'));
+  partes.push('Tipo de serviço: ' + (isEntrega ?'Entrega' : 'Retirada'));
   partes.push('');
   partes.push('Nome: ' + (pedido.nome||''));
   partes.push('Telefone: ' + (pedido.contato||''));
-  partes.push((isEntrega ?'EndereÃ§o: ' : 'Local de retirada: ') + (endFull||''));
+  partes.push((isEntrega ?'Endereço: ' : 'Local de retirada: ') + (endFull||''));
   partes.push('Data de ' + (isEntrega ?'entrega' : 'retirada') + ': ' + (pedido.data||''));
   partes.push('');
   partes.push('-- Produtos --');
@@ -1362,7 +1395,7 @@ function buildTextoWhatsApp(pedido,itens){
   partes.push('Total a pagar: R$ ' + fp(totalFinal));
   partes.push('Forma de pagamento: ' + pagLabel);
   if(pagExtra) partes.push(pagExtra);
-  if(pedido.obs){ partes.push(''); partes.push('-- ObservaÃ§Ãµes --'); partes.push(pedido.obs); }
+  if(pedido.obs){ partes.push(''); partes.push('-- Observações --'); partes.push(pedido.obs); }
   partes.push('');
   partes.push('Por favor, envie-nos esta mensagem agora.');
   return partes.join('\n');
@@ -1373,7 +1406,7 @@ function abrirWhatsApp(texto){
   const url='https://wa.me/'+num+'?text='+encodeURIComponent(texto);
   window.open(url,'_blank');
 }
-/* â”€â”€ PAGAMENTO CHECKOUT â”€â”€ */
+/* ?? PAGAMENTO CHECKOUT ?? */
 let _metodoEntrega='Cartao';
 function setPagMomento(m){
   document.getElementById('co-pag-momento').value=m;
@@ -1433,7 +1466,7 @@ async function enviarPedido(){
 }
 
 
-/* â”€â”€ CALENDAR PICKER â”€â”€ */
+/* ?? CALENDAR PICKER ?? */
 let calCtx=null; // 'co' | 'adm'
 let calAno,calMes;
 
@@ -1447,7 +1480,7 @@ function abrirCal(ctx){
     ?'<span class="cal-dot"></span> Todas as datas de entrega'
     :calCtx==='adm'
     ?'<span class="cal-dot"></span> Selecione qualquer data'
-    :'<span class="cal-dot"></span> PrÃ³ximas 3 datas disponÃ­veis';
+    :'<span class="cal-dot"></span> Próximas 3 datas disponíveis';
   const _calEl=document.getElementById('cal-ov');
   document.body.appendChild(_calEl);
   _calEl.removeAttribute('aria-hidden');
@@ -1470,14 +1503,14 @@ function navCal(d){
 }
 
 function renderCal(){
-  const MESES_LONG=['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'];
+  const MESES_LONG=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   document.getElementById('cal-month-label').textContent=MESES_LONG[calMes]+' '+calAno;
 
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const selVal=document.getElementById(calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data').value;
 
-  // Datas disponÃ­veis: lÃ³gica diferente por contexto
+  // Datas disponíveis: lógica diferente por contexto
   const proximas=new Set();
   if(calCtx==='co'||calCtx==='co3'){
     // Usa corte de 20h (mesma regra de datasComCorte)
@@ -1495,7 +1528,7 @@ function renderCal(){
     const iso=toISO(dt);
     const isHoje=dt.getTime()===hoje.getTime();
     const dow=dt.getDay();
-    // Admin novo pedido: qualquer data. Entregas: todos Ter/SÃ¡b. Cliente: 3 prÃ³ximas
+    // Admin novo pedido: qualquer data. Entregas: todos Ter/Sáb. Cliente: 3 próximas
     let isDisponivel;
     if(calCtx==='adm') isDisponivel=true;
     else if(calCtx==='entr') isDisponivel=(dow===2||dow===5);
@@ -1514,8 +1547,8 @@ function renderCal(){
     if(isDisponivel){
       html+=`<button class="${cls}" onclick="selecionarData('${iso}')">${dia}</button>`;
     }else{
-      // NÃ£o disponÃ­vel: clique sÃ³ fecha o cal (nÃ£o congela)
-      const msg=calCtx==='co'?'Somente terÃ§as e sextas':'';
+      // Não disponível: clique só fecha o cal (não congela)
+      const msg=calCtx==='co'?'Somente terças e sextas':'';
       html+=`<button class="${cls}" onclick="fecharCal();${msg?`toast('${msg}','err',2000)`:''};">${dia}</button>`;
     }
   }
@@ -1525,7 +1558,7 @@ function renderCal(){
 function selecionarData(iso){
   if((calCtx==='co'||calCtx==='co3')&&dataBloqueada(iso,calCtx==='co3'?co3Modalidade:cart.entrega)){
     fecharCal();
-    toast('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.','err',3000);
+    toast('Essa data não está disponível. Escolha outra data.','err',3000);
     return;
   }
   const idInput=calCtx==='co'?'co-data':calCtx==='adm'?'a-data':calCtx==='co3'?'co3-data':'e-data';
@@ -1558,7 +1591,7 @@ function fecharSucesso(){
   _s.setAttribute('inert','');
 }
 
-/* â”€â”€ POPUP & TOAST â”€â”€ */
+/* ?? POPUP & TOAST ?? */
 function toast(msg,type='info',dur=3200){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
@@ -1620,7 +1653,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharAuth();fechar
 ['login-email','login-pass'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()}));
 ['reg-nome','reg-tel','reg-email','reg-pass','reg-pass2'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerCadastro()}));
 
-/* â”€â”€ PRODUCT MODAL â”€â”€ */
+/* ?? PRODUCT MODAL ?? */
 function abrirProdModal(id){
   const p=prods.find(x=>x.id===id);if(!p)return;
   let modal=document.getElementById('prod-modal-ov');
@@ -1628,7 +1661,7 @@ function abrirProdModal(id){
     document.body.insertAdjacentHTML('beforeend',`<div class="modal-ov" id="prod-modal-ov" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
       <div class="modal-box" style="width:360px;padding:0;overflow:hidden">
         <div id="prod-modal-img" style="width:100%;height:200px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:64px;position:relative">
-          <button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>
+          <button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>
         </div>
         <div style="padding:16px">
           <div id="prod-modal-nome" style="font-size:18px;font-weight:800;margin-bottom:4px"></div>
@@ -1645,8 +1678,8 @@ function abrirProdModal(id){
   }
   const imgEl=document.getElementById('prod-modal-img');
   imgEl.innerHTML=p.imagem_url
-    ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>`
-    :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">âœ•</button>`;
+    ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`
+    :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`;
   document.getElementById('prod-modal-nome').textContent=p.nome;
   document.getElementById('prod-modal-peso').textContent=p.peso||'';
   document.getElementById('prod-modal-desc').textContent=p.descricao||'';
@@ -1673,9 +1706,10 @@ function renderProdModalCtrl(id){
 function cQtyModal(id,d){
   const p=prods.find(x=>x.id===id);
   const ex=cart.itens.find(i=>i.prodId===id);
-  if(d>0&&p&&p.estoque!=null){
+  const max=estoqueProduto(p);
+  if(d>0&&max!=null){
     const qAtual=ex?ex.qty:0;
-    if(qAtual>=p.estoque){toast(p.estoque===0?'Produto esgotado.':'MÃ¡ximo disponÃ­vel: '+p.estoque+'.','err');return;}
+    if(qAtual>=max){estoqueMaxMsg();return;}
   }
   if(ex){ex.qty=Math.max(0,ex.qty+d);if(ex.qty===0)cart.itens.splice(cart.itens.indexOf(ex),1)}
   else if(d>0){cart.itens.push({prodId:id,qty:1})}
@@ -1683,13 +1717,13 @@ function cQtyModal(id,d){
   if(document.getElementById('cart-drawer').classList.contains('open'))renderCart();
 }
 
-/* â”€â”€ LOCAIS DE RETIRADA â”€â”€ */
+/* ?? LOCAIS DE RETIRADA ?? */
 const LOCAIS_RETIRADA={
-  2:{nome:'Feira TerÃ§a-feira',end:'Rua Borda do Mato - GrajaÃº, Rio de Janeiro',ref:'Em frente Ã  Academia Borda 90'},
-  5:{nome:'Feira Sexta-feira',end:'Av. JÃºlio Furtado - GrajaÃº, Rio de Janeiro',ref:'Em frente ao StudioGama115'}
+  2:{nome:'Feira Terça-feira',end:'Rua Borda do Mato - Grajaú, Rio de Janeiro',ref:'Em frente à Academia Borda 90'},
+  5:{nome:'Feira Sexta-feira',end:'Av. Júlio Furtado - Grajaú, Rio de Janeiro',ref:'Em frente ao StudioGama115'}
 };
 
-/* â”€â”€ MOBILE CART BAR â”€â”€ */
+/* ?? MOBILE CART BAR ?? */
 function updMobileCartBar(){
   const bar=document.getElementById('mobile-cart-bar');
   if(!bar)return;
@@ -1704,25 +1738,25 @@ function updMobileCartBar(){
   }
 }
 
-/* â”€â”€ DASHBOARD â”€â”€ */
+/* ?? DASHBOARD ?? */
 let cupons=[];
 
 function abrirRastrearPedido(){
   if(perfil){abrirPerfilTab('historico');return;}
-  toast('Abra o link de acompanhamento recebido apÃ³s o pedido.','err');
+  toast('Abra o link de acompanhamento recebido após o pedido.','err');
 }
 async function acompanharPedidoToken(token,limparUrl=false){
   const seguro=String(token||'').trim().toUpperCase();
-  if(!/^CTD-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(seguro)){toast('Link de acompanhamento invÃ¡lido.','err');return;}
+  if(!/^CTD-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(seguro)){toast('Link de acompanhamento inválido.','err');return;}
   try{
     const resp=await fetch('/api/acompanhar-pedido?token='+encodeURIComponent(seguro),{headers:{Accept:'application/json'}});
     const result=await resp.json();
-    if(!resp.ok)throw new Error(result?.error||'Pedido nÃ£o encontrado.');
+    if(!resp.ok)throw new Error(result?.error||'Pedido não encontrado.');
     const data=result.pedido||{},st=data.status||'Pendente';
-    const statusEmoji={'Pendente':'â³','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Pronto para retirar':'ðŸª','Retirado':'âœ…','Entregue':'âœ…','Cancelado':'âŒ'};
-    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'â€”';
-    popTrackAlert((statusEmoji[st]||'ðŸ“¦')+' Pedido #'+(data.codigo||''),'Data: '+dt+'\nModalidade: '+(data.entrega||'â€”')+'\n\nStatus atual:\n'+st);
-  }catch(e){toast(e.message||'NÃ£o foi possÃ­vel acompanhar o pedido.','err');}
+    const statusEmoji={'Pendente':'⏳','Em preparo':'ðŸ‘¨â€ðŸ³','Saiu para entrega':'ðŸ›µ','Pronto para retirar':'ðŸª','Retirado':'?','Entregue':'?','Cancelado':'?'};
+    const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'?';
+    popTrackAlert((statusEmoji[st]||'ðŸ“¦')+' Pedido #'+(data.codigo||''),'Data: '+dt+'\nModalidade: '+(data.entrega||'?')+'\n\nStatus atual:\n'+st);
+  }catch(e){toast(e.message||'Não foi possível acompanhar o pedido.','err');}
   finally{
     if(limparUrl&&history.replaceState){
       const url=new URL(window.location.href);url.searchParams.delete('token');history.replaceState({},'',url.pathname+url.search+url.hash);
@@ -1766,9 +1800,9 @@ async function loginGoogle(){
   if(error)toast('Erro ao conectar com Google.','err');
 }
 function abrirEsqueceuSenha(){
-  popInput('ðŸ”‘','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefiniÃ§Ã£o:','seu@email.com','Enviar link',async(val)=>{
+  popInput('ðŸ”‘','Esqueceu sua senha?','Digite seu e-mail para receber o link de redefinição:','seu@email.com','Enviar link',async(val)=>{
     const email=val.trim().toLowerCase();
-    if(!email||!email.includes('@')){toast('Digite um e-mail vÃ¡lido.','err');return}
+    if(!email||!email.includes('@')){toast('Digite um e-mail válido.','err');return}
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/loja?reset=1'});
     if(error){toast('Erro ao enviar.','err');return}
     toast('Link enviado! Verifique sua caixa de entrada','ok');
@@ -1789,7 +1823,7 @@ function abrirNovaSenha(){
   ov.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px 22px 20px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35)">
     <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)">Nova senha</div>
     <div id="reset-msg" style="margin-bottom:8px"></div>
-    <input id="reset-pass1" type="password" placeholder="Nova senha (mÃ­n. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
+    <input id="reset-pass1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:8px;box-sizing:border-box">
     <input id="reset-pass2" type="password" placeholder="Confirmar nova senha" style="width:100%;font-size:14px;font-family:var(--font);background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px;outline:none;margin-bottom:14px;box-sizing:border-box">
     <button onclick="salvarNovaSenha()" style="width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;border:none;background:var(--green);color:#fff">Salvar nova senha</button>
   </div>`;
@@ -1799,17 +1833,17 @@ async function salvarNovaSenha(){
   const p1=document.getElementById('reset-pass1').value;
   const p2=document.getElementById('reset-pass2').value;
   const msg=document.getElementById('reset-msg');
-  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">MÃ­nimo 6 caracteres.</div>';return}
-  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas nÃ£o coincidem.</div>';return}
+  if(!p1||p1.length<6){msg.innerHTML='<div style="color:var(--red);font-size:12px">Mínimo 6 caracteres.</div>';return}
+  if(p1!==p2){msg.innerHTML='<div style="color:var(--red);font-size:12px">Senhas não coincidem.</div>';return}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.innerHTML='<div style="color:var(--red);font-size:12px">Erro: '+error.message+'</div>';return}
   document.getElementById('reset-ov').remove();
   toast('Senha atualizada!','ok');
 }
 
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
 // LANDING PAGE EDITOR
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
 
 let _pixPedidoData = null; // guarda dados do pedido para confirmar depois
 
@@ -1868,7 +1902,7 @@ function abrirPixModal(total, pedidoData){
   document.getElementById('pix-codigo-txt').textContent = payload;
   _pixQR(document.getElementById('pix-qr-canvas'), payload);
   const ov = document.getElementById('pix-modal-ov');
-  document.body.appendChild(ov); // garantir que estÃ¡ no topo do DOM
+  document.body.appendChild(ov); // garantir que está no topo do DOM
   ov.style.display = 'flex';
   ov.classList.add('open');
 }
@@ -1897,16 +1931,16 @@ async function confirmarPagamentoPix(){
   await _finalizarPedido(_pixPedidoData);
 }
 
-// â”€â”€ FINALIZAR PEDIDO APÃ“S PIX â”€â”€
+// ?? FINALIZAR PEDIDO AP?S PIX ??
 async function _finalizarPedido(){
   fecharPixModal();
   toast('Use o checkout seguro para finalizar o pedido.','err',3000);
   abrirCheckoutSeguroLegado();
 }
 
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
 // CHECKOUT 3 PASSOS
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
 let co3Step=1,co3Modalidade='Entrega',co3CupomAtivo=null,co3FreteCalculado=false,co3PagMetodo='Pix',co3Troco='',co3EnderecoForaRaio=false;
 
 function fecharCo3(){
@@ -1925,16 +1959,16 @@ function co3GoStep(n){
     else{d.textContent=i;}
   });
   ['co3-p1','co3-p2','co3-p3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=(i+1===n)?'block':'none';});
-  // Resumo sÃ³ no passo 1
+  // Resumo só no passo 1
   const _resumo=document.getElementById('co3-resumo-sidebar');
   if(_resumo) _resumo.style.display = n===1 ?'block' : 'none';
   co3RenderResumoItens();
-  // Resumo: sÃ³ no passo 1
+  // Resumo: só no passo 1
   const resumoEl=document.querySelector('.co3-resumo');
   const bodyEl=document.querySelector('.co3-body');
   if(resumoEl)resumoEl.style.display=n===1?'':'none';
   if(bodyEl)bodyEl.classList.toggle('sem-resumo',n!==1);
-  // Mostrar resumo endereÃ§o no passo 2
+  // Mostrar resumo endereço no passo 2
   if(n>=2){
     const resumoEl=document.getElementById('co3-end-resumo');
     const endFull=document.getElementById('co3-end-full')?.value;
@@ -1945,7 +1979,7 @@ function co3GoStep(n){
     if(data){const[y,m,d]=data.split('-').map(Number);const dt=new Date(y,m-1,d);dataLabel=DIAS[dt.getDay()]+', '+String(d).padStart(2,'0')+'/'+MESES2[m-1];}
     if(resumoEl){
       resumoEl.style.display=endFull?'block':'none';
-      if(endFull)resumoEl.innerHTML='<strong>'+co3Modalidade+'</strong> Â· '+dataLabel+(endFull?' Â· '+endFull.split(' - ')[0]:'');
+      if(endFull)resumoEl.innerHTML='<strong>'+co3Modalidade+'</strong> · '+dataLabel+(endFull?' · '+endFull.split(' - ')[0]:'');
     }
   }
   const ov=document.getElementById('co3-ov');if(ov)ov.scrollTop=0;
@@ -1969,7 +2003,16 @@ function co3RenderItems(){
   co3RenderResumoItens();
 }
 
-function co3ChgQty(i,d){cart.itens[i].qty=Math.max(0,cart.itens[i].qty+d);if(cart.itens[i].qty===0)cart.itens.splice(i,1);updCartBadge();co3RenderItems();co3UpdateResumo();}
+function co3ChgQty(i,d){
+  const it=cart.itens[i];if(!it)return;
+  const p=prods.find(x=>x.id===it.prodId);
+  const max=estoqueProduto(p);
+  if(d>0&&max!=null&&it.qty>=max){estoqueMaxMsg();return;}
+  it.qty=Math.max(0,it.qty+d);
+  if(max!=null&&it.qty>max)it.qty=max;
+  if(it.qty===0)cart.itens.splice(i,1);
+  updCartBadge();co3RenderItems();co3UpdateResumo();
+}
 
 function co3UpdateResumo(){
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
@@ -2001,13 +2044,13 @@ async function co3AplicarCupom(){
   if(!codigo){
     co3CupomAtivo=null;
     msg.style.color='var(--red)';
-    msg.textContent='Digite o cÃ³digo do cupom.';
+    msg.textContent='Digite o código do cupom.';
     co3UpdateResumo();
     return;
   }
   if(!perfil?.id){
     msg.style.color='var(--red)';
-    msg.textContent='FaÃ§a login para usar cupons.';
+    msg.textContent='Faça login para usar cupons.';
     return;
   }
   try{
@@ -2015,15 +2058,7 @@ async function co3AplicarCupom(){
     if(error||!cupom||Number(cupom.usos_restantes)<=0){
       co3CupomAtivo=null;
       msg.style.color='var(--red)';
-      msg.textContent='Cupom invÃ¡lido ou indisponÃ­vel.';
-      co3UpdateResumo();
-      return;
-    }
-    const {data:usado}=await sb.from('pedidos').select('id').eq('user_id',perfil.id).eq('cupom',cupom.nome).limit(1);
-    if(usado?.length){
-      co3CupomAtivo=null;
-      msg.style.color='var(--red)';
-      msg.textContent='VocÃª jÃ¡ utilizou este cupom.';
+      msg.textContent='Cupom inválido ou indisponível.';
       co3UpdateResumo();
       return;
     }
@@ -2044,9 +2079,9 @@ async function co3AplicarCupom(){
     msg.textContent=prev.msg||'Cupom aplicado. O desconto final ser\u00e1 validado ao finalizar.';
     co3UpdateResumo();
   }catch(e){
-    console.error('[CUPOM] Falha ao validar prÃ©via:',e);
+    console.error('[CUPOM] Falha ao validar prévia:',e);
     msg.style.color='var(--red)';
-    msg.textContent='NÃ£o foi possÃ­vel validar o cupom. Tente novamente.';
+    msg.textContent='Não foi possível validar o cupom. Tente novamente.';
   }
 }
 
@@ -2130,8 +2165,8 @@ function co3ValidarTroco(){
 function co3ConfirmarTroco(){const val=parseFloat(document.getElementById('co3-troco-val')?.value)||0;const{total}=co3UpdateResumo();if(val<=total){co3ValidarTroco();return;}co3Troco=val.toFixed(2);toast('Troco para R$ '+fp(val)+' confirmado!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 function co3SemTroco(){co3Troco='sem troco';toast('Sem troco!','ok');document.getElementById('co3-dinheiro-box').style.display='none';}
 
-// â”€â”€ CO3: DATAS DISPONÃVEIS (prÃ³ximas 3 terÃ§as e sextas) â”€â”€
-// Corte: TerÃ§a fecha na Segunda Ã s 20h | Sexta fecha na Quinta Ã s 20h
+// ?? CO3: DATAS DISPONÍVEIS (próximas 3 terças e sextas) ??
+// Corte: Terça fecha na Segunda às 20h | Sexta fecha na Quinta às 20h
 function datasComCorte(){
   const agora = new Date();
   const hoje = new Date(agora); hoje.setHours(0,0,0,0);
@@ -2153,8 +2188,8 @@ function datasComCorte(){
 }
 
 
-// â”€â”€ CO3: AUTO BUSCAR CEP (no blur) â”€â”€
-// â”€â”€ CO3: Atualizar co3SetModalidade para p1 â”€â”€
+// ?? CO3: AUTO BUSCAR CEP (no blur) ??
+// ?? CO3: Atualizar co3SetModalidade para p1 ??
 
 function co3SetModalidade(v){
   co3Modalidade=v;cart.entrega=v;
@@ -2179,9 +2214,9 @@ function co3SetModalidade(v){
   co3UpdateResumo();co3RenderRetOpts();
 };
 
-// â”€â”€ CO3: Atualizar co3Passo2 para validar passo 1 â”€â”€
+// ?? CO3: Atualizar co3Passo2 para validar passo 1 ??
 
-// â”€â”€ CO3: Abrir co3 chama RenderDatas â”€â”€
+// ?? CO3: Abrir co3 chama RenderDatas ??
 
 function abrirCo3(){
   if(!perfil){window._coPend=true;abrirAuth();return}
@@ -2210,7 +2245,7 @@ function mostrarBalloon(msg){
   window._balloonTimer = setTimeout(()=>b.classList.remove('show'), 3000);
 }
 
-// â”€â”€ CO3: MOMENTO DO PAGAMENTO â”€â”€
+// ?? CO3: MOMENTO DO PAGAMENTO ??
 function co3SetMomento(v){
   document.getElementById('co3-pag-momento').value = v;
   document.getElementById('co3-momento-agora').classList.toggle('active', v==='agora');
@@ -2219,12 +2254,12 @@ function co3SetMomento(v){
   document.getElementById('co3-entrega-box').style.display = v==='entrega' ?'block' : 'none';
   const btn = document.getElementById('co3-btn-finalizar');
   if(btn){
-    if(v==='agora') btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei â€” Confirmar';
+    if(v==='agora') btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei ? Confirmar';
     else btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
   }
   document.getElementById('co3-pag').value = v==='agora' ?'Pix' : document.getElementById('co3-pag-entrega-met').value;
   if(v==='agora'){
-    // Pagar agora (Pix): iniciar countdown, esconder botÃ£o direto
+    // Pagar agora (Pix): iniciar countdown, esconder botão direto
     const wrap=document.getElementById('co3-countdown-wrap');
     const btn=document.getElementById('co3-btn-finalizar');
     if(wrap)wrap.style.display='block';
@@ -2232,7 +2267,7 @@ function co3SetMomento(v){
     setTimeout(co3GerarQR,50);
     co3IniciarCountdown();
   }else{
-    // Pagar na entrega: esconder countdown, mostrar botÃ£o direto
+    // Pagar na entrega: esconder countdown, mostrar botão direto
     const wrap=document.getElementById('co3-countdown-wrap');
     const btn=document.getElementById('co3-btn-finalizar');
     if(wrap)wrap.style.display='none';
@@ -2244,7 +2279,7 @@ function co3SetMomento(v){
   }
 }
 
-// â”€â”€ CO3: MÃ‰TODO NA ENTREGA â”€â”€
+// ?? CO3: M?TODO NA ENTREGA ??
 function co3SetPagEntrega(v){
   document.getElementById('co3-pag-entrega-met').value = v;
   document.getElementById('co3-pag').value = v;
@@ -2254,7 +2289,7 @@ function co3SetPagEntrega(v){
   document.getElementById('co3-dinheiro-box').style.display = v==='Dinheiro' ?'block' : 'none';
 }
 
-// â”€â”€ CO3: AUTO BUSCAR CEP â”€â”€
+// ?? CO3: AUTO BUSCAR CEP ??
 async function co3AutoBuscarCep(){
   const cepEl = document.getElementById('co3-cep');
   if(!cepEl) return;
@@ -2296,15 +2331,15 @@ async function co3AutoBuscarCep(){
   }
 }
 
-// â”€â”€ CO3: VALIDAR PASSO 2 ATUALIZADO â”€â”€
+// ?? CO3: VALIDAR PASSO 2 ATUALIZADO ??
 function co3Passo2(){
   if(!cart.itens.length){ toast('Carrinho vazio.','err'); return; }
   const data = document.getElementById('co3-data')?.value;
   if(co3Modalidade==='Entrega'){
-    if(co3EnderecoForaRaio){ mostrarBalloon('EndereÃ§o fora da Ã¡rea de entrega.'); return; }
+    if(co3EnderecoForaRaio){ mostrarBalloon('Endereço fora da área de entrega.'); return; }
     if(!co3FreteCalculado){ mostrarBalloon('Informe o CEP para calcular o frete'); return; }
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
-    if(dataBloqueada(data,'Entrega')){ mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.'); return; }
+    if(dataBloqueada(data,'Entrega')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
     const num = document.getElementById('co3-num-p1')?.value.trim();
     if(!num){ mostrarBalloon('Informe o numero do endereco'); return; }
     const rua = document.getElementById('co3-rua-p1')?.value.trim()||'';
@@ -2318,14 +2353,14 @@ function co3Passo2(){
   }
   if(co3Modalidade==='Retirada'){
     if(!data){ mostrarBalloon('Selecione uma data de '+co3Modalidade.toLowerCase()); return; }
-    if(dataBloqueada(data,'Retirada')){ mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.'); return; }
+    if(dataBloqueada(data,'Retirada')){ mostrarBalloon('Essa data não está disponível. Escolha outra data.'); return; }
     const local = document.getElementById('co3-ret-local')?.value;
     if(!local){ mostrarBalloon('Selecione uma data para ver o local de retirada'); return; }
   }
   co3GoStep(2);
 };
 
-// â”€â”€ CO3: co3SetPag para pagar agora (sÃ³ Pix) â”€â”€
+// ?? CO3: co3SetPag para pagar agora (só Pix) ??
 function co3SetPag(v){
   co3PagMetodo=v;
   document.getElementById('co3-pag').value=v;
@@ -2380,7 +2415,7 @@ async function criarPedidoSeguro(payload){
   try{data=await resp.json();}catch(e){}
   if(!resp.ok){
     console.error('[CRIAR PEDIDO] Falha na API:',data);
-    throw new Error(data?.error||'NÃ£o foi possÃ­vel finalizar o pedido. Tente novamente.');
+    throw new Error(data?.error||'Não foi possível finalizar o pedido. Tente novamente.');
   }
   return data;
 }
@@ -2414,12 +2449,12 @@ function montarWhatsAppPedidoSeguro(resultado){
   return partes.join('\n');
 }
 
-// â”€â”€ CO3: co3Finalizar atualizado â”€â”€
+// ?? CO3: co3Finalizar atualizado ??
 async function co3FinalizarLegacyDirect(){
   return co3FinalizarSeguro();
 }
 
-// â”€â”€ CO3: CALENDÃRIO INLINE â”€â”€
+// ?? CO3: CALENDÁRIO INLINE ??
 async function co3FinalizarSeguro(){
   const momento=document.getElementById('co3-pag-momento')?.value||'agora';
   const btn=document.getElementById('co3-btn-finalizar');
@@ -2478,7 +2513,7 @@ async function co3FinalizarSeguro(){
     cart={itens:[],entrega:'Entrega'};
     updCartBadge();fecharCo3();mostrarSucesso();
   }catch(e){
-    toast(e.message||'NÃ£o foi possÃ­vel finalizar o pedido. Tente novamente.','err');
+    toast(e.message||'Não foi possível finalizar o pedido. Tente novamente.','err');
     resetBtn();
   }
 }
@@ -2549,7 +2584,7 @@ function co3CalRender(){
 
 function co3CalSel(iso){
   if(dataBloqueada(iso,co3Modalidade)){
-    mostrarBalloon('Essa data nÃ£o estÃ¡ disponÃ­vel. Escolha outra data.');
+    mostrarBalloon('Essa data não está disponível. Escolha outra data.');
     return;
   }
   document.getElementById('co3-data').value = iso;
@@ -2564,24 +2599,24 @@ function co3CalSel(iso){
   if(co3Modalidade==='Retirada') co3RenderRetOpts();
 }
 
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-// DISTÃ‚NCIA DE ENTREGA
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-// Usa linha reta com fator de correÃ§Ã£o urbana calibrado para RJ.
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
+// DIST?NCIA DE ENTREGA
+// ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?ââ€¢?
+// Usa linha reta com fator de correção urbana calibrado para RJ.
 
 async function distanciaRota(lat1,lng1,lat2,lng2){
   // Haversine * 1.35 (fator urbano RJ calibrado)
   return haversine(lat1,lng1,lat2,lng2) * 1.35;
 }
 
-// Busca CEP sem calcular frete (sÃ³ preenche os campos de endereÃ§o)
+// Busca CEP sem calcular frete (só preenche os campos de endereço)
 async function co3BuscarCepSemFrete(){
   const cepEl = document.getElementById('co3-cep');
   const info = document.getElementById('co3-frete-info');
   if(!cepEl) return;
   const cep = cepEl.value.replace(/\D/g,'');
   if(cep.length !== 8) return;
-  if(info){ info.style.display='block'; info.textContent='Buscando endereÃ§o...'; info.style.color='var(--text2)'; }
+  if(info){ info.style.display='block'; info.textContent='Buscando endereço...'; info.style.color='var(--text2)'; }
   try{
     const r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
     const d = await r.json();
@@ -2594,14 +2629,14 @@ async function co3BuscarCepSemFrete(){
       if(info){ info.textContent='CEP encontrado. Informe o numero para calcular o frete.'; info.style.color='var(--text2)'; }
       document.getElementById('co3-num-p1').focus();
     } else {
-      if(info){ info.textContent='CEP nÃ£o encontrado.'; info.style.color='var(--red)'; }
+      if(info){ info.textContent='CEP não encontrado.'; info.style.color='var(--red)'; }
     }
   }catch(e){
     if(info){ info.textContent='Erro ao buscar CEP.'; info.style.color='var(--red)'; }
   }
 }
 
-// Calcula frete apÃ³s o nÃºmero ser preenchido
+// Calcula frete após o número ser preenchido
 async function co3CalcFreteComNum(){
   const num = document.getElementById('co3-num-p1')?.value.trim();
   const cepEl = document.getElementById('co3-cep');
@@ -2613,7 +2648,7 @@ async function co3CalcFreteComNum(){
   co3EnderecoForaRaio=false;
   if(info){ info.style.display='block'; info.textContent='Calculando frete...'; info.style.color='var(--text2)'; }
 
-  // Atualizar end-full com nÃºmero
+  // Atualizar end-full com número
   const d = window._cartCepData;
   const endBase = (d.logradouro||'')+', '+(d.bairro||'')+' - '+(d.localidade||'')+'/'+d.uf;
   document.getElementById('co3-end-full').value = endBase;
@@ -2628,7 +2663,7 @@ async function co3CalcFreteComNum(){
 
   try{
     const result = await geocodificarCEP(cep);
-    if(!result){ if(info){ info.textContent='NÃ£o foi possÃ­vel calcular o frete.'; info.style.color='var(--orange)'; } return; }
+    if(!result){ if(info){ info.textContent='Não foi possível calcular o frete.'; info.style.color='var(--orange)'; } return; }
     window._cartCoords = {lat:result.lat, lng:result.lng};
     const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
     if(dist > RAIO_MAX){
