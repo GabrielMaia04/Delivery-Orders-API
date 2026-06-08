@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/adm/adm.js?v=20260607-dashboard-payment-bugfix" defer></script>
+  <script src="/adm/adm.js?v=20260607-entregas-print-split" defer></script>
 </head>
 <body>
 <div id="screen-admin" class="screen active">
@@ -467,9 +467,13 @@
     <!-- Pedidos + Consolidado -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="acard-sm">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:700">Pedidos do dia</span>
-          <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-o btn-sm ico-gap" onclick="imprimirPedidosEntrega()"><i data-lucide="truck"></i> Imprimir entregas</button>
+            <button class="btn btn-o btn-sm ico-gap" onclick="imprimirPedidosRetirada()"><i data-lucide="store"></i> Imprimir retiradas</button>
+            <button class="btn btn-o btn-sm ico-gap" onclick="imprimirTodosPedidos()"><i data-lucide="printer"></i> Imprimir todos</button>
+          </div>
         </div>
         <div class="r-scroll-box"><div id="e-pedidos"></div></div>
       </div>

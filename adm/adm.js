@@ -1066,9 +1066,8 @@ async function alterarStatusE(id,status){
   toast('Status atualizado: '+status,'ok');
   renderEntregas();
 }
-function imprimirTodosPedidos(){
-  const lista=window._entCache||[];
-  if(!lista.length){toast('Nenhum pedido para imprimir.','err');return}
+function imprimirPedidosLista(lista,emptyMsg){
+  if(!lista.length){toast(emptyMsg||'Nenhum pedido para imprimir.','err');return}
   toast('Imprimindo '+lista.length+' pedido(s)... aguarde.','ok',lista.length*4000);
   lista.forEach((p,idx)=>{
     setTimeout(()=>{
@@ -1138,6 +1137,20 @@ function imprimirTodosPedidos(){
       setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},5000);
     }, idx*3500);
   });
+}
+
+function imprimirPedidosEntrega(){
+  const lista=(window._entCache||[]).filter(p=>!isRetiradaPedido(p));
+  imprimirPedidosLista(lista,'Nenhum pedido de entrega para imprimir.');
+}
+
+function imprimirPedidosRetirada(){
+  const lista=(window._entCache||[]).filter(isRetiradaPedido);
+  imprimirPedidosLista(lista,'Nenhum pedido de retirada para imprimir.');
+}
+
+function imprimirTodosPedidos(){
+  imprimirPedidosLista(window._entCache||[],'Nenhum pedido para imprimir.');
 }
 
 function imprimirEntregas(){
