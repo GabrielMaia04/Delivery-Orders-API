@@ -53,6 +53,9 @@ function isRetiradaPedido(p){
 function isPedidoCancelado(p){
   return String(p?.status||'').trim().toLowerCase()==='cancelado';
 }
+function isStatusCancelado(status){
+  return statusKeyPedido(status)==='cancelado';
+}
 function statusKeyPedido(status){
   return String(status||'Pendente')
     .trim()
@@ -130,6 +133,47 @@ function statusLabelPedido(status){
 }
 function renderStatusOptionsPedido(p){
   return statusOptionsPedido(p).map(s=>`<option value="${s}"${(p.status||'Pendente')===s?' selected':''}>${statusLabelPedido(s)}</option>`).join('');
+}
+
+async function carregarPedidoStatusItens(id){
+  const {data,error}=await sb.from('pedidos')
+    .select('id,status,itens_pedido(produto_id,quantidade)')
+    .eq('id',id)
+    .single();
+  if(error)throw new Error('Não foi possível carregar o pedido antes de cancelar.');
+  return data;
+}
+
+async function restaurarEstoqueItensPedido(pedido){
+  const qtdPorProduto={};
+  (pedido?.itens_pedido||[]).forEach(it=>{
+    const produtoId=it.produto_id;
+    const qtd=Number(it.quantidade)||0;
+    if(!produtoId||qtd<=0)return;
+    qtdPorProduto[produtoId]=(qtdPorProduto[produtoId]||0)+qtd;
+  });
+  for(const [produtoId,qtd] of Object.entries(qtdPorProduto)){
+    const {data:rows,error}=await sb.from('produtos')
+      .select('id,estoque')
+      .eq('id',produtoId)
+      .limit(1);
+    if(error)throw new Error('Erro ao carregar estoque do produto.');
+    const prod=rows?.[0];
+    if(!prod||prod.estoque==null)continue;
+    const novo=(Number(prod.estoque)||0)+qtd;
+    const {error:updErr}=await sb.from('produtos').update({estoque:novo}).eq('id',produtoId);
+    if(updErr)throw new Error('Erro ao restaurar estoque do produto.');
+    const local=prods.find(p=>String(p.id)===String(produtoId));
+    if(local)local.estoque=novo;
+  }
+}
+
+async function restaurarEstoqueSeCancelando(id,status){
+  if(!isStatusCancelado(status))return false;
+  const pedido=await carregarPedidoStatusItens(id);
+  if(isStatusCancelado(pedido.status))return false;
+  await restaurarEstoqueItensPedido(pedido);
+  return true;
 }
 
 function urlBase64ToUint8Array(base64String){
@@ -1055,6 +1099,13 @@ async function renderEntregas(){
   }).join('') || '<div class="empty">Sem produtos.</div>';
 }
 async function alterarStatusE(id,status){
+  try{
+    await restaurarEstoqueSeCancelando(id,status);
+  }catch(e){
+    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
+    renderEntregas();
+    return;
+  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return;}
   // WhatsApp automático
@@ -1517,6 +1568,13 @@ function dispararWppStatus(pedido, status){
 }
 
 async function alterarStatus(id,status){
+  try{
+    await restaurarEstoqueSeCancelando(id,status);
+  }catch(e){
+    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
+    if(document.getElementById('ap-pedidos')?.classList.contains('active'))renderPedidos();
+    return;
+  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro ao salvar status: '+error.message,'err');return;}
   // Buscar pedido do cache (rCache ou rpCache)
