@@ -1077,7 +1077,7 @@ function imprimirPedidosLista(lista,emptyMsg){
     const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
-    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
+    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
     const _html=`<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>@page{size:80mm auto;margin:0}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -1110,10 +1110,10 @@ function imprimirPedidosLista(lista,emptyMsg){
     <div class="info-block">
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
-      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${fdLabel(p.data_pedido)} · ${modalidadePedidoAdmin(p)}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
-      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
+      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${h(_end)}</span></div>`:''}
+      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
     ${_its}
@@ -1369,7 +1369,7 @@ function imprimirPedido(id){
     const _isPix=(p.pagamento||'').toLowerCase().includes('pix');const _pago=p.status==='Pendente'?'PIX — AGUARDANDO PGTO':_isPix?'PGTO: PAGO':'PGTO: NA ENTREGA';
     const _dt=p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'';
     const _taxa=p.taxa_entrega>0?'R$ '+fp(p.taxa_entrega):'R$ 0,00';
-    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${it.quantidade}x ${it.nome_produto}${it.peso_produto?' ('+it.peso_produto+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
+    const _its=(p.itens_pedido||[]).map(it=>`<div class="item-row"><span class="chk">[ ]</span><span class="in">${Number(it.quantidade)||0}x ${h(it.nome_produto||'')}${it.peso_produto?' ('+h(it.peso_produto)+')':''}</span><span class="iv">R$ ${fp(it.subtotal)}</span></div>`).join('');
     const _html=`<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>@page{size:80mm auto;margin:0}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -1402,10 +1402,10 @@ function imprimirPedido(id){
     <div class="info-block">
       <div class="ir"><span class="lbl">NOME: </span><span class="val">${h(p.cliente_nome)}</span></div>
       <div class="ir"><span class="lbl">TELEFONE: </span><span class="val">${h(p.cliente_contato||'—')}</span></div>
-      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${p.pagamento}</span></div>
-      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${fdLabel(p.data_pedido)} · ${modalidadePedidoAdmin(p)}</span></div>
-      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${_end}</span></div>`:''}
-      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${_comp}</span></div>`:''}
+      <div class="ir"><span class="lbl">PAGAMENTO: </span><span class="val">${h(p.pagamento||'')}</span></div>
+      <div class="ir"><span class="lbl">MODALIDADE: </span><span class="val">${h(fdLabel(p.data_pedido))} · ${h(modalidadePedidoAdmin(p))}</span></div>
+      ${_end?`<div class="ir"><span class="lbl">ENDEREÇO: </span><span class="val">${h(_end)}</span></div>`:''}
+      ${_comp?`<div class="ir"><span class="lbl">COMPLEMENTO: </span><span class="val">${h(_comp)}</span></div>`:''}
     </div>
     <hr class="sep">
     ${_its}
