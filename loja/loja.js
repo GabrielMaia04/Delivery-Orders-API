@@ -1754,7 +1754,7 @@ async function acompanharPedidoToken(token,limparUrl=false){
     if(!resp.ok)throw new Error(result?.error||'Pedido não encontrado.');
     const data=result.pedido||{},st=data.status||'Pendente';
     const dt=data.data_pedido?data.data_pedido.split('-').reverse().join('/'):'--';
-    popTrackAlert('Pedido #'+(data.codigo||''),'Data: '+dt+'\\nModalidade: '+(data.entrega||'--')+'\\n\\nStatus atual:\\n'+st);
+    popTrackAlert('Pedido #'+(data.codigo||''),'Data: '+dt+'\nModalidade: '+(data.entrega||'--')+'\n\nStatus atual:\n'+st);
   }catch(e){toast(e.message||'Não foi possível acompanhar o pedido.','err');}
   finally{
     if(limparUrl&&history.replaceState){
