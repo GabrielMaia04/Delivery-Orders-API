@@ -1678,79 +1678,151 @@ function stripMojibakeIconPrefix(name){
   }
   return text.trim();
 }
-function renderEstoque(){
+let estoqueDatasAdm=[];
+let estoqueDataSelecionadaAdm='';
+let estoqueRowsAdm=[];
+
+function proximasDatasEstoqueFallback(limite=3){
+  const datas=[];
+  const d=new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()+1);
+  while(datas.length<limite){
+    if(d.getDay()===2||d.getDay()===5)datas.push(toISO(d));
+    d.setDate(d.getDate()+1);
+  }
+  return datas;
+}
+
+function estoqueDataLabel(data){
+  const d=new Date(data+'T12:00:00');
+  const dia=new Intl.DateTimeFormat('pt-BR',{weekday:'long'}).format(d);
+  return dia.charAt(0).toUpperCase()+dia.slice(1)+', '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+function estoqueRowAdm(produtoId,data=estoqueDataSelecionadaAdm){
+  return estoqueRowsAdm.find(r=>String(r.produto_id)===String(produtoId)&&r.data_entrega===data);
+}
+
+async function carregarEstoqueDatasAdm(){
+  const {data:datasRpc,error:datasError}=await sb.rpc('proximas_datas_entrega_cortadinhos',{p_limite:3});
+  estoqueDatasAdm=!datasError&&Array.isArray(datasRpc)&&datasRpc.length
+    ?datasRpc.map(x=>x.data_entrega).filter(Boolean)
+    :proximasDatasEstoqueFallback(3);
+  if(!estoqueDatasAdm.includes(estoqueDataSelecionadaAdm))estoqueDataSelecionadaAdm=estoqueDatasAdm[0]||'';
+
+  const {data:rows,error}=await sb.from('produto_estoque_datas')
+    .select('produto_id,data_entrega,estoque_base,estoque_atual')
+    .in('data_entrega',estoqueDatasAdm);
+  if(error){
+    estoqueRowsAdm=[];
+    toast('N\u00e3o foi poss\u00edvel carregar o estoque por data.','err');
+    console.error('[ESTOQUE ADMIN]',error);
+  }else{
+    estoqueRowsAdm=rows||[];
+  }
+}
+
+function renderEstoqueDataCards(){
+  const el=document.getElementById('estoque-date-cards');
+  if(!el)return;
+  el.innerHTML=estoqueDatasAdm.map(data=>{
+    const rows=estoqueRowsAdm.filter(r=>r.data_entrega===data);
+    const disponiveis=rows.reduce((s,r)=>s+Math.max(0,Number(r.estoque_atual)||0),0);
+    const reservados=rows.reduce((s,r)=>s+Math.max(0,(Number(r.estoque_base)||0)-(Number(r.estoque_atual)||0)),0);
+    const esgotados=rows.filter(r=>(Number(r.estoque_atual)||0)<=0).length;
+    return '<button class="stock-date-card '+(data===estoqueDataSelecionadaAdm?'selected':'')+'" onclick="selecionarEstoqueDataAdm(\''+data+'\')" type="button">'
+      +'<div class="stock-date-card-day">'+h(estoqueDataLabel(data))+'</div>'
+      +'<div class="stock-date-card-summary">'
+      +'<span>Unidades dispon\u00edveis: <strong>'+disponiveis+'</strong></span>'
+      +'<span>Unidades reservadas: <strong>'+reservados+'</strong></span>'
+      +'<span>Esgotados: <strong>'+esgotados+'</strong></span>'
+      +'</div></button>';
+  }).join('');
+}
+
+function renderEstoqueListaAdm(){
   const el=document.getElementById('estoque-list');
   if(!el)return;
-  const lista=[...prods].sort((a,b)=>{
-    const ea=a.estoque!=null?a.estoque:Infinity;
-    const eb=b.estoque!=null?b.estoque:Infinity;
-    return ea-eb;
+  const q=(document.getElementById('estoque-search')?.value||'').toLowerCase().trim();
+  const lista=prods.filter(p=>!q||String(p.nome||'').toLowerCase().includes(q)).sort((a,b)=>{
+    const ra=estoqueRowAdm(a.id),rb=estoqueRowAdm(b.id);
+    const ea=a.estoque==null?Infinity:(ra?Number(ra.estoque_atual): -1);
+    const eb=b.estoque==null?Infinity:(rb?Number(rb.estoque_atual): -1);
+    return ea-eb||String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR');
   });
+  const title=document.getElementById('estoque-list-title');
+  if(title)title.textContent=estoqueDataSelecionadaAdm?'Estoque de '+estoqueDataLabel(estoqueDataSelecionadaAdm)+' - menor estoque primeiro':'Produtos por data';
   const countEl=document.getElementById('estoque-count');
-  if(countEl){
-    const zerados=prods.filter(p=>p.estoque!=null&&p.estoque<=0).length;
-    const semInfo=prods.filter(p=>p.estoque==null).length;
-    countEl.textContent=zerados>0?zerados+' esgotado'+(zerados>1?'s':''):'todos com estoque';
-  }
-  if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto.</div>';return}
+  const rowsData=estoqueRowsAdm.filter(r=>r.data_entrega===estoqueDataSelecionadaAdm);
+  const esgotados=rowsData.filter(r=>(Number(r.estoque_atual)||0)<=0).length;
+  if(countEl)countEl.textContent=esgotados?esgotados+' esgotado'+(esgotados===1?'':'s'):'nenhum esgotado';
+  if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto encontrado.</div>';return}
+
   el.innerHTML=lista.map(p=>{
-    const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">&infin; ilimitado</span>'
-      :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
-      :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
-      :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
-    const bar=est!=null&&est>0
-      ?'<div style="height:4px;border-radius:2px;background:var(--bg4);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+(est<=5?'var(--orange)':'var(--green)')+';width:'+Math.min(100,Math.round(est/50*100))+'%"></div></div>'
-      :'';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h(stripMojibakeIconPrefix(p.nome))+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+(p.peso?' &middot; ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
-      +bar
+    const row=estoqueRowAdm(p.id);
+    const ilimitado=p.estoque==null;
+    const atual=row?Math.max(0,Number(row.estoque_atual)||0):0;
+    const base=row?Math.max(0,Number(row.estoque_base)||0):0;
+    const limiteBaixo=Math.max(5,Math.ceil(base*.25));
+    const status=ilimitado?'Ilimitado':!row?'N\u00e3o configurado':atual<=0?'Esgotado':atual<=limiteBaixo?'Baixo estoque':'Dispon\u00edvel';
+    const statusClass=ilimitado?'unlimited':(!row||atual<=0)?'empty':atual<=limiteBaixo?'low':'';
+    const pct=base>0?Math.min(100,Math.round(atual/base*100)):0;
+    const preco=Number(p.preco)||0;
+    return '<div class="stock-product-row">'
+      +'<div class="stock-product-main">'
+      +'<div class="stock-product-name">'+h(stripMojibakeIconPrefix(p.nome))+'</div>'
+      +'<div class="stock-product-meta">'+h(p.peso||'Sem peso')+' &middot; R$ '+preco.toFixed(2).replace('.',',')+(p.ativo===false?' &middot; Inativo':'')+'</div>'
+      +(ilimitado?'':'<div class="stock-progress"><div class="stock-progress-bar '+statusClass+'" style="width:'+pct+'%"></div></div>')
       +'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
-      +label
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
-      +'</div>'
-      +'</div>';
+      +'<div class="stock-product-value">'
+      +'<span class="stock-status '+statusClass+'">'+status+'</span>'
+      +(ilimitado?'<strong>Ilimitado</strong>':row?'<strong>'+atual+' dispon\u00edveis</strong><small>Base: '+base+'</small>':'<small>Use recalcular para criar</small>')
+      +'</div></div>';
   }).join('');
+}
+
+async function renderEstoque(){
+  const el=document.getElementById('estoque-list');
+  if(!el)return;
+  el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Carregando estoque por data...</div>';
+  await carregarEstoqueDatasAdm();
+  renderEstoqueDataCards();
+  renderEstoqueListaAdm();
   refreshIcons();
 }
-function filtrarEstoque(){
-  const q=(document.getElementById('estoque-search')?.value||'').toLowerCase().trim();
-  const el=document.getElementById('estoque-list');
-  if(!el)return;
-  if(!q){renderEstoque();return;}
-  const lista=[...prods]
-    .filter(p=>p.nome.toLowerCase().includes(q))
-    .sort((a,b)=>{
-      const ea=a.estoque!=null?a.estoque:Infinity;
-      const eb=b.estoque!=null?b.estoque:Infinity;
-      return ea-eb;
-    });
-  if(!lista.length){el.innerHTML='<div style="padding:1rem;color:var(--text3);font-size:12px">Nenhum produto encontrado.</div>';return;}
-  el.innerHTML=lista.map(p=>{
-    const est=p.estoque;
-    const label=est==null?'<span style="font-size:11px;color:var(--text3)">&infin; ilimitado</span>'
-      :est<=0?'<span style="font-size:12px;font-weight:800;color:var(--red);background:var(--red-soft);padding:3px 10px;border-radius:20px">Esgotado</span>'
-      :est<=5?'<span style="font-size:12px;font-weight:800;color:var(--orange)">'+est+'</span>'
-      :'<span style="font-size:12px;font-weight:800;color:var(--green-bright)">'+est+'</span>';
-    const bar=est!=null&&est>0
-      ?'<div style="height:4px;border-radius:2px;background:var(--bg4);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+(est<=5?'var(--orange)':'var(--green)')+';width:'+Math.min(100,Math.round(est/50*100))+'%"></div></div>'
-      :'';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h(stripMojibakeIconPrefix(p.nome))+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+(p.peso||'')+( p.peso?' &middot; ':'')+'R$ '+p.preco.toFixed(2).replace('.',',')+'</div>'
-      +bar
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
-      +label
-      +'<button class="btn btn-o btn-sm" onclick="editEstoque('+p.id+')" title="Editar estoque">'+(p.estoque!=null?p.estoque:'Ilimitado')+'</button>'
-      +'</div>'
-      +'</div>';
-  }).join('');
-  refreshIcons();
+
+function selecionarEstoqueDataAdm(data){
+  estoqueDataSelecionadaAdm=data;
+  renderEstoqueDataCards();
+  renderEstoqueListaAdm();
+}
+
+function filtrarEstoque(){renderEstoqueListaAdm()}
+
+async function executarAcaoEstoqueAdm(rpc,args,msg){
+  const {error}=await sb.rpc(rpc,args||{});
+  if(error){
+    console.error('[ESTOQUE ADMIN]',error);
+    toast('N\u00e3o foi poss\u00edvel atualizar o estoque.','err');
+    return;
+  }
+  toast(msg,'ok');
+  await renderEstoque();
+}
+
+function adminRecalcularEstoqueData(){
+  if(!estoqueDataSelecionadaAdm){toast('Selecione uma data.','err');return}
+  executarAcaoEstoqueAdm('admin_recalcular_estoque_data',{p_data:estoqueDataSelecionadaAdm},'Estoque recalculado.');
+}
+
+function adminResetarEstoqueData20(){
+  if(!estoqueDataSelecionadaAdm){toast('Selecione uma data.','err');return}
+  popConfirm('rotate-ccw','Resetar estoque da data?','A base ser\u00e1 definida como 20 e as reservas existentes ser\u00e3o descontadas.','Resetar','pbtn-ok',()=>executarAcaoEstoqueAdm('admin_resetar_estoque_data_20',{p_data:estoqueDataSelecionadaAdm},'Estoque da data resetado.'));
+}
+
+function adminResetarEstoqueProximas(){
+  popConfirm('calendar-sync','Resetar pr\u00f3ximas datas?','As pr\u00f3ximas datas ser\u00e3o criadas ou recalculadas sem apagar reservas.','Resetar','pbtn-ok',()=>executarAcaoEstoqueAdm('admin_resetar_estoque_proximas_datas',{},'Pr\u00f3ximas datas atualizadas.'));
 }
 
 async function rmProd(id){

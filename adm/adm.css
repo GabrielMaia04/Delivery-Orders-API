@@ -333,6 +333,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .full-grid-list{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
 .full-grid-list-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
 .full-grid-list-body{overflow-y:auto;flex:1;padding:0 14px}
+/* Stock by delivery date */
+.stock-date-toolbar{max-width:960px;margin-bottom:14px}
+.stock-date-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.stock-date-card{appearance:none;text-align:left;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;color:var(--text);font-family:var(--font);cursor:pointer;box-shadow:var(--shadow);transition:border-color .15s,background .15s,transform .15s}
+.stock-date-card:hover{border-color:var(--green);transform:translateY(-1px)}
+.stock-date-card.selected{border-color:var(--green-bright);background:var(--green-light);box-shadow:0 0 0 2px rgba(45,140,78,.16)}
+.stock-date-card-day{font-size:13px;font-weight:800;margin-bottom:7px}
+.stock-date-card-summary{display:grid;gap:3px;font-size:10px;color:var(--text3);line-height:1.35}
+.stock-date-card-summary strong{color:var(--text2);font-weight:700}
+.stock-date-actions{display:flex;gap:8px;flex-wrap:wrap}
+.stock-date-list{max-width:960px;max-height:calc(100vh - 300px)}
+.stock-product-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);gap:14px}
+.stock-product-main{flex:1;min-width:0}
+.stock-product-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stock-product-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.stock-progress{height:5px;border-radius:3px;background:var(--bg4);margin-top:7px;overflow:hidden}
+.stock-progress-bar{height:100%;border-radius:3px;background:var(--green);transition:width .2s}
+.stock-progress-bar.low{background:var(--orange)}
+.stock-progress-bar.empty{background:var(--red)}
+.stock-product-value{display:flex;align-items:flex-end;flex-direction:column;gap:3px;flex-shrink:0;text-align:right}
+.stock-product-value strong{font-size:13px;color:var(--green-bright)}
+.stock-product-value small{font-size:10px;color:var(--text3)}
+.stock-status{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;background:var(--green-light);color:var(--green-bright)}
+.stock-status.low{background:rgba(245,158,11,.12);color:var(--orange)}
+.stock-status.empty{background:var(--red-soft);color:var(--red)}
+.stock-status.unlimited{background:var(--bg4);color:var(--text2)}
 /* Config grid */
 .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .config-grid .full-col{grid-column:1/-1}
@@ -355,4 +381,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .clientes-left,.clientes-right{max-height:50vh}
   .landing-grid{grid-template-columns:1fr}
   .page-header{margin-bottom:12px}
+  .stock-date-cards{grid-template-columns:1fr}
+  .stock-date-actions .btn{flex:1 1 100%;justify-content:center}
+  .stock-date-list{max-height:60vh}
 }
