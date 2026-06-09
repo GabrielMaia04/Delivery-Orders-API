@@ -706,10 +706,6 @@ function normalizarCarrinhoEstoque(dataEntrega,avisar=false){
 function estoqueMaxMsg(){
   toast('Estoque m\u00e1ximo dispon\u00edvel para este produto.','err');
 }
-function estoqueDisponivelLabel(max){
-  if(max==null)return 'Estoque ilimitado';
-  return max+' '+(max===1?'dispon\u00edvel':'dispon\u00edveis')+' para '+fdLabel(dataEntregaAtiva);
-}
 async function validarCarrinhoEstoqueData(data){
   if(!data)return true;
   await carregarEstoquesDatas([data]);
@@ -932,7 +928,6 @@ function renderShop(){
       <div class="prod-card-body">
         <div class="prod-card-name">${h(p.nome)}</div>
         <div class="prod-card-peso">${h(p.peso||'')}</div>
-        <div class="prod-stock-date${semEstoque?' empty':''}">${h(estoqueDisponivelLabel(maxEstoque))}</div>
         <div class="prod-card-footer">
           <div class="prod-price">R$ ${fp(p.preco)}</div>
           ${ctrl}
@@ -1809,8 +1804,7 @@ function abrirProdModal(id){
     ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`
     :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`;
   document.getElementById('prod-modal-nome').textContent=p.nome;
-  const max=estoqueProduto(p);
-  document.getElementById('prod-modal-peso').textContent=(p.peso||'')+(p.peso?' - ':'')+estoqueDisponivelLabel(max);
+  document.getElementById('prod-modal-peso').textContent=p.peso||'';
   document.getElementById('prod-modal-desc').textContent=p.descricao||'';
   document.getElementById('prod-modal-preco').textContent='R$ '+fp(p.preco);
   renderProdModalCtrl(id);
