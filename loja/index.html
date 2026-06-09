@@ -14,7 +14,7 @@
   <link rel="manifest" href="/loja/manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/shared.css">
-  <link rel="stylesheet" href="/loja/loja.css?v=20260608-production-polish">
+  <link rel="stylesheet" href="/loja/loja.css?v=20260608-traditional-date-ux">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="/shared/config.js?v=20260602-final"></script>
@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/loja/loja.js?v=20260608-production-polish" defer></script>
+  <script src="/loja/loja.js?v=20260608-traditional-date-ux" defer></script>
 </head>
 <body>
 <!-- LOJA PUBLICA -->
@@ -61,10 +61,7 @@
     <div class="hero-title ico-gap">Fresquinho e direto pra sua mesa <i data-lucide="utensils"></i></div>
     <div class="search-box"><input id="shop-search" type="text" placeholder="Buscar produtos..." oninput="renderShop()"></div>
   </div>
-  <div class="shop-date-context">
-    <label for="shop-date-select"><i data-lucide="calendar-days"></i> Comprar para:</label>
-    <select id="shop-date-select" onchange="alterarDataEntregaAtiva(this.value)" aria-label="Data ativa da compra"></select>
-  </div>
+  <div class="shop-date-context" id="shop-date-info"><i data-lucide="calendar-days"></i> <span>Produtos dispon&iacute;veis para a pr&oacute;xima entrega</span></div>
   <div class="sec-title">Categorias</div>
   <div class="cat-scroll" id="shop-cats"></div>
   <div class="sec-title" id="shop-sec">Todos os produtos</div>
@@ -76,10 +73,6 @@
   <div class="drawer" id="cart-drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-header"><span class="drawer-title ico-gap"><i data-lucide="shopping-cart"></i> Carrinho</span><button class="close-btn" onclick="fecharCart()">&#10005;</button></div>
-    <div class="cart-date-context">
-      <label for="cart-date-select">Comprar para:</label>
-      <select id="cart-date-select" onchange="alterarDataEntregaAtiva(this.value)" aria-label="Data ativa do carrinho"></select>
-    </div>
     <div class="cart-list" id="cart-list"><div class="empty">Carrinho vazio</div></div>
     <div class="cart-footer">
       <div class="sum-row"><span>Itens</span><span id="c-itens">0</span></div>

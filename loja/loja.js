@@ -621,19 +621,13 @@ function datasEstoqueVisiveis(){
 }
 function garantirDataEntregaAtiva(){
   const datas=datasEstoqueVisiveis();
-  let salva='';
-  try{salva=localStorage.getItem('cortadinhos_data_entrega_ativa')||'';}catch(_){}
-  if(!datas.includes(dataEntregaAtiva))dataEntregaAtiva=datas.includes(salva)?salva:(datas[0]||'');
+  if(!datas.includes(dataEntregaAtiva))dataEntregaAtiva=datas[0]||'';
   return dataEntregaAtiva;
 }
 function renderSeletoresDataEntrega(){
-  const datas=datasEstoqueVisiveis();
   garantirDataEntregaAtiva();
-  const html=datas.map(data=>'<option value="'+data+'"'+(data===dataEntregaAtiva?' selected':'')+'>'+h(fdLabel(data))+'</option>').join('');
-  ['shop-date-select','cart-date-select'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.innerHTML=html;
-  });
+  const info=document.querySelector('#shop-date-info span');
+  if(info)info.textContent=dataEntregaAtiva?'Proxima entrega: '+fdLabel(dataEntregaAtiva):'Produtos disponiveis para a proxima entrega';
 }
 function sincronizarDataAtivaCheckout(){
   if(!dataEntregaAtiva)return;
@@ -649,7 +643,6 @@ function sincronizarDataAtivaCheckout(){
 async function alterarDataEntregaAtiva(iso,avisar=true){
   if(!datasEstoqueVisiveis().includes(iso))return;
   dataEntregaAtiva=iso;
-  try{localStorage.setItem('cortadinhos_data_entrega_ativa',iso);}catch(_){}
   await carregarEstoquesDatas([iso]);
   const mudou=normalizarCarrinhoEstoque(iso,false);
   renderSeletoresDataEntrega();
