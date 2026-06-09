@@ -25,6 +25,7 @@ let perfil=null,cats=[],prods=[];
 let cart={itens:[],entrega:'Entrega'};
 let estoqueDatas={};
 let estoqueDatasLoading=false;
+let dataEntregaAtiva='';
 let ap={itens:[],entrega:'Entrega'};
 let apSel=null;
 let fCatShop=null,fCatAdm=null,fCatP=null;
@@ -578,8 +579,10 @@ async function loadCatalog(){
       sb.from('produtos').select('*').order('nome')
     ]);
     cats=c.data||[];prods=p.data||[];
+    garantirDataEntregaAtiva();
     await carregarEstoquesDatas();
     normalizarCarrinhoEstoque();
+    renderSeletoresDataEntrega();
     // Se nao carregou, tenta novamente em 2s
     if(!cats.length && !prods.length){
       setTimeout(async()=>{
@@ -589,9 +592,10 @@ async function loadCatalog(){
         ]);
         if(c2.data?.length||p2.data?.length){
           cats=c2.data||[];prods=p2.data||[];
+          garantirDataEntregaAtiva();
           await carregarEstoquesDatas();
           normalizarCarrinhoEstoque();
-          renderShopCats();renderShop();
+          renderSeletoresDataEntrega();renderShopCats();renderShop();
         }
       },2000);
     }
@@ -606,7 +610,8 @@ function estoqueDatasChave(produtoId,data){
   return String(produtoId)+'|'+String(data||'').slice(0,10);
 }
 function dataEstoqueSelecionada(){
-  return document.getElementById('co3-data')?.value
+  return dataEntregaAtiva
+    || document.getElementById('co3-data')?.value
     || document.getElementById('co-data')?.value
     || '';
 }
@@ -614,9 +619,54 @@ function datasEstoqueVisiveis(){
   try{return datasComCorte().map(toISO).filter(Boolean);}
   catch(_){return [];}
 }
+function garantirDataEntregaAtiva(){
+  const datas=datasEstoqueVisiveis();
+  let salva='';
+  try{salva=localStorage.getItem('cortadinhos_data_entrega_ativa')||'';}catch(_){}
+  if(!datas.includes(dataEntregaAtiva))dataEntregaAtiva=datas.includes(salva)?salva:(datas[0]||'');
+  return dataEntregaAtiva;
+}
+function renderSeletoresDataEntrega(){
+  const datas=datasEstoqueVisiveis();
+  garantirDataEntregaAtiva();
+  const html=datas.map(data=>'<option value="'+data+'"'+(data===dataEntregaAtiva?' selected':'')+'>'+h(fdLabel(data))+'</option>').join('');
+  ['shop-date-select','cart-date-select'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.innerHTML=html;
+  });
+}
+function sincronizarDataAtivaCheckout(){
+  if(!dataEntregaAtiva)return;
+  const co3=document.getElementById('co3-data');
+  if(co3)co3.value=dataEntregaAtiva;
+  const co=document.getElementById('co-data');
+  if(co)co.value=dataEntregaAtiva;
+  const btn=document.getElementById('co-data-btn');
+  if(btn){btn.textContent=fdLabel(dataEntregaAtiva);btn.classList.add('selected');}
+  const lbl=document.getElementById('co3-cal-selected-label');
+  if(lbl){lbl.textContent=fdLabel(dataEntregaAtiva)+' selecionado';lbl.classList.add('show');}
+}
+async function alterarDataEntregaAtiva(iso,avisar=true){
+  if(!datasEstoqueVisiveis().includes(iso))return;
+  dataEntregaAtiva=iso;
+  try{localStorage.setItem('cortadinhos_data_entrega_ativa',iso);}catch(_){}
+  await carregarEstoquesDatas([iso]);
+  const mudou=normalizarCarrinhoEstoque(iso,false);
+  renderSeletoresDataEntrega();
+  sincronizarDataAtivaCheckout();
+  renderShop();
+  if(document.getElementById('cart-drawer')?.classList.contains('open'))renderCart();
+  if(document.getElementById('prod-modal-ov')?.classList.contains('open')){
+    const id=Number(document.getElementById('prod-modal-ov')?.dataset.produtoId);
+    if(id)renderProdModalCtrl(id);
+  }
+  co3RenderItems();
+  co3UpdateResumo();
+  if(mudou&&avisar)toast('Quantidade ajustada ao estoque dispon\u00edvel para esta data.','err',4200);
+}
 async function carregarEstoquesDatas(datas){
   const lista=[...new Set((datas&&datas.length?datas:datasEstoqueVisiveis()).filter(Boolean))];
-  if(!lista.length||estoqueDatasLoading)return;
+  if(!lista.length)return;
   estoqueDatasLoading=true;
   try{
     const {data,error}=await sb.from('produto_estoque_datas')
@@ -638,6 +688,7 @@ function estoqueProduto(p,dataEntrega){
   if(data){
     const key=estoqueDatasChave(p.id,data);
     if(Object.prototype.hasOwnProperty.call(estoqueDatas,key))return estoqueDatas[key];
+    return 0;
   }
   const n=Number(p.estoque);
   return Number.isFinite(n)?Math.max(0,Math.floor(n)):null;
@@ -662,6 +713,10 @@ function normalizarCarrinhoEstoque(dataEntrega,avisar=false){
 function estoqueMaxMsg(){
   toast('Estoque m\u00e1ximo dispon\u00edvel para este produto.','err');
 }
+function estoqueDisponivelLabel(max){
+  if(max==null)return 'Estoque ilimitado';
+  return max+' '+(max===1?'dispon\u00edvel':'dispon\u00edveis')+' para '+fdLabel(dataEntregaAtiva);
+}
 async function validarCarrinhoEstoqueData(data){
   if(!data)return true;
   await carregarEstoquesDatas([data]);
@@ -676,14 +731,7 @@ async function validarCarrinhoEstoqueData(data){
   return true;
 }
 async function estoqueDataSelecionadaMudou(iso){
-  await carregarEstoquesDatas([iso]);
-  const mudou=normalizarCarrinhoEstoque(iso,true);
-  if(mudou){
-    renderShop();
-    if(document.getElementById('cart-drawer')?.classList.contains('open'))renderCart();
-    co3RenderItems();
-    co3UpdateResumo();
-  }
+  await alterarDataEntregaAtiva(iso,true);
 }
 
 async function loadProfile(uid,user){
@@ -891,6 +939,7 @@ function renderShop(){
       <div class="prod-card-body">
         <div class="prod-card-name">${h(p.nome)}</div>
         <div class="prod-card-peso">${h(p.peso||'')}</div>
+        <div class="prod-stock-date${semEstoque?' empty':''}">${h(estoqueDisponivelLabel(maxEstoque))}</div>
         <div class="prod-card-footer">
           <div class="prod-price">R$ ${fp(p.preco)}</div>
           ${ctrl}
@@ -1340,6 +1389,20 @@ function renderRetOpts(){
 }
 let cupomAtivo=null;
 
+async function cupomJaUsadoPorConta(cupom){
+  if(!cupom?.uso_unico_por_conta||!perfil?.id)return false;
+  const {data,error}=await sb.from('pedidos')
+    .select('id')
+    .eq('user_id',perfil.id)
+    .eq('cupom',cupom.nome)
+    .limit(1);
+  if(error){
+    console.warn('[CUPOM] Nao foi possivel verificar uso anterior:',error);
+    return false;
+  }
+  return Array.isArray(data)&&data.length>0;
+}
+
 async function aplicarCupom(){
   const nome=document.getElementById('cart-cupom-input').value.trim().toUpperCase();
   const msg=document.getElementById('cart-cupom-msg');
@@ -1353,6 +1416,10 @@ async function aplicarCupom(){
   if(c.usos_restantes<=0){
     msg.style.display='block';msg.style.color='var(--orange)';
     msg.textContent='Esse cupom fez sucesso e j\u00e1 esgotou!';return;
+  }
+  if(await cupomJaUsadoPorConta(c)){
+    msg.style.display='block';msg.style.color='var(--red)';
+    msg.textContent='Voce ja utilizou este cupom.';return;
   }
 
   const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
@@ -1744,11 +1811,13 @@ function abrirProdModal(id){
     modal=document.getElementById('prod-modal-ov');
   }
   const imgEl=document.getElementById('prod-modal-img');
+  modal.dataset.produtoId=String(id);
   imgEl.innerHTML=p.imagem_url
     ?`<img src="${p.imagem_url}" style="width:100%;height:100%;object-fit:cover"><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`
     :`<span style="font-size:64px">${emoji(p)}</span><button onclick="document.getElementById('prod-modal-ov').classList.remove('open')" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.4);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>`;
   document.getElementById('prod-modal-nome').textContent=p.nome;
-  document.getElementById('prod-modal-peso').textContent=p.peso||'';
+  const max=estoqueProduto(p);
+  document.getElementById('prod-modal-peso').textContent=(p.peso||'')+(p.peso?' - ':'')+estoqueDisponivelLabel(max);
   document.getElementById('prod-modal-desc').textContent=p.descricao||'';
   document.getElementById('prod-modal-preco').textContent='R$ '+fp(p.preco);
   renderProdModalCtrl(id);
@@ -1756,15 +1825,21 @@ function abrirProdModal(id){
   modal.classList.add('open');
 }
 function renderProdModalCtrl(id){
+  const p=prods.find(x=>x.id===id);
   const it=cart.itens.find(i=>i.prodId===id);
   const qty=it?it.qty:0;
+  const max=estoqueProduto(p);
   const ctrl=document.getElementById('prod-modal-ctrl');
   if(!ctrl)return;
+  if(max!=null&&max<=0){
+    ctrl.innerHTML='<span style="font-size:11px;font-weight:800;color:var(--red)">Esgotado para esta data</span>';
+    return;
+  }
   if(qty>0){
     ctrl.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
       <button class="cqb-lg" onclick="cQtyModal(${id},-1)">-</button>
       <span style="font-size:20px;font-weight:800;min-width:24px;text-align:center">${qty}</span>
-      <button class="cqb-lg" onclick="cQtyModal(${id},1)">+</button>
+      <button class="cqb-lg" aria-disabled="${max!=null&&qty>=max?'true':'false'}" onclick="cQtyModal(${id},1)">+</button>
     </div>`;
   }else{
     ctrl.innerHTML=`<button class="add-btn-lg" style="width:auto;padding:0 20px;font-size:16px" onclick="cQtyModal(${id},1)">+ Adicionar</button>`;
@@ -2128,6 +2203,13 @@ async function co3AplicarCupom(){
       co3UpdateResumo();
       return;
     }
+    if(await cupomJaUsadoPorConta(cupom)){
+      co3CupomAtivo=null;
+      msg.style.color='var(--red)';
+      msg.textContent='Voce ja utilizou este cupom.';
+      co3UpdateResumo();
+      return;
+    }
     const sub=cart.itens.reduce((s,it)=>{const p=prods.find(x=>x.id===it.prodId);return s+(p?p.preco*it.qty:0)},0);
     const taxaBase=co3Modalidade==='Entrega'&&co3FreteCalculado?TAXA:0;
     const prev=calcCupomPreview(cupom,sub,taxaBase,co3Modalidade);
@@ -2295,6 +2377,8 @@ function abrirCo3(){
   const cupomMsg=document.getElementById('co3-cupom-msg');
   if(cupomInput)cupomInput.value=co3CupomAtivo?.nome||'';
   if(cupomMsg&&!co3CupomAtivo)cupomMsg.style.display='none';
+  garantirDataEntregaAtiva();
+  sincronizarDataAtivaCheckout();
   co3SetModalidade(co3Modalidade);
   co3GoStep(1);co3RenderItems();co3UpdateResumo();
   co3CalInit();
@@ -2579,7 +2663,9 @@ async function co3FinalizarSeguro(){
     abrirWhatsApp(montarWhatsAppPedidoSeguro(resultado));
     cupomAtivo=null;co3CupomAtivo=null;co3Troco='';
     cart={itens:[],entrega:'Entrega'};
+    await carregarEstoquesDatas([dataEntregaAtiva]);
     updCartBadge();fecharCo3();mostrarSucesso();
+    renderShop();
   }catch(e){
     toast(e.message||'Não foi possível finalizar o pedido. Tente novamente.','err');
     resetBtn();

@@ -2965,8 +2965,11 @@ function renderCupons(){
   if(!cupons.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Nenhum cupom.</div>';return}
   el.innerHTML=cupons.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
     <div><div style="font-size:12px;font-weight:800;font-family:monospace">${h(c.nome)}</div>
-    <div style="font-size:11px;color:var(--text2)">${h(labelCupomAdm(c))} · ${Number(c.usos_restantes)||0} uso(s)</div></div>
-    <button class="btn btn-r btn-sm" onclick="rmCupom(${c.id})">x</button>
+    <div style="font-size:11px;color:var(--text2)">${h(labelCupomAdm(c))} · ${Number(c.usos_restantes)||0} uso(s) · ${c.uso_unico_por_conta?'Uso unico por conta':'Uso repetido permitido'}</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-o btn-sm" onclick="toggleCupomUsoUnico(${c.id})">${c.uso_unico_por_conta?'Permitir repetir':'Limitar por conta'}</button>
+      <button class="btn btn-r btn-sm" onclick="rmCupom(${c.id})">x</button>
+    </div>
   </div>`).join('');
 }
 function tipoCupomAdm(c){return String(c?.tipo||'porcentagem').toLowerCase();}
@@ -2993,15 +2996,26 @@ async function criarCupom(){
   const valorMin=parseFloat(document.getElementById('dash-cup-min')?.value)||0;
   const qty=parseInt(document.getElementById('dash-cup-qty').value);
   const ativo=document.getElementById('dash-cup-ativo')?.checked!==false;
+  const usoUnico=document.getElementById('dash-cup-uso-unico')?.checked===true;
   if(!nome||isNaN(qty)||qty<1||(tipo!=='frete_gratis'&&(isNaN(valor)||valor<=0))||(tipo==='porcentagem'&&valor>100)){toast('Preencha todos os campos.','err');return}
   const desconto=tipo==='porcentagem'?valor:0;
-  const {data,error}=await sb.from('cupons').insert({nome,tipo,valor,valor_minimo:valorMin,desconto,usos_restantes:qty,ativo}).select().single();
+  const {data,error}=await sb.from('cupons').insert({nome,tipo,valor,valor_minimo:valorMin,desconto,usos_restantes:qty,ativo,uso_unico_por_conta:usoUnico}).select().single();
   if(error){toast('Erro: '+error.message,'err');return}
   cupons.unshift(data);
   ['dash-cup-nome','dash-cup-pct','dash-cup-min','dash-cup-qty'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const ativoEl=document.getElementById('dash-cup-ativo');if(ativoEl)ativoEl.checked=true;
+  const usoUnicoEl=document.getElementById('dash-cup-uso-unico');if(usoUnicoEl)usoUnicoEl.checked=false;
   const tipoEl=document.getElementById('dash-cup-tipo');if(tipoEl)tipoEl.value='porcentagem';toggleCupomTipoAdm();
   renderCupons();toast('Cupom criado!','ok');
+}
+async function toggleCupomUsoUnico(id){
+  const cupom=cupons.find(c=>String(c.id)===String(id));if(!cupom)return;
+  const novo=!cupom.uso_unico_por_conta;
+  const {error}=await sb.from('cupons').update({uso_unico_por_conta:novo}).eq('id',id);
+  if(error){toast('Erro: '+error.message,'err');return}
+  cupom.uso_unico_por_conta=novo;
+  renderCupons();
+  toast(novo?'Uso unico por conta ativado.':'Uso repetido permitido.','ok');
 }
 async function rmCupom(id){
   if(!confirm('Remover cupom?'))return;

@@ -66,6 +66,7 @@ function friendlyRpcError(message) {
     ['Cupom esgotado', 'Este cupom est\u00e1 esgotado.'],
     ['Este cupom e valido para pedidos acima de R$', 'Este cupom \u00e9 v\u00e1lido para pedidos acima do valor m\u00ednimo.'],
     ['Cupom de frete gratis valido apenas para entrega', 'Este cupom \u00e9 v\u00e1lido apenas para entrega.'],
+    ['Voce ja utilizou este cupom', 'Voce ja utilizou este cupom.'],
     ['Produto nao encontrado', 'Um produto do carrinho n\u00e3o foi encontrado.'],
     ['Produto inativo', 'Um produto do carrinho n\u00e3o est\u00e1 mais dispon\u00edvel.'],
     ['Estoque insuficiente', 'Estoque insuficiente para um produto do carrinho.'],

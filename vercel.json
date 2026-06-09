@@ -1,6 +1,12 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/cron-reset-estoque-datas",
+      "schedule": "1 23 * * 1,4"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
