@@ -135,25 +135,6 @@ function renderStatusOptionsPedido(p){
   return statusOptionsPedido(p).map(s=>`<option value="${s}"${(p.status||'Pendente')===s?' selected':''}>${statusLabelPedido(s)}</option>`).join('');
 }
 
-async function carregarPedidoStatusItens(id){
-  const {data,error}=await sb.from('pedidos')
-    .select('id,status,itens_pedido(produto_id,quantidade)')
-    .eq('id',id)
-    .single();
-  if(error)throw new Error('Não foi possível carregar o pedido antes de cancelar.');
-  return data;
-}
-
-async function restaurarEstoqueItensPedido(pedido){
-  // Deprecated: stock restoration now happens in the database trigger.
-  return false;
-}
-
-async function restaurarEstoqueSeCancelando(id,status){
-  // Stock restoration is handled by the database trigger on pedidos.status.
-  // Keep this no-op so existing status-update flows do not double-restore stock.
-  return false;
-}
 
 function urlBase64ToUint8Array(base64String){
   const padding='='.repeat((4-base64String.length%4)%4);
@@ -1083,13 +1064,6 @@ async function renderEntregas(){
   }).join('') || '<div class="empty">Sem produtos.</div>';
 }
 async function alterarStatusE(id,status){
-  try{
-    await restaurarEstoqueSeCancelando(id,status);
-  }catch(e){
-    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
-    renderEntregas();
-    return;
-  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return;}
   // WhatsApp automatico
@@ -1550,13 +1524,6 @@ function dispararWppStatus(pedido, status){
 }
 
 async function alterarStatus(id,status){
-  try{
-    await restaurarEstoqueSeCancelando(id,status);
-  }catch(e){
-    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
-    if(document.getElementById('ap-pedidos')?.classList.contains('active'))renderPedidos();
-    return;
-  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro ao salvar status: '+error.message,'err');return;}
   // Buscar pedido do cache (rCache ou rpCache)
