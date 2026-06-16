@@ -3,7 +3,10 @@ const IMG_BASE = CONFIG.IMG_BASE;
 const WHATSAPP_NUM = CONFIG.WHATSAPP_NUMBER;
 const sb = window.sb;
 const PIX_CHAVE = CONFIG.PIX_CHAVE || '';
+const PIX_CHAVE_DISPLAY = CONFIG.PIX_CHAVE_DISPLAY || PIX_CHAVE;
+const PIX_TIPO = CONFIG.PIX_TIPO || 'CPF';
 const PIX_NOME = CONFIG.PIX_NOME || '';
+const PIX_INSTITUICAO = CONFIG.PIX_INSTITUICAO || '';
 const PIX_CIDADE = CONFIG.PIX_CIDADE || '';
 
 let TAXA=2.50;
@@ -2009,6 +2012,10 @@ function gerarPixPayload(valor, txid){
   return payload + crc.toString(16).toUpperCase().padStart(4,'0');
 }
 
+function pixInfoTexto(){
+  return 'Pix '+PIX_TIPO+': '+PIX_CHAVE_DISPLAY+' | Recebedor: '+PIX_NOME+(PIX_INSTITUICAO?' | Banco: '+PIX_INSTITUICAO:'');
+}
+
 function _pixQR(canvas, texto){
   // QR Code simples via Google Charts API
   const size = canvas.width;
@@ -2027,6 +2034,8 @@ function abrirPixModal(total, pedidoData){
   _pixPedidoData = pedidoData;
   const payload = gerarPixPayload(total, 'CORT'+Date.now().toString().slice(-8));
   document.getElementById('pix-valor-txt').textContent = 'R$ ' + fp(total);
+  const info=document.getElementById('pix-info-txt');
+  if(info)info.textContent=pixInfoTexto();
   document.getElementById('pix-codigo-txt').textContent = payload;
   _pixQR(document.getElementById('pix-qr-canvas'), payload);
   const ov = document.getElementById('pix-modal-ov');
@@ -2285,6 +2294,8 @@ function co3GerarQR(totalServidor, txidServidor){
   const payload=gerarPixPayload(total,txidServidor||('CORT'+Date.now().toString().slice(-8)));
   const valEl=document.getElementById('co3-pix-valor'),codEl=document.getElementById('co3-pix-codigo');
   if(valEl)valEl.textContent='R$ '+fp(total);if(codEl)codEl.textContent=payload;
+  const info=document.getElementById('co3-pix-info');
+  if(info)info.textContent=pixInfoTexto();
   const canvas=document.getElementById('co3-pix-canvas');if(canvas)_pixQR(canvas,payload);
 }
 
