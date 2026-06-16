@@ -14,7 +14,7 @@
   <link rel="manifest" href="/loja/manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/shared.css">
-  <link rel="stylesheet" href="/loja/loja.css?v=20260616-phone-pix">
+  <link rel="stylesheet" href="/loja/loja.css?v=20260616-hide-pix-details">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="/shared/config.js?v=20260616-phone-pix"></script>
@@ -22,7 +22,7 @@
   <script src="/shared/utils.js?v=20260602-final"></script>
   <script src="/shared/formatters.js?v=20260602-final"></script>
   <script src="/shared/auth.js?v=20260602-final"></script>
-  <script src="/loja/loja.js?v=20260616-phone-pix" defer></script>
+  <script src="/loja/loja.js?v=20260616-hide-pix-details" defer></script>
 </head>
 <body>
 <!-- LOJA PUBLICA -->
@@ -386,7 +386,6 @@
   <div class="pix-modal">
     <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">Pagar com Pix</div>
     <div class="pix-valor" id="pix-valor-txt">R$ 0,00</div>
-    <div class="pix-info" id="pix-info-txt"></div>
     <div class="pix-qr-wrap"><canvas id="pix-qr-canvas" width="168" height="168"></canvas></div>
     <div class="pix-codigo-wrap">
       <span class="pix-codigo-txt" id="pix-codigo-txt"></span>
@@ -596,7 +595,6 @@
               <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Escaneie o QR Code</div>
               <div class="co3-pix-qr"><canvas id="co3-pix-canvas" width="160" height="160"></canvas></div>
               <div style="font-size:20px;font-weight:900;color:var(--green-bright);margin:8px 0" id="co3-pix-valor">R$ 0,00</div>
-              <div class="co3-pix-info" id="co3-pix-info"></div>
               <div class="co3-pix-codigo">
                 <span class="co3-pix-codigo-txt" id="co3-pix-codigo"></span>
                 <button class="co3-pix-copy" onclick="co3CopiarPix()">Copiar</button>

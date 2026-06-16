@@ -319,7 +319,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .pix-copy-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
 .pix-copy-btn:active{opacity:.8}
 .pix-valor{font-size:28px;font-weight:900;color:var(--green-bright);margin:8px 0 4px}
-.pix-info,.co3-pix-info{font-size:11px;color:var(--text2);line-height:1.45;margin:6px 0 2px}
 .pix-instrucao{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px}
 .pix-steps{display:flex;flex-direction:column;gap:6px;margin:12px 0;text-align:left}
 .pix-step{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2)}
