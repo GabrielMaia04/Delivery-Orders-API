@@ -135,6 +135,25 @@ function renderStatusOptionsPedido(p){
   return statusOptionsPedido(p).map(s=>`<option value="${s}"${(p.status||'Pendente')===s?' selected':''}>${statusLabelPedido(s)}</option>`).join('');
 }
 
+async function carregarPedidoStatusItens(id){
+  const {data,error}=await sb.from('pedidos')
+    .select('id,status,itens_pedido(produto_id,quantidade)')
+    .eq('id',id)
+    .single();
+  if(error)throw new Error('Não foi possível carregar o pedido antes de cancelar.');
+  return data;
+}
+
+async function restaurarEstoqueItensPedido(pedido){
+  // Deprecated: stock restoration now happens in the database trigger.
+  return false;
+}
+
+async function restaurarEstoqueSeCancelando(id,status){
+  // Stock restoration is handled by the database trigger on pedidos.status.
+  // Keep this no-op so existing status-update flows do not double-restore stock.
+  return false;
+}
 
 function urlBase64ToUint8Array(base64String){
   const padding='='.repeat((4-base64String.length%4)%4);
@@ -1064,6 +1083,13 @@ async function renderEntregas(){
   }).join('') || '<div class="empty">Sem produtos.</div>';
 }
 async function alterarStatusE(id,status){
+  try{
+    await restaurarEstoqueSeCancelando(id,status);
+  }catch(e){
+    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
+    renderEntregas();
+    return;
+  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return;}
   // WhatsApp automatico
@@ -1524,6 +1550,13 @@ function dispararWppStatus(pedido, status){
 }
 
 async function alterarStatus(id,status){
+  try{
+    await restaurarEstoqueSeCancelando(id,status);
+  }catch(e){
+    toast(e.message||'Erro ao restaurar estoque antes de cancelar.','err',5000);
+    if(document.getElementById('ap-pedidos')?.classList.contains('active'))renderPedidos();
+    return;
+  }
   const {error}=await sb.from('pedidos').update({status}).eq('id',id);
   if(error){toast('Erro ao salvar status: '+error.message,'err');return;}
   // Buscar pedido do cache (rCache ou rpCache)
@@ -1918,6 +1951,111 @@ function renderCatSel(){
   el.innerHTML=cats.map(c=>'<option value="'+c.id+'">'+h(c.nome)+'</option>').join('');
 }
 
+const PRODUCT_IMAGE_MAX_DIM=1000;
+const PRODUCT_IMAGE_WEBP_QUALITY=.80;
+const PRODUCT_IMAGE_JPEG_QUALITY=.82;
+const PRODUCT_IMAGE_SKIP_BYTES=220*1024;
+let _productImageWebpSupport=null;
+
+function formatBytes(bytes){
+  const n=Number(bytes)||0;
+  if(n>=1024*1024)return (n/1024/1024).toFixed(1).replace('.',',')+'MB';
+  if(n>=1024)return Math.round(n/1024)+'KB';
+  return Math.round(n)+'B';
+}
+function setProductImageFeedback(msg,type=''){
+  const el=document.getElementById('p-img-feedback');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.className='image-opt-feedback '+(type||'');
+}
+function setProductImageMaintStatus(msg,type=''){
+  const el=document.getElementById('product-image-maint-status');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.className='image-maint-status '+(type||'');
+}
+function productImageRandomPart(){
+  return Math.random().toString(36).slice(2,8);
+}
+function isSupportedProductImage(file){
+  return !!file&&/^image\/(jpeg|jpg|png|webp)$/i.test(file.type||'');
+}
+async function canvasToBlobSafe(canvas,type,quality){
+  return new Promise((resolve,reject)=>{
+    canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Nao foi possivel otimizar a imagem.')),type,quality);
+  });
+}
+async function productCanvasSupportsWebP(){
+  if(_productImageWebpSupport!==null)return _productImageWebpSupport;
+  const canvas=document.createElement('canvas');
+  canvas.width=1;canvas.height=1;
+  try{
+    const blob=await canvasToBlobSafe(canvas,'image/webp',PRODUCT_IMAGE_WEBP_QUALITY);
+    _productImageWebpSupport=!!blob&&blob.type==='image/webp';
+  }catch(e){
+    _productImageWebpSupport=false;
+  }
+  return _productImageWebpSupport;
+}
+async function loadProductImage(file){
+  if(window.createImageBitmap){
+    return createImageBitmap(file);
+  }
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error('Nao foi possivel ler a imagem.'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+async function compressProductImage(file,options={}){
+  if(!isSupportedProductImage(file)){
+    throw new Error('Formato de imagem nao suportado. Use JPG, PNG ou WebP.');
+  }
+  const img=await loadProductImage(file);
+  const srcW=img.width||1,srcH=img.height||1;
+  const scale=Math.min(1,PRODUCT_IMAGE_MAX_DIM/srcW,PRODUCT_IMAGE_MAX_DIM/srcH);
+  const width=Math.max(1,Math.round(srcW*scale));
+  const height=Math.max(1,Math.round(srcH*scale));
+  const canvas=document.createElement('canvas');
+  canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');
+  const useWebP=await productCanvasSupportsWebP();
+  const mimeType=useWebP?'image/webp':'image/jpeg';
+  const extension=useWebP?'webp':'jpg';
+  if(!useWebP){
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,width,height);
+  }
+  ctx.drawImage(img,0,0,width,height);
+  if(typeof img.close==='function')img.close();
+  const quality=useWebP?PRODUCT_IMAGE_WEBP_QUALITY:PRODUCT_IMAGE_JPEG_QUALITY;
+  const blob=await canvasToBlobSafe(canvas,mimeType,quality);
+  const originalSize=Number(file.size)||0;
+  const compressedSize=Number(blob.size)||0;
+  const percent=originalSize>0?Math.max(0,Math.round((1-compressedSize/originalSize)*100)):0;
+  const baseName=String(options.baseName||file.name||'produto').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,40)||'produto';
+  const optimizedFile=new File([blob],baseName+'.'+extension,{type:mimeType});
+  return {blob,file:optimizedFile,mimeType,extension,originalSize,compressedSize,percent,width,height};
+}
+function imageCompressionMessage(result){
+  return 'Imagem otimizada: '+formatBytes(result.originalSize)+' -> '+formatBytes(result.compressedSize)+(result.percent?(' ('+result.percent+'% menor)'):'');
+}
+async function uploadOptimizedProductImage(file,options={}){
+  const result=await compressProductImage(file,{baseName:options.baseName});
+  const folder=options.optimized?'produtos/optimized':'produtos';
+  const idPart=options.productId?String(options.productId):'novo';
+  const path=folder+'/'+idPart+'-'+Date.now()+'-'+productImageRandomPart()+'.'+result.extension;
+  const {error}=await sb.storage.from('imagens').upload(path,result.blob,{
+    cacheControl:'31536000',
+    upsert:true,
+    contentType:result.mimeType
+  });
+  if(error)throw new Error('Erro no upload da imagem: '+error.message);
+  return {...result,path,url:IMG_BASE+'/'+path};
+}
+
 async function addProd(){
   const nome=document.getElementById('p-nome').value.trim();
   const preco=parseFloat(document.getElementById('p-preco').value);
@@ -1933,17 +2071,22 @@ async function addProd(){
     let imagem_url=null;
     const imgFile=document.getElementById('p-img-file')?.files[0];
     if(imgFile){
-      if(imgFile.size>5*1024*1024){toast('Imagem muito grande. Máx 5 MB.','err');return}
-      const ext=imgFile.name.split('.').pop().toLowerCase();
-      const path='produtos/'+Date.now()+'.'+ext;
-      toast('Enviando imagem...','ok');
-      const {error:upErr}=await sb.storage.from('imagens').upload(path,imgFile,{upsert:true});
-      if(upErr){
-        console.error('Upload error:',upErr);
-        toast('Erro no upload da imagem: '+upErr.message,'err');
+      try{
+        if(imgFile.size>8*1024*1024){
+          setProductImageFeedback('Imagem grande. Tentando otimizar antes do envio.','warn');
+        }
+        toast('Otimizando imagem...','ok');
+        const uploaded=await uploadOptimizedProductImage(imgFile,{baseName:nome});
+        imagem_url=uploaded.url;
+        const msg=imageCompressionMessage(uploaded);
+        setProductImageFeedback(msg,uploaded.compressedSize>300*1024?'warn':'ok');
+        toast(msg,uploaded.compressedSize>300*1024?'info':'ok');
+      }catch(imgErr){
+        console.error('Upload error:',imgErr);
+        toast(imgErr.message||'Erro no upload da imagem.','err');
+        setProductImageFeedback(imgErr.message||'Erro no upload da imagem.','err');
         return;
       }
-      imagem_url=IMG_BASE+'/'+path;
     }
 
     const {data,error}=await sb.from('produtos').insert({
@@ -1963,6 +2106,7 @@ async function addProd(){
     });
     const pf=document.getElementById('p-img-file');if(pf)pf.value='';
     const pp=document.getElementById('p-img-preview');if(pp){pp.innerHTML=lucideIcon('sprout');refreshIcons();}
+    setProductImageFeedback('');
     renderProdList();renderAGrid();
     toast('Produto adicionado!','ok');
   }finally{
@@ -1971,6 +2115,12 @@ async function addProd(){
 }
 function previewProdImg(input){
   const f=input.files[0];if(!f)return;
+  if(!isSupportedProductImage(f)){
+    setProductImageFeedback('Formato nao suportado. Use JPG, PNG ou WebP.','err');
+    input.value='';
+    return;
+  }
+  setProductImageFeedback('Selecionada: '+formatBytes(f.size)+'. A imagem sera otimizada ao salvar.',f.size>8*1024*1024?'warn':'');
   const r=new FileReader();
   r.onload=e=>{
     const prev=document.getElementById('p-img-preview');
@@ -1986,6 +2136,71 @@ function previewCatImg(input){
     if(prev)prev.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
   };
   r.readAsDataURL(f);
+}
+
+function produtoImagemJaOtimizada(url){
+  const u=String(url||'').toLowerCase();
+  return u.includes('/optimized/')||u.includes('produtos/optimized/')||u.split('?')[0].endsWith('.webp');
+}
+
+async function comprimirImagensExistentes(){
+  popConfirm(
+    'image',
+    'Comprimir imagens existentes',
+    'Isso vai otimizar as imagens dos produtos e atualizar os links. Continuar?',
+    'Continuar',
+    'pbtn-ok',
+    executarCompressaoImagensExistentes
+  );
+}
+
+async function executarCompressaoImagensExistentes(){
+  const btn=document.getElementById('btn-comprimir-prod-imgs');
+  const originalLabel=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Otimizando...';}
+  setProductImageMaintStatus('Carregando produtos com imagem...','');
+  try{
+    const {data,error}=await sb.from('produtos').select('id,nome,imagem_url').order('nome');
+    if(error){toast('Erro ao carregar produtos: '+error.message,'err');return}
+    const lista=(data||[]).filter(p=>p.imagem_url);
+    if(!lista.length){setProductImageMaintStatus('Nenhuma imagem de produto para otimizar.','warn');return}
+    let feitas=0,ignoradas=0,falhas=0;
+    for(let i=0;i<lista.length;i++){
+      const p=lista[i];
+      setProductImageMaintStatus((i+1)+'/'+lista.length+' verificando '+(p.nome||'produto')+'...','');
+      try{
+        if(produtoImagemJaOtimizada(p.imagem_url)){
+          ignoradas++;
+          continue;
+        }
+        const resp=await fetch(p.imagem_url,{cache:'no-store'});
+        if(!resp.ok)throw new Error('Falha ao baixar imagem atual.');
+        const blob=await resp.blob();
+        if(blob.size>0&&blob.size<=PRODUCT_IMAGE_SKIP_BYTES){
+          ignoradas++;
+          continue;
+        }
+        const sourceFile=new File([blob],'produto-'+p.id,{type:blob.type||'image/jpeg'});
+        const uploaded=await uploadOptimizedProductImage(sourceFile,{productId:p.id,optimized:true,baseName:p.nome||('produto-'+p.id)});
+        const {error:upErr}=await sb.from('produtos').update({imagem_url:uploaded.url}).eq('id',p.id);
+        if(upErr)throw new Error(upErr.message);
+        const local=prods.find(x=>String(x.id)===String(p.id));
+        if(local)local.imagem_url=uploaded.url;
+        feitas++;
+        setProductImageMaintStatus((i+1)+'/'+lista.length+' imagens otimizadas. Ultima: '+imageCompressionMessage(uploaded),'ok');
+      }catch(itemErr){
+        falhas++;
+        console.error('[IMAGEM PRODUTO]',p,itemErr);
+        setProductImageMaintStatus((i+1)+'/'+lista.length+' falha em '+(p.nome||'produto')+'. Continuando...','warn');
+      }
+    }
+    renderProdList();renderAGrid();
+    const resumo=feitas+' otimizadas, '+ignoradas+' ignoradas, '+falhas+' falhas.';
+    setProductImageMaintStatus(resumo,falhas?'warn':'ok');
+    toast(resumo,falhas?'info':'ok');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=originalLabel;}
+  }
 }
 
 function renderPPills(){
