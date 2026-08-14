@@ -397,13 +397,15 @@ async function geocodificar(endereco){
   }catch(e){return null}
 }
 
-async function geocodificarCEP(cep){
+async function geocodificarCEPCandidatos(cep){
   const cepLimpo = cep.replace(/\D/g,'');
+  const candidatos=[];
+  let dv=null;
   try{
 // ----------------------------------------------------------------
     const rv = await fetch('https://viacep.com.br/ws/'+cepLimpo+'/json/');
-    const dv = await rv.json();
-    if(dv.erro) return null;
+    dv = await rv.json();
+    if(dv.erro) return {viacep:null,candidatos:[]};
 
 // ----------------------------------------------------------------
     try{
@@ -411,7 +413,7 @@ async function geocodificarCEP(cep){
       if(rb.ok){
         const db = await rb.json();
         if(db.location?.coordinates?.latitude){
-          return {lat:db.location.coordinates.latitude, lng:db.location.coordinates.longitude, viacep:dv};
+          candidatos.push({lat:Number(db.location.coordinates.latitude),lng:Number(db.location.coordinates.longitude),source:'brasilapi',viacep:dv});
         }
       }
     }catch(e2){}
@@ -423,12 +425,13 @@ async function geocodificarCEP(cep){
       if(rn.ok){
         const dn = await rn.json();
         if(dn[0]){
-          return {lat:parseFloat(dn[0].lat), lng:parseFloat(dn[0].lon), viacep:dv};
+          candidatos.push({lat:parseFloat(dn[0].lat),lng:parseFloat(dn[0].lon),source:'postalcode',display:dn[0].display_name,viacep:dv});
         }
       }
     }catch(e3){}
 
     // 4. Nominatim fallback por bairro + cidade (NAO por rua - evita resultados errados)
+    if(dv.bairro){
     try{
       const q = (dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
       const nomUrl2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
@@ -436,13 +439,54 @@ async function geocodificarCEP(cep){
       if(rn2.ok){
         const dn2 = await rn2.json();
         if(dn2[0]){
-          return {lat:parseFloat(dn2[0].lat), lng:parseFloat(dn2[0].lon), viacep:dv};
+          candidatos.push({lat:parseFloat(dn2[0].lat),lng:parseFloat(dn2[0].lon),source:'bairro-cidade',display:dn2[0].display_name,viacep:dv});
         }
       }
     }catch(e4){}
+    }
 
-    return null;
-  }catch(e){return null}
+    if(dv.logradouro&&dv.bairro){
+      try{
+        const q = dv.logradouro+', '+(dv.bairro?dv.bairro+', ':'')+dv.localidade+', '+dv.uf+', Brasil';
+        const nomUrl3 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q);
+        const rn3 = await fetch(nomUrl3, {headers:{'User-Agent':'Cortadinhos/1.0'}});
+        if(rn3.ok){
+          const dn3 = await rn3.json();
+          if(dn3[0]){
+            candidatos.push({lat:parseFloat(dn3[0].lat),lng:parseFloat(dn3[0].lon),source:'rua-bairro-cidade',display:dn3[0].display_name,viacep:dv});
+          }
+        }
+      }catch(e5){}
+    }
+
+    return {viacep:dv,candidatos:candidatos.filter(c=>Number.isFinite(c.lat)&&Number.isFinite(c.lng))};
+  }catch(e){return {viacep:null,candidatos:[]}}
+}
+
+async function geocodificarCEP(cep){
+  const r=await geocodificarCEPCandidatos(cep);
+  const primeiro=r.candidatos[0];
+  return primeiro?{...primeiro,viacep:r.viacep}:null;
+}
+
+async function calcularFreteSeguroPorCEP(cep){
+  const r=await geocodificarCEPCandidatos(cep);
+  if(!r.viacep)return {ok:false,motivo:'cep-nao-encontrado'};
+  if(!LOJA_LAT||!LOJA_LNG||LOJA_LAT===0){
+    const zona=zonas[0]||null;
+    return {ok:!!zona,estimado:true,viacep:r.viacep,zona,dist:null,coords:null};
+  }
+  const avaliados=[];
+  for(const c of r.candidatos){
+    const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,c.lat,c.lng);
+    const zona=calcularZona(dist);
+    avaliados.push({...c,dist,zona,dentro:dist<=RAIO_MAX&&!!zona});
+  }
+  const dentro=avaliados.find(a=>a.dentro);
+  if(dentro)return {ok:true,estimado:dentro.source!=='brasilapi'&&dentro.source!=='postalcode',viacep:r.viacep,zona:dentro.zona,dist:dentro.dist,coords:{lat:dentro.lat,lng:dentro.lng},source:dentro.source};
+  const primeiro=avaliados[0];
+  if(primeiro)return {ok:false,motivo:'fora-raio',viacep:r.viacep,dist:primeiro.dist,coords:{lat:primeiro.lat,lng:primeiro.lng},source:primeiro.source};
+  return {ok:false,motivo:'sem-coordenada',viacep:r.viacep};
 }
 
 
@@ -494,13 +538,35 @@ async function verificarZonaEntrega(){
     return;
   }
   const endCliente=document.getElementById('co-end').value.trim();
-  const numCliente=document.getElementById('co-num').value.trim();
+  const cepCliente=document.getElementById('co-cep')?.value.replace(/\D/g,'')||'';
   if(!endCliente){el.style.display='none';return}
 
   el.innerHTML='<div style="color:var(--text2);font-size:12px">Calculando dist\u00e2ncia...</div>';
   el.style.display='block';
 
-  const endFull=endCliente+(numCliente?', '+numCliente:'')+', Rio de Janeiro';
+  if(cepCliente.length===8){
+    const frete=await calcularFreteSeguroPorCEP(cepCliente);
+    if(frete.coords){_clienteLat=frete.coords.lat;_clienteLng=frete.coords.lng;}
+    if(!frete.viacep){
+      el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--orange-soft);border:1px solid var(--orange);font-size:12px;color:var(--orange);font-weight:700">N\u00e3o conseguimos confirmar a taxa automaticamente. Confira o endere\u00e7o ou fale conosco pelo WhatsApp.</div>';
+      _zonaAtiva=null;
+      updCoResumo();
+      return;
+    }
+    if(!frete.ok){
+      el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--red-soft);border:1px solid var(--red);color:var(--red);font-size:12px;font-weight:700">'+(frete.motivo==='fora-raio'?'Este endere\u00e7o parece estar fora da nossa \u00e1rea de entrega.':'N\u00e3o conseguimos confirmar a taxa automaticamente. Confira o endere\u00e7o ou fale conosco pelo WhatsApp.')+'</div>';
+      _zonaAtiva=null;
+      updCoResumo();
+      return;
+    }
+    TAXA=frete.zona.taxa;
+    _zonaAtiva=frete.zona;
+    el.innerHTML='<div style="padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);font-size:12px;font-weight:700;color:var(--green-bright)">Frete: R$ '+fp(frete.zona.taxa)+'</div>';
+    updCoResumo();
+    return;
+  }
+
+  const endFull=endCliente+', Rio de Janeiro';
   const coords=await geocodificar(endFull);
   if(!coords){
     el.innerHTML='<div style="color:var(--orange);font-size:12px">N\u00e3o foi poss\u00edvel calcular a dist\u00e2ncia. Prossiga normalmente.</div>';
@@ -822,8 +888,6 @@ async function fazerCadastro(){
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
-  const aceitou=document.getElementById('aceito-termos')?.checked;
-  if(!aceitou){showMsg(msg,'Você precisa aceitar os Termos de Uso para criar uma conta.','error');return}
   if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
   if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
@@ -1143,53 +1207,32 @@ async function calcularFreteCarrinho(){
   refreshIcons();
 
   try{
-    const result = await geocodificarCEP(cepInput);
-    if(!result||!result.viacep){
+    const frete = await calcularFreteSeguroPorCEP(cepInput);
+    if(!frete.viacep){
       info.style.color='var(--red)';
       info.textContent='CEP não encontrado. Verifique e tente novamente.';
       return;
     }
 
-    const dv = result.viacep;
+    const dv = frete.viacep;
     window._cartCepData = dv;
-    window._cartCoords = {lat:result.lat, lng:result.lng};
+    if(frete.coords)window._cartCoords = frete.coords;
 
-    if(!LOJA_LAT||!LOJA_LNG||LOJA_LAT===0){
-// ----------------------------------------------------------------
-      _cartZona = zonas[0]||null;
-      if(_cartZona)TAXA=_cartZona.taxa;
-      _freteEstimado=true;
-      info.style.color='var(--text2)';
-      info.textContent='Frete: R$ '+fp(TAXA);
-      refreshIcons();
-      updSums();
-      return;
-    }
-
-    const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-    if(dist > RAIO_MAX){
+    if(!frete.ok){
       _cartZona = null;
       window._cartCoords = undefined; // sinaliza fora do raio
       info.style.color='var(--red)';
-      info.textContent='Fora do raio de entrega.';
+      info.textContent=frete.motivo==='fora-raio'?'Este endereço parece estar fora da nossa área de entrega.':'Não conseguimos confirmar a taxa automaticamente. Confira o endereço ou fale conosco pelo WhatsApp.';
       atualizarBtnContinuar();
       return;
     }
 
-    const zona = calcularZona(dist);
-    _cartZona = zona;
-
-    if(zona){
-      TAXA = zona.taxa;
-      _freteCalculado=true;
-      _freteEstimado=false;
-      info.style.color='var(--green-bright)';
-      info.textContent='Frete: R$ '+fp(zona.taxa);
-    }else{
-      _cartZona=null;
-      info.style.color='var(--orange)';
-      info.textContent='Fora do raio de entrega.';
-    }
+    _cartZona = frete.zona;
+    TAXA = frete.zona.taxa;
+    _freteCalculado=true;
+    _freteEstimado=!!frete.estimado;
+    info.style.color=frete.estimado?'var(--orange)':'var(--green-bright)';
+    info.textContent='Frete: R$ '+fp(frete.zona.taxa);
     updSums();
     atualizarBtnContinuar();
   }catch(e){
@@ -2241,16 +2284,19 @@ async function co3CalcFrete(){
   if(cep.length!==8){info.style.display='block';info.style.color='var(--orange)';info.textContent='Digite um CEP valido.';return;}
   co3EnderecoForaRaio=false;
   info.style.display='block';info.textContent='Calculando...';info.style.color='var(--text2)';
-  const result=await geocodificarCEP(cep);
-  if(!result||!result.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
-  window._cartCepData=result.viacep;window._cartCoords={lat:result.lat,lng:result.lng};
+  const frete=await calcularFreteSeguroPorCEP(cep);
+  if(!frete.viacep){info.style.color='var(--red)';info.textContent='CEP nao encontrado.';return;}
+  window._cartCepData=frete.viacep;if(frete.coords)window._cartCoords=frete.coords;
   const c2=document.getElementById('co3-cep2');if(c2)c2.value=cepEl.value;
-  if(!LOJA_LAT||!LOJA_LNG){TAXA=zonas[0]?.taxa||TAXA;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=true;info.style.color='var(--orange)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();return;}
-  const dist=await distanciaRota(LOJA_LAT,LOJA_LNG,result.lat,result.lng);
-  if(dist>RAIO_MAX){co3EnderecoForaRaio=true;co3FreteCalculado=false;_freteCalculado=false;info.style.color='var(--red)';info.textContent='Fora do raio de entrega.';return;}
-  const zona=calcularZona(dist);
-  if(zona){co3EnderecoForaRaio=false;TAXA=zona.taxa;_zonaAtiva=zona;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=false;info.style.color='var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();}
-  else{info.style.color='var(--orange)';info.textContent='Fora do raio de entrega.';}
+  if(!frete.ok){
+    co3EnderecoForaRaio=frete.motivo==='fora-raio';
+    co3FreteCalculado=false;_freteCalculado=false;
+    info.style.color=frete.motivo==='fora-raio'?'var(--red)':'var(--orange)';
+    info.textContent=frete.motivo==='fora-raio'?'Este endereço parece estar fora da nossa área de entrega.':'Não conseguimos confirmar a taxa automaticamente. Confira o endereço ou fale conosco pelo WhatsApp.';
+    return;
+  }
+  co3EnderecoForaRaio=false;TAXA=frete.zona.taxa;_zonaAtiva=frete.zona;co3FreteCalculado=true;_freteCalculado=true;_freteEstimado=!!frete.estimado;
+  info.style.color=frete.estimado?'var(--orange)':'var(--green-bright)';info.textContent='Frete: R$ '+fp(TAXA);co3UpdateResumo();
 }
 
 
@@ -2452,16 +2498,14 @@ async function co3AutoBuscarCep(){
         document.getElementById('co3-num-p1').focus();
         // Calcular frete em background
         if(LOJA_LAT && LOJA_LNG){
-          const result = await geocodificarCEP(cep);
-          if(result){
-            window._cartCoords = {lat:result.lat, lng:result.lng};
-            const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-            if(dist > RAIO_MAX){ co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--red)'; } return; }
-            const zona = calcularZona(dist);
-            if(zona){ co3EnderecoForaRaio=false; TAXA=zona.taxa; _zonaAtiva=zona; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=false;
-              if(info){ info.textContent='Frete: R$ '+fp(TAXA); }
+          const frete = await calcularFreteSeguroPorCEP(cep);
+          if(frete.ok){
+            if(frete.coords)window._cartCoords = frete.coords;
+            co3EnderecoForaRaio=false; TAXA=frete.zona.taxa; _zonaAtiva=frete.zona; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=!!frete.estimado;
+              if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color=frete.estimado?'var(--orange)':'var(--green-bright)'; }
               co3UpdateResumo();
-            }
+          }else if(frete.motivo==='fora-raio'){
+            co3EnderecoForaRaio=true; co3FreteCalculado=false; _freteCalculado=false; if(info){ info.textContent='Este endereço parece estar fora da nossa área de entrega.'; info.style.color='var(--red)'; } return;
           }
         } else { co3EnderecoForaRaio=false; co3FreteCalculado=true; _freteCalculado=true; _freteEstimado=true; if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--orange)'; } co3UpdateResumo(); }
       } else {
@@ -2807,25 +2851,22 @@ async function co3CalcFreteComNum(){
   }
 
   try{
-    const result = await geocodificarCEP(cep);
-    if(!result){ if(info){ info.textContent='Não foi possível calcular o frete.'; info.style.color='var(--orange)'; } return; }
-    window._cartCoords = {lat:result.lat, lng:result.lng};
-    const dist = await distanciaRota(LOJA_LAT, LOJA_LNG, result.lat, result.lng);
-    if(dist > RAIO_MAX){
-      co3EnderecoForaRaio = true;
+    const frete = await calcularFreteSeguroPorCEP(cep);
+    if(!frete.viacep){ if(info){ info.textContent='Não foi possível calcular o frete.'; info.style.color='var(--orange)'; } return; }
+    if(frete.coords)window._cartCoords = frete.coords;
+    if(!frete.ok){
+      co3EnderecoForaRaio = frete.motivo==='fora-raio';
       co3FreteCalculado = false; _freteCalculado = false;
-      if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--red)'; }
+      if(info){
+        info.textContent=frete.motivo==='fora-raio'?'Este endereço parece estar fora da nossa área de entrega.':'Não conseguimos confirmar a taxa automaticamente. Confira o endereço ou fale conosco pelo WhatsApp.';
+        info.style.color=frete.motivo==='fora-raio'?'var(--red)':'var(--orange)';
+      }
       return;
     }
-    const zona = calcularZona(dist);
-    if(zona){
-      co3EnderecoForaRaio = false;
-      TAXA = zona.taxa; _zonaAtiva = zona; co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = false;
-      if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color='var(--green-bright)'; }
-      co3UpdateResumo();
-    } else {
-      if(info){ info.textContent='Fora do raio de entrega.'; info.style.color='var(--orange)'; }
-    }
+    co3EnderecoForaRaio = false;
+    TAXA = frete.zona.taxa; _zonaAtiva = frete.zona; co3FreteCalculado = true; _freteCalculado = true; _freteEstimado = !!frete.estimado;
+    if(info){ info.textContent='Frete: R$ '+fp(TAXA); info.style.color=frete.estimado?'var(--orange)':'var(--green-bright)'; }
+    co3UpdateResumo();
   }catch(e){
     if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }
   }

@@ -139,10 +139,7 @@
         <div class="field"><label>Email <span class="required-mark">*</span></label><input id="reg-email" type="email" placeholder="seu@email.com"></div>
         <div class="field"><label>Senha <span class="required-mark">*</span></label><input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
         <div class="field"><label>Confirmar senha <span class="required-mark">*</span></label><input id="reg-pass2" type="password" placeholder="Repita a senha"></div>
-        <div style="display:flex;align-items:flex-start;gap:8px;margin:8px 0 2px">
-          <input type="checkbox" id="aceito-termos" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;margin-top:2px;flex-shrink:0">
-          <label for="aceito-termos" style="font-size:12px;color:var(--text2);cursor:pointer;line-height:1.5">Li e aceito os <a href="/termos" target="_blank" rel="noopener" style="color:var(--green-bright);font-weight:600;text-decoration:underline">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener" style="color:var(--green-bright);font-weight:600;text-decoration:underline">Política de Privacidade</a></label>
-        </div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.5;margin:8px 0 2px">Ao criar sua conta, você concorda com os <a href="/termos" target="_blank" rel="noopener" style="color:var(--green-bright);font-weight:600;text-decoration:underline">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener" style="color:var(--green-bright);font-weight:600;text-decoration:underline">Política de Privacidade</a>.</p>
         <button class="big-btn" id="reg-btn" onclick="fazerCadastro()" style="margin-top:6px">Criar conta</button>
         <div class="auth-divider"><span>ou</span></div>
         <button class="google-btn" onclick="loginGoogle()">

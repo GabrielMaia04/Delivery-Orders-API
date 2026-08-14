@@ -93,16 +93,18 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function geocodificarCEP(cep) {
+async function geocodificarCEPCandidatos(cep) {
   const cepLimpo = String(cep || '').replace(/\D/g, '');
-  if (cepLimpo.length !== 8) return null;
+  if (cepLimpo.length !== 8) return { via: null, candidatos: [] };
 
   let via = null;
+  const candidatos = [];
   try {
     const rv = await fetch('https://viacep.com.br/ws/' + cepLimpo + '/json/');
     via = await rv.json();
     if (via?.erro) via = null;
   } catch (_) {}
+  if (!via) return { via: null, candidatos: [] };
 
   try {
     const rb = await fetch('https://brasilapi.com.br/api/cep/v2/' + cepLimpo);
@@ -110,7 +112,7 @@ async function geocodificarCEP(cep) {
       const db = await rb.json();
       const lat = db?.location?.coordinates?.latitude;
       const lng = db?.location?.coordinates?.longitude;
-      if (lat && lng) return { lat: Number(lat), lng: Number(lng), via, estimated: false };
+      if (lat && lng) candidatos.push({ lat: Number(lat), lng: Number(lng), via, estimated: false, source: 'brasilapi' });
     }
   } catch (_) {}
 
@@ -119,7 +121,7 @@ async function geocodificarCEP(cep) {
     const rn = await fetch(nomUrl, { headers: { 'User-Agent': 'Cortadinhos/1.0' } });
     const dn = await rn.json();
     if (dn?.[0]?.lat && dn?.[0]?.lon) {
-      return { lat: Number(dn[0].lat), lng: Number(dn[0].lon), via, estimated: false };
+      candidatos.push({ lat: Number(dn[0].lat), lng: Number(dn[0].lon), via, estimated: false, source: 'postalcode' });
     }
   } catch (_) {}
 
@@ -130,12 +132,44 @@ async function geocodificarCEP(cep) {
       const rn2 = await fetch(nomUrl2, { headers: { 'User-Agent': 'Cortadinhos/1.0' } });
       const dn2 = await rn2.json();
       if (dn2?.[0]?.lat && dn2?.[0]?.lon) {
-        return { lat: Number(dn2[0].lat), lng: Number(dn2[0].lon), via, estimated: true };
+        candidatos.push({ lat: Number(dn2[0].lat), lng: Number(dn2[0].lon), via, estimated: true, source: 'bairro-cidade' });
       }
     } catch (_) {}
   }
 
-  return null;
+  if (via?.logradouro && via?.bairro && via?.localidade) {
+    try {
+      const q = [via.logradouro, via.bairro, via.localidade, via.uf, 'Brasil'].filter(Boolean).join(', ');
+      const nomUrl3 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
+      const rn3 = await fetch(nomUrl3, { headers: { 'User-Agent': 'Cortadinhos/1.0' } });
+      const dn3 = await rn3.json();
+      if (dn3?.[0]?.lat && dn3?.[0]?.lon) {
+        candidatos.push({ lat: Number(dn3[0].lat), lng: Number(dn3[0].lon), via, estimated: true, source: 'rua-bairro-cidade' });
+      }
+    } catch (_) {}
+  }
+
+  return {
+    via,
+    candidatos: candidatos.filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lng))
+  };
+}
+
+function calcularFretePorCandidatos(candidatos, zonasRows, lojaLat, lojaLng, raioMax) {
+  for (const candidato of candidatos) {
+    const dist = haversine(lojaLat, lojaLng, candidato.lat, candidato.lng) * 1.35;
+    const zona = (zonasRows || []).find(z => dist >= Number(z.km_min || 0) && dist <= Number(z.km_max || 0));
+    if (dist <= raioMax && zona) {
+      return {
+        ok: true,
+        zona,
+        dist,
+        estimated: !!candidato.estimated,
+        source: candidato.source
+      };
+    }
+  }
+  return { ok: false };
 }
 
 function parseConfig(rows) {
@@ -245,18 +279,17 @@ module.exports = async function handler(req, res) {
         frete_estimado: true
       };
     } else {
-      const geo = await geocodificarCEP(cep);
-      if (!geo) return res.status(400).json({ error: 'Nao foi possivel validar o CEP' });
-      const dist = haversine(lojaLat, lojaLng, geo.lat, geo.lng) * 1.35;
-      if (dist > raioMax) return res.status(400).json({ error: 'Endereco fora da area de entrega' });
-      const zona = (zonasRows || []).find(z => dist >= Number(z.km_min || 0) && dist <= Number(z.km_max || 0));
-      if (!zona) return res.status(400).json({ error: 'Endereco fora das zonas de entrega' });
+      const geo = await geocodificarCEPCandidatos(cep);
+      if (!geo.via) return res.status(400).json({ error: 'Nao foi possivel validar o CEP' });
+      const frete = calcularFretePorCandidatos(geo.candidatos, zonasRows, lojaLat, lojaLng, raioMax);
+      if (!frete.ok) return res.status(400).json({ error: 'Endereco fora da area de entrega' });
+      const zona = frete.zona;
       deliveryCalc = {
         taxa_entrega: Number(zona.taxa || 0),
-        distancia_km: Number(dist.toFixed(3)),
+        distancia_km: Number(frete.dist.toFixed(3)),
         zona_id: zona.id || null,
         zona_nome: zona.nome || null,
-        frete_estimado: !!geo.estimated
+        frete_estimado: !!frete.estimated
       };
     }
   }
