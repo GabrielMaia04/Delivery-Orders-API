@@ -857,6 +857,8 @@ function switchTab(t){
   document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',(t==='login'&&i===0)||(t==='register'&&i===1)));
   document.getElementById('t-login').classList.toggle('hidden',t!=='login');
   document.getElementById('t-reg').classList.toggle('hidden',t!=='register');
+  const regLoginLink=document.getElementById('reg-login-link');
+  if(regLoginLink)regLoginLink.classList.add('hidden');
 }
 
 async function fazerLogin(){
@@ -883,11 +885,13 @@ async function fazerLogin(){
 async function fazerCadastro(){
   const btn=document.getElementById('reg-btn');
   const msg=document.getElementById('reg-msg');
+  const loginLink=document.getElementById('reg-login-link');
   const nome=document.getElementById('reg-nome').value.trim();
   const tel=document.getElementById('reg-tel').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
   const pass2=document.getElementById('reg-pass2').value;
+  if(loginLink)loginLink.classList.add('hidden');
   if(!nome||!tel||!email||!pass){showMsg(msg,'Preencha todos os campos obrigatorios.','error');return}
   if(tel.length<14){showMsg(msg,'Informe um telefone valido.','error');return}
   if(pass!==pass2){showMsg(msg,'Senhas nao coincidem.','error');return}
@@ -896,6 +900,8 @@ async function fazerCadastro(){
   const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nome}}});
   btn.disabled=false;btn.textContent='Criar conta';
   if(error){showMsg(msg,tErr(error.message),'error');return}
+  document.getElementById('reg-pass').value='';
+  document.getElementById('reg-pass2').value='';
   if(data?.user){
     await loadProfile(data.user.id,data.user);
     // Salvar telefone imediatamente
@@ -903,9 +909,9 @@ async function fazerCadastro(){
       await sb.from('profiles').update({telefone:tel}).eq('id',perfil.id);
       perfil.telefone=tel;
     }
-    fecharAuth();
-    if(window._coPend){window._coPend=false;abrirCo3()}
-  }else{showMsg(msg,'Verifique seu email para confirmar.','success')}
+  }
+  showMsg(msg,'Conta criada com sucesso! Enviamos um e-mail de confirmacao para voce. Abra sua caixa de entrada e clique no link para ativar sua conta. Se nao encontrar, verifique tambem a pasta de spam ou lixo eletronico.','success');
+  if(loginLink)loginLink.classList.remove('hidden');
 }
 
 async function fazerLogout(){
