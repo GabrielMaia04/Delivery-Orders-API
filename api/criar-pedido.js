@@ -233,6 +233,17 @@ module.exports = async function handler(req, res) {
   if (!entrega.data_pedido || !/^\d{4}-\d{2}-\d{2}$/.test(String(entrega.data_pedido))) {
     return res.status(400).json({ error: 'Data do pedido invalida' });
   }
+  const { data: datasPermitidas, error: datasError } = await supabase
+    .rpc('proximas_datas_entrega_cortadinhos', { p_limite: 3 });
+  if (datasError) {
+    console.error('[CRIAR PEDIDO] Delivery dates validation error:', datasError);
+    return res.status(500).json({ error: 'Nao foi possivel validar a data do pedido' });
+  }
+  const dataPedido = String(entrega.data_pedido).slice(0, 10);
+  const datasOk = (datasPermitidas || []).map(row => String(row?.data_entrega || row).slice(0, 10));
+  if (!datasOk.includes(dataPedido)) {
+    return res.status(400).json({ error: 'Essa data nao esta disponivel. Escolha outra data.' });
+  }
   if (!cliente.nome || !cliente.contato) return res.status(400).json({ error: 'Dados do cliente incompletos' });
   if (!itens.length) return res.status(400).json({ error: 'Carrinho vazio' });
 

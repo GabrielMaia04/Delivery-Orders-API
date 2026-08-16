@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/cron-reset-estoque-datas",
-      "schedule": "1 23 * * 1,4"
+      "schedule": "1 1 * * 2,5"
     }
   ],
   "headers": [
@@ -38,6 +38,10 @@
     {
       "source": "/loja",
       "destination": "/loja/index.html"
+    },
+    {
+      "source": "/loja-teste",
+      "destination": "/loja-teste/index.html"
     },
     {
       "source": "/adm",

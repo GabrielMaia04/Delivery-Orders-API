@@ -1686,7 +1686,7 @@ function renderCal(){
 // ----------------------------------------------------------------
   const proximas=new Set();
   if(calCtx==='co'||calCtx==='co3'){
-    // Usa corte de 20h (mesma regra de datasComCorte)
+    // Usa corte de 22h (mesma regra de datasComCorte)
     datasComCorte().forEach(dt=>proximas.add(toISO(dt)));
   }
 
@@ -2361,6 +2361,7 @@ function datasComCorte(){
   const agora = new Date();
   const hoje = new Date(agora); hoje.setHours(0,0,0,0);
   const horaAgora = agora.getHours();
+  const minutoAgora = agora.getMinutes();
   const diaSemana = agora.getDay();
   const proximas = [];
   const d = new Date(hoje); d.setDate(d.getDate()+1);
@@ -2369,7 +2370,7 @@ function datasComCorte(){
     if(dia===2 || dia===5){
       const diaCorte = dia===2 ?1 : 4;
       const isAmanha = (d.getTime()-hoje.getTime())===86400000;
-      const passou = isAmanha && diaSemana===diaCorte && horaAgora>=20;
+      const passou = isAmanha && diaSemana===diaCorte && (horaAgora>22 || (horaAgora===22 && minutoAgora>=1));
       if(!passou) proximas.push(new Date(d));
     }
     d.setDate(d.getDate()+1);
@@ -2741,7 +2742,7 @@ function co3CalRender(){
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
 
-  // Datas com corte de 20h (reutiliza datasComCorte)
+  // Datas com corte de 22h (reutiliza datasComCorte)
   const proximas = new Set(
     datasComCorte().map(dt=>
       dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')
