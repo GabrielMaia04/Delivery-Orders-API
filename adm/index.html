@@ -898,6 +898,54 @@
   </div>
 </div>
 
+<div class="modal-ov" id="ped-edit-modal" onclick="if(event.target===this){fecharEditPedido();}">
+  <div class="modal-box" style="width:760px;max-width:94vw;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <div>
+        <div class="modal-title" id="ped-edit-title">Alterar pedido</div>
+        <div class="modal-sub" id="ped-edit-sub">As alterações serão validadas pelo sistema antes de salvar.</div>
+      </div>
+      <button onclick="fecharEditPedido()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <div id="ped-edit-blocked" class="hidden" style="padding:12px;border:1px solid var(--orange);background:var(--orange-soft);border-radius:10px;color:var(--orange);font-size:13px;font-weight:700;margin-bottom:12px">Este pedido já foi concluído ou cancelado e não pode ser alterado.</div>
+    <div id="ped-edit-form">
+      <div class="row2">
+        <div class="field"><label>Nome do cliente</label><input id="pe-nome" type="text"></div>
+        <div class="field"><label>WhatsApp</label><input id="pe-tel" type="tel"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Tipo de pedido</label><select id="pe-entrega" onchange="peSetTipo(this.value)"><option value="Entrega">Entrega</option><option value="Retirada">Retirada</option></select></div>
+        <div class="field"><label>Data</label><input id="pe-data" type="date" onchange="peRenderResumo()"></div>
+      </div>
+      <div id="pe-end-bloco">
+        <div class="field"><label>Endereço</label><input id="pe-end" type="text"></div>
+        <div class="row2">
+          <div class="field"><label>Número</label><input id="pe-num" type="text"></div>
+          <div class="field"><label>Complemento</label><input id="pe-comp" type="text"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Taxa de entrega (R$)</label><input id="pe-taxa" type="number" min="0" step="0.5" oninput="peRenderResumo()"></div>
+          <div class="field"><label>Pagamento</label><select id="pe-pag" onchange="peRenderResumo()"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartao">Cartão</option></select></div>
+        </div>
+      </div>
+      <div class="field" id="pe-pag-retirada" style="display:none"><label>Pagamento</label><select id="pe-pag-ret" onchange="peRenderResumo()"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartao">Cartão</option></select></div>
+      <div class="field"><label>Observações</label><textarea id="pe-obs" style="height:64px;resize:none"></textarea></div>
+      <div class="field"><label>Produtos</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="pe-prod" style="flex:1"></select>
+          <input id="pe-qty" type="number" min="1" value="1" style="width:78px">
+          <button class="btn btn-g btn-sm" onclick="peAddItem()">Adicionar</button>
+        </div>
+      </div>
+      <div id="pe-items" style="border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:12px"></div>
+      <div class="field"><label>Motivo da alteração</label><input id="pe-motivo" type="text" placeholder="Opcional"></div>
+      <div id="pe-resumo" style="font-size:13px;border-top:1px solid var(--border);padding-top:10px;margin-bottom:12px"></div>
+      <div id="pe-msg" style="font-size:12px;margin-bottom:10px"></div>
+      <button class="btn btn-g" id="pe-save" style="width:100%;padding:12px;font-size:13px" onclick="salvarEditPedido()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ESTOQUE -->
 <div class="modal-ov" id="est-modal" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
   <div class="modal-box">

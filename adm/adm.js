@@ -2455,9 +2455,10 @@ function renderRPPage(){
   if(loading)loading.classList.add('hidden');
   const table=document.getElementById('rp-table');if(table)table.classList.remove('hidden');
   const tbody=document.getElementById('rp-tbody');if(!tbody)return;
-  if(!pagina.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPPag();return}
+  if(!pagina.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Nenhum pedido</td></tr>';renderRPPag();return}
   tbody.innerHTML=pagina.map(p=>{
     const opts=renderStatusOptionsPedido(p);
+    const editBtn=pedidoEditavel(p)?'<button class="btn btn-o btn-sm" onclick="abrirEditPedido('+p.id+')">Alterar</button>':'';
     return'<tr>'
       +'<td><span style="font-size:11px;font-weight:700;font-family:monospace;color:var(--text2)">'+h(p.codigo||'-')+'</span></td>'
       +'<td><div style="font-weight:700;font-size:12px">'+h(p.cliente_nome)+'</div><div style="font-size:10px;color:var(--text2)">'+h(p.cliente_contato||'')+'</div></td>'
@@ -2467,12 +2468,233 @@ function renderRPPage(){
       +'<td>'+(!isRetiradaPedido(p)?'<span class="badge bg-orange">Entrega</span>':'<span class="badge bg-gray">Retirada</span>')+'</td>'
       +'<td>'+p.pagamento+'</td>'
       +'<td style="text-align:right;font-weight:700;color:var(--green-bright)">R$ '+fp(p.total)+'</td>'
-      +'<td><button class="btn btn-o btn-sm" onclick="verPedRP('+p.id+')">Ver</button></td>'
+      +'<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-o btn-sm" onclick="verPedRP('+p.id+')">Ver</button>'+editBtn+'</div></td>'
       +'</tr>';
   }).join('');
 }
 
 function verPedRP(id){return verPed(id);}
+
+let pePedido=null;
+let peItens=[];
+
+function pedidoEditavel(p){
+  const st=statusKeyPedido(p?.status);
+  return st==='pendente'||st==='em preparo';
+}
+
+function produtoById(id){
+  return prods.find(p=>String(p.id)===String(id));
+}
+
+function pePagamentoAtual(){
+  const tipo=document.getElementById('pe-entrega')?.value||'Entrega';
+  return tipo==='Retirada'
+    ? (document.getElementById('pe-pag-ret')?.value||'Pix')
+    : (document.getElementById('pe-pag')?.value||'Pix');
+}
+
+function peSetTipo(v){
+  const isEntrega=v==='Entrega';
+  const end=document.getElementById('pe-end-bloco');
+  const pagRet=document.getElementById('pe-pag-retirada');
+  if(end)end.style.display=isEntrega?'block':'none';
+  if(pagRet)pagRet.style.display=isEntrega?'none':'block';
+  const pag=document.getElementById('pe-pag');
+  const pagR=document.getElementById('pe-pag-ret');
+  if(isEntrega&&pagR&&pag)pag.value=pagR.value||pag.value;
+  if(!isEntrega&&pag&&pagR)pagR.value=pag.value||pagR.value;
+  peRenderResumo();
+}
+
+function pePopularProdutos(){
+  const sel=document.getElementById('pe-prod');
+  if(!sel)return;
+  const ativos=(prods||[]).filter(p=>p.ativo!==false).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
+  sel.innerHTML=ativos.map(p=>'<option value="'+h(p.id)+'">'+h(p.nome)+' - R$ '+fp(Number(p.preco)||0)+'</option>').join('');
+}
+
+function peRenderItens(){
+  const el=document.getElementById('pe-items');
+  if(!el)return;
+  if(!peItens.length){
+    el.innerHTML='<div class="empty" style="padding:10px">Nenhum produto no pedido.</div>';
+    peRenderResumo();
+    return;
+  }
+  el.innerHTML=peItens.map((it,i)=>{
+    const p=produtoById(it.prodId);
+    const nome=p?.nome||it.nome||'Produto';
+    const peso=p?.peso||it.peso||'';
+    const preco=Number(p?.preco??it.preco)||0;
+    return '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="min-width:0"><div style="font-size:12px;font-weight:700">'+h(nome)+'</div><div style="font-size:10px;color:var(--text3)">'+h(peso)+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:5px"><button class="qb" onclick="peChgItem('+i+',-1)">-</button><span class="qn">'+it.qty+'</span><button class="qb" onclick="peChgItem('+i+',1)">+</button></div>'
+      +'<div style="font-size:12px;font-weight:700;color:var(--green-bright);white-space:nowrap">R$ '+fp(preco*it.qty)+'</div>'
+      +'<button class="db" onclick="peRmItem('+i+')">Remover</button>'
+      +'</div>';
+  }).join('');
+  peRenderResumo();
+}
+
+function peAddItem(){
+  const id=document.getElementById('pe-prod')?.value;
+  const qty=Math.max(1,parseInt(document.getElementById('pe-qty')?.value,10)||1);
+  const p=produtoById(id);
+  if(!p){toast('Selecione um produto.','err');return;}
+  const ex=peItens.find(i=>String(i.prodId)===String(id));
+  if(ex)ex.qty+=qty;
+  else peItens.push({prodId:p.id,qty,nome:p.nome,preco:Number(p.preco)||0,peso:p.peso||''});
+  document.getElementById('pe-qty').value='1';
+  peRenderItens();
+}
+
+function peChgItem(i,d){
+  if(!peItens[i])return;
+  peItens[i].qty=Math.max(1,(parseInt(peItens[i].qty,10)||1)+d);
+  peRenderItens();
+}
+
+function peRmItem(i){
+  peItens.splice(i,1);
+  peRenderItens();
+}
+
+function peSub(){
+  return peItens.reduce((s,it)=>{
+    const p=produtoById(it.prodId);
+    const preco=Number(p?.preco??it.preco)||0;
+    return s+(preco*(Number(it.qty)||0));
+  },0);
+}
+
+function peTaxa(){
+  if((document.getElementById('pe-entrega')?.value||'Entrega')!=='Entrega')return 0;
+  const n=parseFloat(String(document.getElementById('pe-taxa')?.value||'0').replace(',','.'));
+  return Number.isFinite(n)&&n>0?n:0;
+}
+
+function peRenderResumo(){
+  const el=document.getElementById('pe-resumo');
+  if(!el)return;
+  const sub=peSub();
+  const taxa=peTaxa();
+  el.innerHTML='<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Subtotal previsto</span><strong>R$ '+fp(sub)+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Taxa prevista</span><strong>R$ '+fp(taxa)+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--border);font-size:14px"><span>Total previsto</span><strong style="color:var(--green-bright)">R$ '+fp(sub+taxa)+'</strong></div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:4px">Valores finais, estoque e cupons serão recalculados pelo sistema ao salvar.</div>';
+}
+
+async function carregarPedidoEditavel(id){
+  const caches=[rpCache,rCache,window._entCache||[],window._pedClienteCache||[],[window._pedDetalheAtual].filter(Boolean)];
+  let p=caches.flat().find(x=>String(x.id)===String(id));
+  if(!p?.itens_pedido){
+    const {data,error}=await sb.from('pedidos').select('*,itens_pedido(*)').eq('id',id).single();
+    if(error)throw error;
+    p=data;
+  }
+  return p;
+}
+
+async function abrirEditPedido(id){
+  try{
+    pePopularProdutos();
+    const p=await carregarPedidoEditavel(id);
+    pePedido=p;
+    const modal=document.getElementById('ped-edit-modal');
+    const blocked=document.getElementById('ped-edit-blocked');
+    const form=document.getElementById('ped-edit-form');
+    document.getElementById('ped-edit-title').textContent='Alterar pedido '+(p.codigo||'#'+p.id);
+    document.getElementById('ped-edit-sub').textContent='As alterações serão validadas pelo sistema antes de salvar.';
+    const can=pedidoEditavel(p);
+    if(blocked)blocked.classList.toggle('hidden',can);
+    if(form)form.style.display=can?'block':'none';
+    if(!can){
+      document.body.appendChild(modal);modal.style.display='flex';modal.classList.add('open');refreshIcons();return;
+    }
+    document.getElementById('pe-nome').value=p.cliente_nome||'';
+    document.getElementById('pe-tel').value=p.cliente_contato||'';
+    document.getElementById('pe-entrega').value=isRetiradaPedido(p)?'Retirada':'Entrega';
+    document.getElementById('pe-data').value=String(p.data_pedido||'').slice(0,10);
+    document.getElementById('pe-end').value=p.cliente_endereco||'';
+    document.getElementById('pe-num').value=p.cliente_numero||'';
+    document.getElementById('pe-comp').value=p.cliente_complemento||'';
+    document.getElementById('pe-taxa').value=Number(p.taxa_entrega||0).toFixed(2);
+    const pag=formatFormaPagamentoRelatorio(p).replace('Cartão','Cartao');
+    document.getElementById('pe-pag').value=['Pix','Dinheiro','Cartao'].includes(pag)?pag:'Pix';
+    document.getElementById('pe-pag-ret').value=document.getElementById('pe-pag').value;
+    document.getElementById('pe-obs').value=p.observacoes||'';
+    document.getElementById('pe-motivo').value='';
+    document.getElementById('pe-msg').textContent='';
+    peItens=(p.itens_pedido||[]).map(it=>({
+      prodId:it.produto_id,
+      qty:Number(it.quantidade)||1,
+      nome:it.nome_produto||'Produto',
+      preco:Number(it.preco_unitario)||0,
+      peso:it.peso_produto||''
+    })).filter(it=>it.prodId);
+    peSetTipo(document.getElementById('pe-entrega').value);
+    peRenderItens();
+    document.body.appendChild(modal);modal.style.display='flex';modal.classList.add('open');refreshIcons();
+  }catch(e){
+    console.warn('abrirEditPedido falhou',e);
+    toast('Não foi possível abrir a edição do pedido.','err');
+  }
+}
+
+function fecharEditPedido(){
+  const modal=document.getElementById('ped-edit-modal');
+  if(modal){modal.classList.remove('open');modal.style.display='none';}
+  pePedido=null;peItens=[];
+}
+
+async function salvarEditPedido(){
+  if(!pePedido){toast('Pedido não carregado.','err');return;}
+  if(!pedidoEditavel(pePedido)){toast('Este pedido já foi concluído ou cancelado e não pode ser alterado.','err');return;}
+  const nome=document.getElementById('pe-nome').value.trim();
+  const data=document.getElementById('pe-data').value;
+  const tipo=document.getElementById('pe-entrega').value;
+  if(!nome){toast('Informe o nome do cliente.','err');return;}
+  if(!data){toast('Informe a data do pedido.','err');return;}
+  if(!peItens.length){toast('Adicione ao menos um produto.','err');return;}
+  if(tipo==='Entrega'&&!document.getElementById('pe-end').value.trim()){toast('Informe o endereço de entrega.','err');return;}
+  const btn=document.getElementById('pe-save');
+  const msg=document.getElementById('pe-msg');
+  if(msg){msg.textContent='';msg.style.color='';}
+  btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    const pedidoData={
+      cliente_nome:nome,
+      cliente_contato:document.getElementById('pe-tel').value.trim(),
+      cliente_endereco:tipo==='Entrega'?document.getElementById('pe-end').value.trim():'',
+      cliente_numero:tipo==='Entrega'?document.getElementById('pe-num').value.trim():'',
+      cliente_complemento:tipo==='Entrega'?document.getElementById('pe-comp').value.trim():'',
+      entrega:tipo,
+      data_pedido:data,
+      taxa_entrega:tipo==='Entrega'?peTaxa():0,
+      pagamento:pePagamentoAtual(),
+      observacoes:document.getElementById('pe-obs').value
+    };
+    const itens=peItens.map(it=>({produto_id:it.prodId,quantidade:Number(it.qty)||1}));
+    const {error}=await sb.rpc('editar_pedido_admin_seguro',{
+      p_pedido_id:pePedido.id,
+      p_pedido:pedidoData,
+      p_itens:itens,
+      p_motivo:document.getElementById('pe-motivo').value.trim()||null
+    });
+    if(error)throw error;
+    toast('Pedido alterado!','ok');
+    fecharEditPedido();
+    await renderPedidos();
+    if(document.getElementById('ap-entregas')?.classList.contains('active'))renderEntregas();
+  }catch(e){
+    console.warn('salvarEditPedido falhou',e);
+    if(msg){msg.textContent='Erro: '+(e.message||'Não foi possível salvar.');msg.style.color='var(--red)';}
+    toast('Erro ao alterar pedido.','err');
+  }finally{
+    btn.disabled=false;btn.textContent='Salvar alterações';
+  }
+}
 
 function renderRPPag(){
   const total=Math.ceil(rpTotal/PER);
