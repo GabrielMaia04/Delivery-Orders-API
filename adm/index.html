@@ -932,7 +932,11 @@
       <div class="field"><label>Observações</label><textarea id="pe-obs" style="height:64px;resize:none"></textarea></div>
       <div class="field"><label>Produtos</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <select id="pe-prod" style="flex:1"></select>
+          <div id="pe-prod-wrap" style="position:relative;flex:1;min-width:0">
+            <input id="pe-prod-search" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="peBuscarProduto()" onfocus="peAbrirBuscaProduto()" onkeydown="peBuscaProdutoKey(event)">
+            <input id="pe-prod" type="hidden">
+            <div id="pe-prod-list" class="hidden" style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:700;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 32px rgba(0,0,0,.35);max-height:230px;overflow-y:auto"></div>
+          </div>
           <input id="pe-qty" type="number" min="1" value="1" style="width:78px">
           <button class="btn btn-g btn-sm" onclick="peAddItem()">Adicionar</button>
         </div>
