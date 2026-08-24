@@ -1339,8 +1339,7 @@ function abrirCo(){
   const tv=document.getElementById('co-taxa-val');
   if(tv)tv.textContent=fp(TAXA);
   // Reset pagamento
-  setPagMomento('agora');
-  document.getElementById('co-pag').value='Pix';
+  setMetodo('Pix');
   // Pre-preenche CEP do carrinho se foi calculado
   if(window._cartCepData){
     const d=window._cartCepData;
@@ -1513,7 +1512,6 @@ function buildTextoWhatsApp(pedido,itens){
   let pagExtra = '';
   if(pagBruto.toLowerCase().includes('pix')){
     pagLabel = 'Pix';
-    pagExtra = 'Chave Pix: ' + PIX_CHAVE;
   } else if(pagBruto.toLowerCase().includes('dinheiro')){
     pagLabel = 'Dinheiro';
     // Troco
@@ -1544,7 +1542,7 @@ function buildTextoWhatsApp(pedido,itens){
       .replace(/{endereco}/g, endFull||'')
       .replace(/{obs}/g, pedido.obs||'')
       .replace(/{troco}/g, trocoTxt)
-      .replace(/{chave_pix}/g, pagLabel==='Pix' ?PIX_CHAVE : '');
+      .replace(/{chave_pix}/g, '');
   }
 
   // Template padrao formatado
@@ -1580,26 +1578,13 @@ function abrirWhatsApp(texto){
   window.open(url,'_blank');
 }
 // ----------------------------------------------------------------
-let _metodoEntrega='Cartao';
+let _metodoEntrega='Pix';
 function setPagMomento(m){
-  document.getElementById('co-pag-momento').value=m;
-  document.getElementById('co-pag-agora').classList.toggle('active',m==='agora');
-  document.getElementById('co-pag-entrega').classList.toggle('active',m==='entrega');
-  document.getElementById('co-pag-pix-box').classList.toggle('hidden',m!=='agora');
-  document.getElementById('co-pag-entr-box').classList.toggle('hidden',m!=='entrega');
-  if(m==='agora'){
-    document.getElementById('co-pag').value='Pix';
-    document.getElementById('co-troco-box').classList.add('hidden');
-  }else{
-    _metodoEntrega='Cartao';
-    document.getElementById('met-cartao').classList.add('active');
-    document.getElementById('met-dinheiro').classList.remove('active');
-    document.getElementById('co-pag').value='Cartao';
-    document.getElementById('co-troco-box').classList.add('hidden');
-  }
+  setMetodo(m==='entrega'?'Cartao':'Pix');
 }
 function setMetodo(m){
   _metodoEntrega=m;
+  document.getElementById('met-pix')?.classList.toggle('active',m==='Pix');
   document.getElementById('met-cartao').classList.toggle('active',m==='Cartao');
   document.getElementById('met-dinheiro').classList.toggle('active',m==='Dinheiro');
   document.getElementById('co-pag').value=m;
@@ -2022,98 +2007,7 @@ async function salvarNovaSenha(){
 }
 
 // ----------------------------------------------------------------
-// LANDING PAGE EDITOR
-// ----------------------------------------------------------------
-
-let _pixPedidoData = null; // guarda dados do pedido para confirmar depois
-
-function _pixCampo(id, val){
-  return id + String(val.length).padStart(2,'0') + val;
-}
-
-function gerarPixPayload(valor, txid){
-  const chave = PIX_CHAVE;
-  const merchantAccount = _pixCampo('00','BR.GOV.BCB.PIX') + _pixCampo('01', chave);
-  const nome = PIX_NOME.slice(0,25);
-  const cidade = PIX_CIDADE.slice(0,15);
-  const valStr = valor.toFixed(2);
-  const tx = (txid||'***').slice(0,25);
-
-  let payload =
-    _pixCampo('00','01') +
-    _pixCampo('26', merchantAccount) +
-    _pixCampo('52','0000') +
-    _pixCampo('53','986') +
-    _pixCampo('54', valStr) +
-    _pixCampo('58','BR') +
-    _pixCampo('59', nome) +
-    _pixCampo('60', cidade) +
-    _pixCampo('62', _pixCampo('05', tx)) +
-    '6304';
-
-  // CRC16-CCITT
-  let crc = 0xFFFF;
-  for(let i=0;i<payload.length;i++){
-    crc ^= payload.charCodeAt(i) << 8;
-    for(let j=0;j<8;j++) crc = (crc & 0x8000) ?(crc<<1)^0x1021 : crc<<1;
-    crc &= 0xFFFF;
-  }
-  return payload + crc.toString(16).toUpperCase().padStart(4,'0');
-}
-
-function _pixQR(canvas, texto){
-  // QR Code simples via Google Charts API
-  const size = canvas.width;
-  const url = 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(texto)+'&format=png&ecc=M';
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0,0,size,size);
-    ctx.drawImage(img,0,0,size,size);
-  };
-  img.src = url;
-}
-
-function abrirPixModal(total, pedidoData){
-  _pixPedidoData = pedidoData;
-  const payload = gerarPixPayload(total, 'CORT'+Date.now().toString().slice(-8));
-  document.getElementById('pix-valor-txt').textContent = 'R$ ' + fp(total);
-  document.getElementById('pix-codigo-txt').textContent = payload;
-  _pixQR(document.getElementById('pix-qr-canvas'), payload);
-  const ov = document.getElementById('pix-modal-ov');
-  document.body.appendChild(ov); // garantir que está no topo do DOM
-  ov.style.display = 'flex';
-  ov.classList.add('open');
-}
-
-function fecharPixModal(){
-  const ov = document.getElementById('pix-modal-ov');
-  ov.classList.remove('open');
-  ov.style.display = 'none';
-}
-
-function copiarPixCodigo(){
-  const txt = document.getElementById('pix-codigo-txt').textContent;
-  navigator.clipboard.writeText(txt).then(()=>toast('Codigo Pix copiado!','ok')).catch(()=>{
-    // fallback
-    const el = document.createElement('textarea');
-    el.value = txt; document.body.appendChild(el);
-    el.select(); document.execCommand('copy');
-    document.body.removeChild(el);
-    toast('Codigo Pix copiado!','ok');
-  });
-}
-
-async function confirmarPagamentoPix(){
-  if(!_pixPedidoData){ fecharPixModal(); return; }
-  fecharPixModal();
-  await _finalizarPedido(_pixPedidoData);
-}
-
-// ----------------------------------------------------------------
 async function _finalizarPedido(){
-  fecharPixModal();
   toast('Use o checkout seguro para finalizar o pedido.','err',3000);
   abrirCheckoutSeguroLegado();
 }
@@ -2164,7 +2058,6 @@ function co3GoStep(n){
   }
   const ov=document.getElementById('co3-ov');if(ov)ov.scrollTop=0;
   const lbl=document.getElementById('co3-data-lbl');if(lbl)lbl.textContent=co3Modalidade==='Entrega'?'entrega':'retirada';
-  if(n===3&&co3PagMetodo==='Pix')co3GerarQR();
 }
 
 function co3RenderResumoItens(){
@@ -2332,20 +2225,7 @@ function co3Passo3(){
   const nome=document.getElementById('co3-nome')?.value.trim(),tel=document.getElementById('co3-tel')?.value.trim();
   const erros=[];if(!nome)erros.push('Nome');if(!tel)erros.push('Telefone');
   if(erros.length){popAlert('triangle-alert','Campos obrigatorios','Preencha: '+erros.join(', '));return;}
-  co3GoStep(3);co3SetPag('Pix');
-}
-
-function co3GerarQR(totalServidor, txidServidor){
-  const total=Number.isFinite(Number(totalServidor))?Number(totalServidor):co3UpdateResumo().total;
-  const payload=gerarPixPayload(total,txidServidor||('CORT'+Date.now().toString().slice(-8)));
-  const valEl=document.getElementById('co3-pix-valor'),codEl=document.getElementById('co3-pix-codigo');
-  if(valEl)valEl.textContent='R$ '+fp(total);if(codEl)codEl.textContent=payload;
-  const canvas=document.getElementById('co3-pix-canvas');if(canvas)_pixQR(canvas,payload);
-}
-
-function co3CopiarPix(){
-  const txt=document.getElementById('co3-pix-codigo')?.textContent;if(!txt)return;
-  navigator.clipboard.writeText(txt).then(()=>toast('Codigo Pix copiado!','ok')).catch(()=>{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Codigo Pix copiado!','ok');});
+  co3GoStep(3);co3SetPagEntrega(co3PagMetodo||'Pix');
 }
 
 function co3ValidarTroco(){
@@ -2440,45 +2320,25 @@ function mostrarBalloon(msg){
 
 // ----------------------------------------------------------------
 function co3SetMomento(v){
-  document.getElementById('co3-pag-momento').value = v;
-  document.getElementById('co3-momento-agora').classList.toggle('active', v==='agora');
-  document.getElementById('co3-momento-entrega').classList.toggle('active', v==='entrega');
-  document.getElementById('co3-agora-box').style.display = v==='agora' ?'block' : 'none';
-  document.getElementById('co3-entrega-box').style.display = v==='entrega' ?'block' : 'none';
-  const btn = document.getElementById('co3-btn-finalizar');
-  if(btn){
-    if(v==='agora') btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Ja paguei - Confirmar';
-    else btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
-  }
-  document.getElementById('co3-pag').value = v==='agora' ?'Pix' : document.getElementById('co3-pag-entrega-met').value;
-  if(v==='agora'){
-// ----------------------------------------------------------------
-    const wrap=document.getElementById('co3-countdown-wrap');
-    const btn=document.getElementById('co3-btn-finalizar');
-    if(wrap)wrap.style.display='block';
-    if(btn)btn.style.display='none';
-    setTimeout(co3GerarQR,50);
-    co3IniciarCountdown();
-  }else{
-// ----------------------------------------------------------------
-    const wrap=document.getElementById('co3-countdown-wrap');
-    const btn=document.getElementById('co3-btn-finalizar');
-    if(wrap)wrap.style.display='none';
-    if(btn){
-      btn.style.display='flex';
-      btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Finalizar pedido';
-    }
-    clearInterval(_co3CountdownTimer);
-  }
+  co3SetPagEntrega(v==='entrega'?'Cartao':'Pix');
 }
 
 // ----------------------------------------------------------------
 function co3SetPagEntrega(v){
+  co3PagMetodo=v;
   document.getElementById('co3-pag-entrega-met').value = v;
   document.getElementById('co3-pag').value = v;
+  document.getElementById('co3-opt-pix')?.classList.toggle('active', v==='Pix');
   document.getElementById('co3-opt-cartao').classList.toggle('active', v==='Cartao');
   document.getElementById('co3-opt-dinheiro').classList.toggle('active', v==='Dinheiro');
-  document.getElementById('co3-cartao-info').style.display = v==='Cartao' ?'block' : 'none';
+  const info=document.getElementById('co3-pag-info');
+  if(info){
+    info.textContent = v==='Pix'
+      ?'Você paga por Pix somente no momento da entrega ou retirada.'
+      :v==='Dinheiro'
+      ?'Você paga em dinheiro no momento da entrega ou retirada.'
+      :'Você paga no cartão no momento da entrega ou retirada.';
+  }
   document.getElementById('co3-dinheiro-box').style.display = v==='Dinheiro' ?'block' : 'none';
 }
 
@@ -2555,12 +2415,7 @@ async function co3Passo2(){
 
 // ----------------------------------------------------------------
 function co3SetPag(v){
-  co3PagMetodo=v;
-  document.getElementById('co3-pag').value=v;
-  if(v==='Pix'){
-    setTimeout(co3GerarQR,100);
-    co3IniciarCountdown();
-  }
+  co3SetPagEntrega(v);
 }
 
 function co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,momento,pagLabel){
@@ -2635,7 +2490,6 @@ function montarWhatsAppPedidoSeguro(resultado){
   partes.push('-- Pagamento --');
   partes.push('Forma de pagamento: '+(pagamento.label||pedido.pagamento||''));
   partes.push('Total a pagar: R$ '+fp(Number(totais.total||0)));
-  if(String(pagamento.metodo||pagamento.label||pedido.pagamento||'').toLowerCase().includes('pix'))partes.push('Chave Pix: '+PIX_CHAVE);
   if(pedido.observacoes){partes.push('');partes.push('-- Observacoes --');partes.push(pedido.observacoes);}
   if(pedido.tracking_token){partes.push('');partes.push('Acompanhe seu pedido: '+window.location.origin+'/loja/?token='+encodeURIComponent(pedido.tracking_token));}
   partes.push('');partes.push('Por favor, envie-nos esta mensagem agora.');
@@ -2649,12 +2503,9 @@ async function co3FinalizarLegacyDirect(){
 
 // ----------------------------------------------------------------
 async function co3FinalizarSeguro(){
-  const momento=document.getElementById('co3-pag-momento')?.value||'agora';
   const btn=document.getElementById('co3-btn-finalizar');
-  const cbtn=document.getElementById('co3-countdown-btn');
-  const resetBtn=()=>{if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}if(cbtn){cbtn.disabled=false;}};
+  const resetBtn=()=>{if(btn){btn.disabled=false;btn.textContent='Finalizar pedido';}};
   if(btn){btn.disabled=true;btn.textContent='Aguarde...';}
-  if(cbtn)cbtn.disabled=true;
 
   if(!perfil||!perfil.id){
     mostrarBalloon('Entre ou crie uma conta para finalizar o pedido');
@@ -2670,10 +2521,8 @@ async function co3FinalizarSeguro(){
   }
   if(!cart.itens.length){toast('Carrinho vazio.','err');resetBtn();return;}
 
-  if(momento==='entrega'){
-    const met=document.getElementById('co3-pag-entrega-met')?.value||'Cartao';
-    if(met==='Dinheiro'&&!co3Troco){mostrarBalloon('Informe o valor para troco');resetBtn();return;}
-  }
+  const met=document.getElementById('co3-pag-entrega-met')?.value||co3PagMetodo||'Pix';
+  if(met==='Dinheiro'&&!co3Troco){mostrarBalloon('Informe o valor para troco');resetBtn();return;}
 
   const nome=document.getElementById('co3-nome')?.value.trim();
   const tel=document.getElementById('co3-tel')?.value.trim();
@@ -2693,14 +2542,11 @@ async function co3FinalizarSeguro(){
     return;
   }
 
-  const pagLabel=momento==='agora'?'Pix':
-    (document.getElementById('co3-pag-entrega-met')?.value||'Cartao')+
-    (co3Troco&&co3Troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(co3Troco))+')':(co3Troco==='sem troco'?' (sem troco)':''));
+  const pagLabel=met+(co3Troco&&co3Troco!=='sem troco'?' (troco p/ R$ '+fp(parseFloat(co3Troco))+')':(co3Troco==='sem troco'?' (sem troco)':''));
 
   try{
-    const payload=co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,momento,pagLabel);
+    const payload=co3MontarPayloadSeguro(nome,tel,data,obs,recebedor,'entrega',pagLabel);
     const resultado=await criarPedidoSeguro(payload);
-    if(momento==='agora')co3GerarQR(Number(resultado?.totais?.total||0),String(resultado?.pedido?.codigo||'CORT'+Date.now()).slice(0,25));
     abrirWhatsApp(montarWhatsAppPedidoSeguro(resultado));
     cupomAtivo=null;co3CupomAtivo=null;co3Troco='';
     cart={itens:[],entrega:'Entrega'};
@@ -2877,33 +2723,6 @@ async function co3CalcFreteComNum(){
   }catch(e){
     if(info){ info.textContent='Erro ao calcular frete.'; info.style.color='var(--red)'; }
   }
-}
-
-let _co3CountdownTimer = null;
-
-function co3IniciarCountdown(){
-  const wrap=document.getElementById('co3-countdown-wrap');
-  const btn=document.getElementById('co3-btn-finalizar');
-  const cbtn=document.getElementById('co3-countdown-btn');
-  if(!wrap)return;
-  wrap.style.display='block';
-  if(btn)btn.style.display='none';
-  if(cbtn)cbtn.classList.remove('ready');
-  clearInterval(_co3CountdownTimer);
-  let seg=15;
-  _co3CountdownTimer=setInterval(()=>{
-    seg--;
-    if(seg<=0){
-      clearInterval(_co3CountdownTimer);
-      if(cbtn)cbtn.classList.add('ready');
-    }
-  },1000);
-}
-
-function co3FinalizarReady(){
-  const cbtn = document.getElementById('co3-countdown-btn');
-  if(!cbtn || !cbtn.classList.contains('ready')) return;
-  window.co3Finalizar();
 }
 
 function registrarPWA() {

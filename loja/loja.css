@@ -308,25 +308,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @media(max-width:768px){
 }
 
-/* ── PIX MODAL ── */
-.pix-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9995;display:none;align-items:center;justify-content:center;padding:20px}
-.pix-modal-ov.open{display:flex}
-.pix-modal{background:var(--bg2);border-radius:20px;padding:28px 24px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.4)}
-.pix-qr-wrap{background:#fff;border-radius:14px;padding:16px;margin:16px auto;width:200px;height:200px;display:flex;align-items:center;justify-content:center}
-.pix-qr-wrap canvas{border-radius:8px}
-.pix-codigo-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:12px 0;display:flex;align-items:center;gap:8px}
-.pix-codigo-txt{font-size:10px;color:var(--text2);word-break:break-all;text-align:left;flex:1;line-height:1.4;font-family:monospace}
-.pix-copy-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
-.pix-copy-btn:active{opacity:.8}
-.pix-valor{font-size:28px;font-weight:900;color:var(--green-bright);margin:8px 0 4px}
-.pix-instrucao{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px}
-.pix-steps{display:flex;flex-direction:column;gap:6px;margin:12px 0;text-align:left}
-.pix-step{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2)}
-.pix-step-num{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.pix-confirmado-btn{width:100%;padding:13px;border-radius:12px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:var(--font);margin-top:8px}
-.pix-confirmado-btn:active{opacity:.88}
-.pix-cancelar-btn{width:100%;padding:10px;border-radius:12px;background:transparent;color:var(--text3);border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);margin-top:6px}
-
 /* ── CHECKOUT 3 PASSOS ── */
 .co3-ov{position:fixed;inset:0;background:var(--bg);z-index:600;display:none;flex-direction:column;overflow-y:auto}
 .co3-ov.open{display:flex}
@@ -417,16 +398,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .co3-pag-opt.active{border-color:var(--green);background:var(--green-light)}
 .co3-pag-opt.active .pag-lbl{color:var(--green-bright)}
 
-/* PIX INLINE */
-.co3-pix-box{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;margin-top:4px}
-.co3-pix-qr{background:#fff;border-radius:12px;padding:12px;display:inline-block;margin:12px auto}
-.co3-pix-codigo{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-top:12px;text-align:left}
-.co3-pix-codigo-txt{font-size:10px;color:var(--text2);word-break:break-all;flex:1;font-family:monospace;line-height:1.4}
-.co3-pix-copy{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
-.co3-pix-steps{display:flex;flex-direction:column;gap:8px;margin:16px 0;text-align:left}
-.co3-pix-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text2)}
-.co3-pix-step-n{width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
 /* DINHEIRO TROCO */
 .co3-troco-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px}
 
@@ -462,11 +433,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @media(max-width:640px){.co3-step1-grid{grid-template-columns:1fr}}
 /* campos readonly */
 .co3-readonly{background:var(--bg4)!important;color:var(--text3)!important;cursor:not-allowed!important}
-/* pag momento toggle */
-.co3-momento-toggle{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.co3-momento-btn{padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px}
-.co3-momento-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.co3-momento-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green-bright)}
 .co3-pag-disabled{opacity:.35;pointer-events:none}
 
 /* ── CALENDÁRIO INLINE CO3 ── */
@@ -491,16 +457,3 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 /* Quando resumo oculto, conteúdo ocupa tudo */
 .co3-body.sem-resumo{grid-template-columns:1fr;max-width:680px}
-
-/* ── COUNTDOWN BOTÃO PIX ── */
-.co3-pix-countdown{
-  width:100%;padding:14px;border-radius:12px;
-  background:var(--green);border:2px solid var(--green);
-  color:#fff;font-size:14px;font-weight:800;
-  font-family:var(--font);text-align:center;cursor:not-allowed;
-  transition:opacity .4s ease;display:flex;align-items:center;justify-content:center;gap:8px;
-  pointer-events:none;opacity:.35;
-}
-.co3-pix-countdown.ready{
-  opacity:1;cursor:pointer;pointer-events:auto;
-}

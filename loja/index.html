@@ -218,46 +218,37 @@
       </div>
       <!-- PAGAMENTO -->
       <div class="field">
-        <label>Pagamento</label>
+        <label>Como você deseja pagar?</label>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Você paga no momento da entrega ou retirada.</div>
         <div class="pag-toggle">
-          <button type="button" class="pag-opt active" id="co-pag-agora" onclick="setPagMomento('agora')">
+          <button type="button" class="pag-opt active" id="met-pix" onclick="setMetodo('Pix')">
             <span class="pag-ico"><i data-lucide="smartphone"></i></span>
-            <div class="pag-lbl">Pagar agora</div>
-            <div class="pag-sub">Via Pix</div>
+            <div class="pag-lbl">Pix na entrega/retirada</div>
+            <div class="pag-sub">Você paga por Pix somente no momento da entrega ou retirada.</div>
           </button>
-          <button type="button" class="pag-opt" id="co-pag-entrega" onclick="setPagMomento('entrega')">
+          <button type="button" class="pag-opt" id="met-cartao" onclick="setMetodo('Cartao')">
+            <span class="pag-ico"><i data-lucide="credit-card"></i></span>
+            <div class="pag-lbl">Cartão na entrega/retirada</div>
+            <div class="pag-sub">Você paga no cartão no momento da entrega ou retirada.</div>
+          </button>
+          <button type="button" class="pag-opt" id="met-dinheiro" onclick="setMetodo('Dinheiro')">
             <span class="pag-ico"><i data-lucide="truck"></i></span>
-            <div class="pag-lbl">Pagar na entrega</div>
-            <div class="pag-sub">Cartão ou dinheiro</div>
+            <div class="pag-lbl">Dinheiro na entrega/retirada</div>
+            <div class="pag-sub">Você paga em dinheiro no momento da entrega ou retirada.</div>
           </button>
         </div>
-        <!-- Pix (pagar agora) -->
-        <div id="co-pag-pix-box">
-          <div class="metodos">
-            <button type="button" class="met-btn active" id="met-pix">Pix</button>
+        <div id="co-troco-box" class="troco-box hidden">
+          <div style="font-size:12px;font-weight:700;margin-bottom:6px">Vai precisar de troco?</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Informe o valor que vai pagar. Deve ser maior que o total do pedido.</div>
+          <input id="co-troco-val" type="number" step="0.01" placeholder="Ex: 100,00" style="width:100%" oninput="validarTroco()">
+          <div id="co-troco-erro" style="font-size:11px;color:var(--red);margin-top:4px;display:none"></div>
+          <div class="troco-btns">
+            <button type="button" class="btn btn-g btn-sm" style="flex:1" onclick="confirmarTroco()">Confirmar</button>
+            <button type="button" class="btn btn-o btn-sm" style="flex:1" onclick="semTroco()">Não preciso de troco!</button>
           </div>
         </div>
-        <!-- Métodos na entrega -->
-        <div id="co-pag-entr-box" class="hidden">
-          <div class="metodos">
-            <button type="button" class="met-btn active" id="met-cartao" onclick="setMetodo('Cartao')">Cartão</button>
-            <button type="button" class="met-btn" id="met-dinheiro" onclick="setMetodo('Dinheiro')">Dinheiro</button>
-          </div>
-          <!-- Troco (só dinheiro) -->
-          <div id="co-troco-box" class="troco-box hidden">
-            <div style="font-size:12px;font-weight:700;margin-bottom:6px">Vai precisar de troco?</div>
-            <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Informe o valor que vai pagar. Deve ser maior que o total do pedido.</div>
-            <input id="co-troco-val" type="number" step="0.01" placeholder="Ex: 100,00" style="width:100%" oninput="validarTroco()">
-            <div id="co-troco-erro" style="font-size:11px;color:var(--red);margin-top:4px;display:none"></div>
-            <div class="troco-btns">
-              <button type="button" class="btn btn-g btn-sm" style="flex:1" onclick="confirmarTroco()">Confirmar</button>
-              <button type="button" class="btn btn-o btn-sm" style="flex:1" onclick="semTroco()">Não preciso de troco!</button>
-            </div>
-          </div>
-        </div>
-        <input type="hidden" id="co-pag">
+        <input type="hidden" id="co-pag" value="Pix">
         <input type="hidden" id="co-troco">
-        <input type="hidden" id="co-pag-momento" value="agora">
       </div>
       <div class="field"><label>Observações</label><textarea id="co-obs" placeholder="Alguma observação..."></textarea></div>
       <div class="resumo-box">
@@ -379,26 +370,6 @@
     <div id="ped-det-btns"></div>
   </div>
 </div>
-<!-- PIX MODAL -->
-<div class="pix-modal-ov" id="pix-modal-ov">
-  <div class="pix-modal">
-    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">Pagar com Pix</div>
-    <div class="pix-valor" id="pix-valor-txt">R$ 0,00</div>
-    <div class="pix-qr-wrap"><canvas id="pix-qr-canvas" width="168" height="168"></canvas></div>
-    <div class="pix-codigo-wrap">
-      <span class="pix-codigo-txt" id="pix-codigo-txt"></span>
-      <button class="pix-copy-btn" onclick="copiarPixCodigo()">Copiar</button>
-    </div>
-    <div class="pix-steps">
-      <div class="pix-step"><span class="pix-step-num">1</span><span>Abra o app do seu banco e acesse a opção Pix</span></div>
-      <div class="pix-step"><span class="pix-step-num">2</span><span>Escaneie o QR Code ou cole o código copia e cola</span></div>
-      <div class="pix-step"><span class="pix-step-num">3</span><span>Confirme o pagamento e clique no botão abaixo</span></div>
-    </div>
-    <button class="pix-confirmado-btn" onclick="confirmarPagamentoPix()">Já paguei — Confirmar pedido</button>
-    <button class="pix-cancelar-btn" onclick="fecharPixModal()">Voltar</button>
-  </div>
-</div>
-
 <!-- ══ CHECKOUT 3 PASSOS ══ -->
 <div class="co3-ov" id="co3-ov">
 
@@ -571,60 +542,29 @@
             Forma de pagamento
           </div>
 
-          <!-- MOMENTO DO PAGAMENTO -->
-          <div class="co3-momento-toggle">
-            <button class="co3-momento-btn active" id="co3-momento-agora" onclick="co3SetMomento('agora')">
-              <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Pagar agora
-              <span style="font-size:10px;font-weight:500;opacity:.7">Via Pix</span>
-            </button>
-            <button class="co3-momento-btn" id="co3-momento-entrega" onclick="co3SetMomento('entrega')">
-              <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-              Pagar na entrega
-              <span style="font-size:10px;font-weight:500;opacity:.7">Cartão ou Dinheiro</span>
-            </button>
-          </div>
-          <input type="hidden" id="co3-pag-momento" value="agora">
+          <div style="font-size:13px;color:var(--text2);margin:-2px 0 14px">Você paga no momento da entrega ou retirada.</div>
 
-          <!-- PAGAR AGORA: só PIX -->
-          <div id="co3-agora-box">
-            <div id="co3-pix-box">
-            <div class="co3-pix-box">
-              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Escaneie o QR Code</div>
-              <div class="co3-pix-qr"><canvas id="co3-pix-canvas" width="160" height="160"></canvas></div>
-              <div style="font-size:20px;font-weight:900;color:var(--green-bright);margin:8px 0" id="co3-pix-valor">R$ 0,00</div>
-              <div class="co3-pix-codigo">
-                <span class="co3-pix-codigo-txt" id="co3-pix-codigo"></span>
-                <button class="co3-pix-copy" onclick="co3CopiarPix()">Copiar</button>
-              </div>
-              <div class="co3-pix-steps">
-                <div class="co3-pix-step"><span class="co3-pix-step-n">1</span><span>Abra o app do banco e acesse o Pix</span></div>
-                <div class="co3-pix-step"><span class="co3-pix-step-n">2</span><span>Escaneie o QR Code ou cole o código</span></div>
-                <div class="co3-pix-step"><span class="co3-pix-step-n">3</span><span>Confirme e clique em "Já paguei" abaixo</span></div>
-              </div>
-            </div>
-          </div>
-
-          </div><!-- /co3-agora-box -->
-
-          <!-- PAGAR NA ENTREGA: Cartão ou Dinheiro -->
-          <div id="co3-entrega-box" style="display:none">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-              <button class="co3-pag-opt active" id="co3-opt-cartao" onclick="co3SetPagEntrega('Cartao')">
+          <div id="co3-entrega-box">
+            <div class="co3-pag-opts">
+              <button class="co3-pag-opt active" id="co3-opt-pix" onclick="co3SetPagEntrega('Pix')">
+                <div class="pag-ico"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+                <div class="pag-lbl">Pix na entrega/retirada</div>
+              </button>
+              <button class="co3-pag-opt" id="co3-opt-cartao" onclick="co3SetPagEntrega('Cartao')">
                 <div class="pag-ico"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-                <div class="pag-lbl">Cartão</div>
+                <div class="pag-lbl">Cartão na entrega/retirada</div>
               </button>
               <button class="co3-pag-opt" id="co3-opt-dinheiro" onclick="co3SetPagEntrega('Dinheiro')">
                 <div class="pag-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                <div class="pag-lbl">Dinheiro</div>
+                <div class="pag-lbl">Dinheiro na entrega/retirada</div>
               </button>
             </div>
-            <div id="co3-cartao-info" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;color:var(--text2);font-size:13px">
-              Pagamento com cartão na entrega.<br>Aceitamos débito e crédito.
+            <div id="co3-pag-info" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;color:var(--text2);font-size:13px">
+              Você paga por Pix somente no momento da entrega ou retirada.
             </div>
             <div id="co3-dinheiro-box" style="display:none">
               <div class="co3-troco-box" style="margin-top:12px">
-                <div style="font-size:13px;font-weight:700;margin-bottom:8px">Troco obrigatório</div>
+                <div style="font-size:13px;font-weight:700;margin-bottom:8px">Vai precisar de troco?</div>
                 <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Informe o valor que vai pagar (maior que o total do pedido)</div>
                 <input id="co3-troco-val" type="number" step="0.01" placeholder="Ex: 50,00" style="width:100%;margin-bottom:8px" oninput="co3ValidarTroco()">
                 <div id="co3-troco-err" style="font-size:11px;color:var(--red);margin-bottom:8px;display:none"></div>
@@ -636,7 +576,7 @@
             </div>
           </div>
           <input type="hidden" id="co3-pag" value="Pix">
-          <input type="hidden" id="co3-pag-entrega-met" value="Cartao">
+          <input type="hidden" id="co3-pag-entrega-met" value="Pix">
           <input type="hidden" id="co3-troco">
         </div>
 
@@ -645,16 +585,9 @@
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             Voltar
           </button>
-          <div id="co3-countdown-wrap" style="display:none;width:100%">
-            <button class="co3-pix-countdown" id="co3-countdown-btn" onclick="co3FinalizarReady()">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Já paguei — Confirmar pedido
-            </button>
-
-          </div>
-          <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()" style="display:none">
+          <button class="co3-btn-next" id="co3-btn-finalizar" onclick="co3Finalizar()">
             <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Já paguei — Confirmar pedido
+            Finalizar pedido
           </button>
         </div>
         <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">Ao finalizar, você concorda com nossos <a href="/termos" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline">Política de Privacidade</a></p>
